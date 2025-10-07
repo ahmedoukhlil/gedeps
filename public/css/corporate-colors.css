@@ -1,0 +1,251 @@
+/* Palette de couleurs d'entreprise - Bleu et Blanc */
+
+:root {
+  /* Couleurs principales */
+  --corporate-primary: #2563eb;      /* blue-600 */
+  --corporate-primary-dark: #1d4ed8; /* blue-700 */
+  --corporate-primary-light: #3b82f6; /* blue-500 */
+  --corporate-primary-lighter: #60a5fa; /* blue-400 */
+  
+  /* Couleurs secondaires */
+  --corporate-secondary: #1e40af;    /* blue-800 */
+  --corporate-secondary-light: #3b82f6; /* blue-500 */
+  --corporate-secondary-dark: #1e3a8a; /* blue-900 */
+  
+  /* Couleurs d'accent */
+  --corporate-accent: #dbeafe;       /* blue-100 */
+  --corporate-accent-light: #eff6ff; /* blue-50 */
+  --corporate-accent-dark: #bfdbfe;  /* blue-200 */
+  
+  /* Couleurs de texte */
+  --corporate-text-primary: #1e3a8a;  /* blue-900 */
+  --corporate-text-secondary: #1e40af; /* blue-800 */
+  --corporate-text-tertiary: #2563eb; /* blue-600 */
+  --corporate-text-quaternary: #3b82f6; /* blue-500 */
+  
+  /* Couleurs de fond */
+  --corporate-bg-primary: #ffffff;   /* blanc */
+  --corporate-bg-secondary: #f8fafc; /* slate-50 */
+  --corporate-bg-tertiary: #f1f5f9;  /* slate-100 */
+  
+  /* Couleurs de bordure */
+  --corporate-border-primary: #e2e8f0; /* slate-200 */
+  --corporate-border-secondary: #cbd5e1; /* slate-300 */
+  --corporate-border-accent: #3b82f6; /* blue-500 */
+  
+  /* Couleurs d'état */
+  --corporate-success: #10b981;      /* emerald-500 */
+  --corporate-warning: #f59e0b;       /* amber-500 */
+  --corporate-error: #ef4444;         /* red-500 */
+  --corporate-info: #3b82f6;          /* blue-500 */
+}
+
+/* Classes utilitaires pour la palette d'entreprise */
+.corporate-primary {
+  background-color: var(--corporate-primary);
+  color: white;
+}
+
+.corporate-primary-text {
+  color: var(--corporate-primary);
+}
+
+.corporate-secondary {
+  background-color: var(--corporate-secondary);
+  color: white;
+}
+
+.corporate-secondary-text {
+  color: var(--corporate-secondary);
+}
+
+.corporate-accent {
+  background-color: var(--corporate-accent);
+  color: var(--corporate-text-primary);
+}
+
+.corporate-accent-text {
+  color: var(--corporate-text-primary);
+}
+
+.corporate-bg-primary {
+  background-color: var(--corporate-bg-primary);
+}
+
+.corporate-bg-secondary {
+  background-color: var(--corporate-bg-secondary);
+}
+
+.corporate-bg-tertiary {
+  background-color: var(--corporate-bg-tertiary);
+}
+
+.corporate-border {
+  border-color: var(--corporate-border-primary);
+}
+
+.corporate-border-accent {
+  border-color: var(--corporate-border-accent);
+}
+
+/* Hover states */
+.corporate-hover:hover {
+  background-color: var(--corporate-primary-dark);
+  color: white;
+}
+
+.corporate-hover-light:hover {
+  background-color: var(--corporate-accent);
+  color: var(--corporate-text-primary);
+}
+
+/* Focus states */
+.corporate-focus:focus {
+  outline: 2px solid var(--corporate-primary);
+  outline-offset: 2px;
+}
+
+.corporate-focus-ring:focus {
+  ring-color: var(--corporate-primary);
+  ring-width: 2px;
+}
+
+/* Transitions */
+.corporate-transition {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Gradients d'entreprise */
+.corporate-gradient {
+  background: linear-gradient(135deg, var(--corporate-primary) 0%, var(--corporate-primary-light) 100%);
+}
+
+.corporate-gradient-light {
+  background: linear-gradient(135deg, var(--corporate-accent-light) 0%, var(--corporate-accent) 100%);
+}
+
+/* Ombres d'entreprise */
+.corporate-shadow {
+  box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.1), 0 2px 4px -1px rgba(37, 99, 235, 0.06);
+}
+
+.corporate-shadow-lg {
+  box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.1), 0 4px 6px -2px rgba(37, 99, 235, 0.05);
+}
+
+/* Badges d'entreprise */
+.corporate-badge {
+  background-color: var(--corporate-primary);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.corporate-badge-light {
+  background-color: var(--corporate-accent);
+  color: var(--corporate-text-primary);
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* Boutons d'entreprise */
+.corporate-btn {
+  background-color: var(--corporate-primary);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+  border: none;
+  cursor: pointer;
+}
+
+.corporate-btn:hover {
+  background-color: var(--corporate-primary-dark);
+  transform: translateY(-1px);
+  box-shadow: var(--corporate-shadow);
+}
+
+.corporate-btn-secondary {
+  background-color: var(--corporate-accent);
+  color: var(--corporate-text-primary);
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+  border: 1px solid var(--corporate-border-primary);
+  cursor: pointer;
+}
+
+.corporate-btn-secondary:hover {
+  background-color: var(--corporate-accent-dark);
+  border-color: var(--corporate-border-accent);
+}
+
+/* Cards d'entreprise */
+.corporate-card {
+  background-color: var(--corporate-bg-primary);
+  border: 1px solid var(--corporate-border-primary);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  box-shadow: var(--corporate-shadow);
+}
+
+.corporate-card-hover:hover {
+  box-shadow: var(--corporate-shadow-lg);
+  transform: translateY(-2px);
+  transition: all 0.2s ease-in-out;
+}
+
+/* Inputs d'entreprise */
+.corporate-input {
+  border: 1px solid var(--corporate-border-primary);
+  border-radius: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.corporate-input:focus {
+  outline: none;
+  border-color: var(--corporate-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Navigation d'entreprise */
+.corporate-nav {
+  background-color: var(--corporate-bg-primary);
+  border-bottom: 1px solid var(--corporate-border-primary);
+}
+
+.corporate-nav-link {
+  color: var(--corporate-text-secondary);
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.corporate-nav-link:hover {
+  background-color: var(--corporate-accent);
+  color: var(--corporate-text-primary);
+}
+
+.corporate-nav-link-active {
+  background-color: var(--corporate-accent);
+  color: var(--corporate-text-primary);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .corporate-card {
+    padding: 1rem;
+  }
+  
+  .corporate-btn {
+    padding: 0.75rem 1.5rem;
+    font-size: 0.875rem;
+  }
+}

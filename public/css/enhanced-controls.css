@@ -1,0 +1,381 @@
+/* Enhanced Controls UX - Amélioration de l'UX des boutons de contrôles */
+
+/* Variables CSS pour la cohérence */
+:root {
+    --primary-color: #667eea;
+    --secondary-color: #764ba2;
+    --success-color: #28a745;
+    --warning-color: #ffc107;
+    --danger-color: #dc3545;
+    --info-color: #17a2b8;
+    --light-color: #f8f9fa;
+    --dark-color: #343a40;
+    --border-radius: 8px;
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    --shadow-hover: 0 8px 25px rgba(0, 0, 0, 0.2);
+}
+
+/* Conteneur principal des contrôles */
+.pdf-controls-container {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    border-radius: var(--border-radius);
+    padding: 16px;
+    box-shadow: var(--shadow);
+    margin: 16px 0;
+    position: sticky;
+    top: 20px;
+    z-index: 100;
+}
+
+/* Groupe de contrôles */
+.control-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    justify-content: center;
+    margin: 8px 0;
+}
+
+.control-group:not(:last-child) {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    padding-bottom: 12px;
+    margin-bottom: 12px;
+}
+
+/* Boutons principaux (Signature, Paraphe, etc.) */
+.enhanced-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    border: none;
+    border-radius: var(--border-radius);
+    font-weight: 600;
+    font-size: 14px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+    min-width: 120px;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.enhanced-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.enhanced-btn:hover::before {
+    left: 100%;
+}
+
+.enhanced-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+}
+
+.enhanced-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Variantes de boutons */
+.enhanced-btn-primary {
+    background: linear-gradient(135deg, var(--success-color) 0%, #20c997 100%);
+    color: white;
+}
+
+.enhanced-btn-primary:hover {
+    background: linear-gradient(135deg, #218838 0%, #1ea085 100%);
+}
+
+.enhanced-btn-secondary {
+    background: linear-gradient(135deg, var(--info-color) 0%, #138496 100%);
+    color: white;
+}
+
+.enhanced-btn-secondary:hover {
+    background: linear-gradient(135deg, #138496 0%, #0f6674 100%);
+}
+
+.enhanced-btn-warning {
+    background: linear-gradient(135deg, var(--warning-color) 0%, #fd7e14 100%);
+    color: white;
+}
+
+.enhanced-btn-warning:hover {
+    background: linear-gradient(135deg, #e0a800 0%, #dc6502 100%);
+}
+
+.enhanced-btn-danger {
+    background: linear-gradient(135deg, var(--danger-color) 0%, #e83e8c 100%);
+    color: white;
+}
+
+.enhanced-btn-danger:hover {
+    background: linear-gradient(135deg, #c82333 0%, #d91a72 100%);
+}
+
+/* Boutons de navigation PDF */
+.pdf-nav-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    cursor: pointer;
+    transition: var(--transition);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.pdf-nav-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.pdf-nav-btn:active {
+    transform: scale(0.95);
+}
+
+.pdf-nav-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Boutons de zoom */
+.zoom-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 25px;
+    padding: 4px;
+    backdrop-filter: blur(10px);
+}
+
+.zoom-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    cursor: pointer;
+    transition: var(--transition);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.zoom-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+}
+
+.zoom-btn:active {
+    transform: scale(0.95);
+}
+
+/* Indicateur de page */
+.page-indicator {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 14px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    min-width: 80px;
+    text-align: center;
+}
+
+/* Boutons d'action rapide */
+.quick-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.quick-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.quick-action-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+}
+
+/* États des boutons */
+.btn-loading {
+    position: relative;
+    pointer-events: none;
+}
+
+.btn-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid transparent;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.btn-success {
+    background: linear-gradient(135deg, var(--success-color) 0%, #20c997 100%);
+    color: white;
+}
+
+.btn-success:hover {
+    background: linear-gradient(135deg, #218838 0%, #1ea085 100%);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .pdf-controls-container {
+        padding: 12px;
+        margin: 12px 0;
+    }
+    
+    .control-group {
+        gap: 8px;
+    }
+    
+    .enhanced-btn {
+        padding: 10px 16px;
+        font-size: 13px;
+        min-width: 100px;
+    }
+    
+    .pdf-nav-btn {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .zoom-btn {
+        width: 36px;
+        height: 36px;
+    }
+    
+    .page-indicator {
+        padding: 6px 12px;
+        font-size: 12px;
+        min-width: 60px;
+    }
+}
+
+@media (max-width: 480px) {
+    .control-group {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .enhanced-btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .quick-actions {
+        flex-direction: column;
+    }
+    
+    .quick-action-btn {
+        justify-content: center;
+    }
+}
+
+/* Animations d'entrée */
+.control-group {
+    animation: slideInUp 0.5s ease-out;
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Tooltips améliorés */
+.enhanced-btn[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: -35px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+/* Focus states pour l'accessibilité */
+.enhanced-btn:focus,
+.pdf-nav-btn:focus,
+.zoom-btn:focus,
+.quick-action-btn:focus {
+    outline: 2px solid rgba(255, 255, 255, 0.8);
+    outline-offset: 2px;
+}
+
+/* États de validation */
+.btn-valid {
+    background: linear-gradient(135deg, var(--success-color) 0%, #20c997 100%);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(40, 167, 69, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+}

@@ -1,0 +1,67 @@
+/* 
+ * RÉSUMÉ DE LA PALETTE DE COULEURS D'ENTREPRISE
+ * 
+ * Cette palette de couleurs a été implémentée dans toute l'application
+ * pour assurer une cohérence visuelle parfaite basée sur le bleu et le blanc.
+ * 
+ * COULEURS PRINCIPALES :
+ * - Bleu principal : #2563eb (blue-600)
+ * - Bleu secondaire : #1e40af (blue-800)
+ * - Bleu d'accent : #3b82f6 (blue-500)
+ * - Blanc : #ffffff
+ * 
+ * COULEURS DE SUPPORT :
+ * - Bleu clair : #dbeafe (blue-100)
+ * - Bleu très clair : #eff6ff (blue-50)
+ * - Gris clair : #f8fafc (slate-50)
+ * 
+ * UTILISATION :
+ * - Textes : blue-900, blue-800, blue-700, blue-600, blue-500
+ * - Arrière-plans : white, blue-50, blue-100
+ * - Bordures : blue-200, blue-300, blue-500
+ * - Boutons : blue-600, blue-700, blue-100, blue-200
+ * - États : hover, focus, active avec variations bleues
+ * 
+ * COHÉRENCE APPLIQUÉE :
+ * ✅ Layout principal (app.blade.php)
+ * ✅ Vue upload (documents/upload.blade.php)
+ * ✅ Vue signatures (signatures/index.blade.php)
+ * ✅ Vue pending (documents/pending.blade.php)
+ * ✅ Vue process (documents/process.blade.php)
+ * 
+ * RÉSULTAT :
+ * Interface moderne, cohérente et professionnelle
+ * avec une identité visuelle forte basée sur le bleu et le blanc.
+ */
+
+/* Variables CSS pour la cohérence */
+:root {
+  --corporate-blue-900: #1e3a8a;
+  --corporate-blue-800: #1e40af;
+  --corporate-blue-700: #1d4ed8;
+  --corporate-blue-600: #2563eb;
+  --corporate-blue-500: #3b82f6;
+  --corporate-blue-400: #60a5fa;
+  --corporate-blue-300: #93c5fd;
+  --corporate-blue-200: #bfdbfe;
+  --corporate-blue-100: #dbeafe;
+  --corporate-blue-50: #eff6ff;
+  --corporate-white: #ffffff;
+}
+
+/* Classes de cohérence globale */
+.corporate-consistent {
+  color: var(--corporate-blue-900);
+  background-color: var(--corporate-white);
+  border-color: var(--corporate-blue-200);
+}
+
+.corporate-consistent:hover {
+  background-color: var(--corporate-blue-100);
+  color: var(--corporate-blue-800);
+}
+
+.corporate-consistent:focus {
+  outline-color: var(--corporate-blue-500);
+  border-color: var(--corporate-blue-500);
+}

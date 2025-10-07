@@ -1,0 +1,36 @@
+<svg width="200" height="80" viewBox="0 0 200 80" xmlns="http://www.w3.org/2000/svg">
+  <!-- Globe avec arcs -->
+  <g transform="translate(20, 40)">
+    <!-- Globe -->
+    <circle cx="0" cy="0" r="18" fill="none" stroke="#1e3a8a" stroke-width="2"/>
+    
+    <!-- Lignes de longitude -->
+    <path d="M-18,0 Q0,-8 18,0" fill="none" stroke="#1e3a8a" stroke-width="1"/>
+    <path d="M-18,0 Q0,8 18,0" fill="none" stroke="#1e3a8a" stroke-width="1"/>
+    <path d="M-18,0 Q0,-4 18,0" fill="none" stroke="#1e3a8a" stroke-width="1"/>
+    <path d="M-18,0 Q0,4 18,0" fill="none" stroke="#1e3a8a" stroke-width="1"/>
+    
+    <!-- Lignes de latitude -->
+    <ellipse cx="0" cy="0" rx="18" ry="6" fill="none" stroke="#1e3a8a" stroke-width="1"/>
+    <ellipse cx="0" cy="0" rx="18" ry="12" fill="none" stroke="#1e3a8a" stroke-width="1"/>
+    
+    <!-- Arc intérieur -->
+    <path d="M-25,-15 Q-5,-25 15,-15" fill="none" stroke="#3b82f6" stroke-width="3"/>
+    
+    <!-- Arc extérieur -->
+    <path d="M-30,-20 Q-10,-35 20,-20" fill="none" stroke="#1e40af" stroke-width="3"/>
+  </g>
+  
+  <!-- Texte EPS.SARL -->
+  <text x="60" y="25" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#1e3a8a">EPS</text>
+  <text x="95" y="25" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#000000">.SARL</text>
+  
+  <!-- Ligne rouge -->
+  <line x1="60" y1="30" x2="140" y2="30" stroke="#dc2626" stroke-width="2"/>
+  
+  <!-- Texte arabe -->
+  <text x="60" y="45" font-family="Arial, sans-serif" font-size="10" fill="#000000">البركة خدمات</text>
+  
+  <!-- Texte anglais -->
+  <text x="60" y="60" font-family="Arial, sans-serif" font-size="10" font-style="italic" fill="#000000">El baraka Prestations de Services</text>
+</svg>

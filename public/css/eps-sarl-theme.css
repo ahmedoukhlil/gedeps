@@ -1,0 +1,784 @@
+/* Design simple et élégant - Dégradé bleu, blanc et noir */
+:root {
+    /* Couleurs principales - Design simple et élégant */
+    --eps-primary: #2563eb;      /* Bleu principal */
+    --eps-secondary: #3b82f6;    /* Bleu secondaire */
+    --eps-accent: #1d4ed8;       /* Bleu accent */
+    --eps-dark: #1e40af;         /* Bleu foncé */
+    --eps-light: #60a5fa;        /* Bleu clair */
+    
+    /* Dégradés bleus élégants */
+    --eps-gradient-primary: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+    --eps-gradient-secondary: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+    --eps-gradient-light: linear-gradient(135deg, #60a5fa 0%, #93c5fd 100%);
+    --eps-gradient-subtle: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    
+    /* Couleurs neutres - Blanc et noir */
+    --eps-white: #ffffff;        /* Blanc pur */
+    --eps-black: #000000;        /* Noir pur */
+    --eps-gray-50: #f9fafb;      /* Gris très clair */
+    --eps-gray-100: #f3f4f6;     /* Gris clair */
+    --eps-gray-200: #e5e7eb;     /* Gris moyen clair */
+    --eps-gray-300: #d1d5db;     /* Gris moyen */
+    --eps-gray-400: #9ca3af;     /* Gris moyen foncé */
+    --eps-gray-500: #6b7280;     /* Gris foncé */
+    --eps-gray-600: #4b5563;     /* Gris très foncé */
+    --eps-gray-700: #374151;      /* Gris très très foncé */
+    --eps-gray-800: #1f2937;      /* Gris presque noir */
+    --eps-gray-900: #111827;      /* Gris noir */
+    
+    /* Couleurs de texte - Noir et nuances */
+    --eps-text-primary: #000000;   /* Texte principal noir */
+    --eps-text-secondary: #374151;  /* Texte secondaire gris foncé */
+    --eps-text-muted: #6b7280;     /* Texte atténué gris moyen */
+    --eps-text-light: #9ca3af;     /* Texte très atténué */
+    
+    /* Couleurs de fond - Blanc et nuances */
+    --eps-bg-primary: #ffffff;     /* Fond principal blanc */
+    --eps-bg-secondary: #f9fafb;   /* Fond secondaire gris très clair */
+    --eps-bg-accent: #f0f9ff;      /* Fond accent bleu très clair */
+    --eps-bg-hover: #f3f4f6;      /* Fond hover gris clair */
+    
+    /* Bordures et séparateurs */
+    --eps-border: #e5e7eb;         /* Bordure gris clair */
+    --eps-border-light: #f3f4f6;   /* Bordure très claire */
+    --eps-border-dark: #d1d5db;    /* Bordure plus foncée */
+    
+    /* Ombres élégantes */
+    --eps-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --eps-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --eps-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    --eps-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    --eps-shadow-blue: 0 4px 14px 0 rgba(37, 99, 235, 0.15);
+}
+
+/* Styles de base - Design simple et élégant */
+body {
+    font-family: 'Inter', 'Segoe UI', 'Arial', sans-serif;
+    background: var(--eps-gradient-subtle);
+    color: var(--eps-text-primary);
+    line-height: 1.6;
+    font-size: 16px;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100vh;
+}
+
+/* Hiérarchie typographique optimisée */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--eps-text-primary);
+    font-weight: 700;
+    line-height: 1.25;
+    margin-bottom: 0.75rem;
+    letter-spacing: -0.025em;
+}
+
+h1 { font-size: 2.25rem; }
+h2 { font-size: 1.875rem; }
+h3 { font-size: 1.5rem; }
+h4 { font-size: 1.25rem; }
+h5 { font-size: 1.125rem; }
+h6 { font-size: 1rem; }
+
+p, span, div {
+    color: var(--eps-text-secondary);
+    line-height: 1.7;
+}
+
+/* Amélioration des contrastes et accessibilité */
+.text-primary {
+    color: var(--eps-text-primary) !important;
+    font-weight: 600;
+}
+
+.text-secondary {
+    color: var(--eps-text-secondary) !important;
+    font-weight: 500;
+}
+
+.text-muted {
+    color: var(--eps-text-muted) !important;
+    font-weight: 400;
+}
+
+.text-light {
+    color: var(--eps-text-light) !important;
+    font-weight: 400;
+}
+
+/* Focus states pour l'accessibilité */
+*:focus {
+    outline: 2px solid var(--eps-primary);
+    outline-offset: 2px;
+}
+
+/* Amélioration des liens */
+a {
+    color: var(--eps-primary);
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+a:hover {
+    color: var(--eps-dark);
+    text-decoration: underline;
+}
+
+a:focus {
+    outline: 2px solid var(--eps-primary);
+    outline-offset: 2px;
+    border-radius: 2px;
+}
+
+/* Header avec logo */
+.navbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.navbar-brand img {
+    height: 40px;
+    width: auto;
+}
+
+/* Boutons élégants - Design simple et élégant */
+.btn-eps-primary {
+    background: var(--eps-gradient-primary);
+    border: none;
+    color: var(--eps-white);
+    padding: 16px 32px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    box-shadow: var(--eps-shadow-blue);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 48px;
+    min-width: 140px;
+    text-decoration: none;
+}
+
+.btn-eps-primary:hover {
+    background: var(--eps-gradient-secondary);
+    transform: translateY(-2px);
+    box-shadow: var(--eps-shadow-lg);
+    color: var(--eps-white);
+}
+
+.btn-eps-primary:active {
+    transform: translateY(0);
+    box-shadow: var(--eps-shadow-md);
+}
+
+.btn-eps-primary:focus {
+    outline: 2px solid var(--eps-primary);
+    outline-offset: 2px;
+}
+
+.btn-eps-primary:disabled {
+    background: var(--eps-gray-300);
+    color: var(--eps-gray-500);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.btn-eps-secondary {
+    background: var(--eps-white);
+    border: 2px solid var(--eps-primary);
+    color: var(--eps-primary);
+    padding: 16px 32px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    box-shadow: var(--eps-shadow-sm);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 48px;
+    min-width: 140px;
+    text-decoration: none;
+}
+
+.btn-eps-secondary:hover {
+    background: var(--eps-primary);
+    color: var(--eps-white);
+    transform: translateY(-2px);
+    box-shadow: var(--eps-shadow-md);
+}
+
+.btn-eps-secondary:active {
+    transform: translateY(0);
+    box-shadow: var(--eps-shadow-sm);
+}
+
+.btn-eps-secondary:focus {
+    outline: 2px solid var(--eps-primary);
+    outline-offset: 2px;
+}
+
+.btn-eps-secondary:disabled {
+    background: var(--eps-gray-100);
+    border-color: var(--eps-gray-300);
+    color: var(--eps-gray-400);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.btn-eps-accent {
+    background: var(--eps-gradient-light);
+    border: none;
+    color: var(--eps-white);
+    padding: 16px 32px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    box-shadow: var(--eps-shadow-blue);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 48px;
+    min-width: 140px;
+    text-decoration: none;
+}
+
+.btn-eps-accent:hover {
+    background: var(--eps-gradient-primary);
+    transform: translateY(-2px);
+    box-shadow: var(--eps-shadow-lg);
+    color: var(--eps-white);
+}
+
+.btn-eps-accent:active {
+    transform: translateY(0);
+    box-shadow: var(--eps-shadow-md);
+}
+
+.btn-eps-accent:focus {
+    outline: 2px solid var(--eps-light);
+    outline-offset: 2px;
+}
+
+.btn-eps-accent:disabled {
+    background: var(--eps-gray-300);
+    color: var(--eps-gray-500);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Cards élégantes - Design simple et élégant */
+.card-eps {
+    background: var(--eps-white);
+    border: 1px solid var(--eps-border);
+    border-radius: 12px;
+    box-shadow: var(--eps-shadow-md);
+    transition: all 0.3s ease;
+    overflow: hidden;
+    margin-bottom: 24px;
+    position: relative;
+}
+
+.card-eps::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--eps-gradient-primary);
+}
+
+.card-eps:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--eps-shadow-xl);
+}
+
+.card-eps:focus-within {
+    outline: 2px solid var(--eps-primary);
+    outline-offset: 2px;
+}
+
+.card-eps-header {
+    background: var(--eps-gradient-subtle);
+    border-bottom: 1px solid var(--eps-border);
+    padding: 24px 28px;
+    border-radius: 12px 12px 0 0;
+}
+
+.card-eps-header h1,
+.card-eps-header h2,
+.card-eps-header h3 {
+    margin: 0;
+    color: var(--eps-text-primary);
+    font-weight: 700;
+}
+
+.card-eps-header p {
+    margin: 8px 0 0 0;
+    color: var(--eps-text-secondary);
+    font-size: 0.95rem;
+}
+
+/* Status badges élégants - Design simple et élégant */
+.status-eps-pending {
+    background: var(--eps-gradient-light);
+    color: var(--eps-white);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: var(--eps-shadow-sm);
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.status-eps-signed {
+    background: var(--eps-gradient-primary);
+    color: var(--eps-white);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: var(--eps-shadow-sm);
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.status-eps-paraphed {
+    background: var(--eps-gradient-secondary);
+    color: var(--eps-white);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: var(--eps-shadow-sm);
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Navigation élégante - Design simple et élégant */
+.navbar-eps {
+    background: var(--eps-gradient-primary);
+    box-shadow: var(--eps-shadow-lg);
+}
+
+.navbar-eps .navbar-nav .nav-link {
+    color: var(--eps-white);
+    font-weight: 600;
+    transition: all 0.3s ease;
+    padding: 12px 20px;
+    border-radius: 8px;
+    margin: 0 4px;
+}
+
+.navbar-eps .navbar-nav .nav-link:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+    color: var(--eps-white);
+}
+
+.navbar-eps .navbar-nav .nav-link.active {
+    background: rgba(255, 255, 255, 0.2);
+    color: var(--eps-white);
+    box-shadow: var(--eps-shadow-sm);
+}
+
+/* Styles pour la navbar moderne */
+.modern-nav {
+    background: var(--eps-gradient-primary);
+    box-shadow: var(--eps-shadow-lg);
+    border-bottom: none;
+}
+
+.modern-nav .nav-link {
+    color: var(--eps-white);
+    font-weight: 600;
+    transition: all 0.3s ease;
+    padding: 12px 20px;
+    border-radius: 8px;
+    margin: 0 4px;
+    text-decoration: none;
+}
+
+.modern-nav .nav-link:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+    color: var(--eps-white);
+}
+
+.modern-nav .nav-link.active {
+    background: rgba(255, 255, 255, 0.2);
+    color: var(--eps-white);
+    box-shadow: var(--eps-shadow-sm);
+}
+
+/* Footer élégant - Design simple et élégant */
+.footer-eps {
+    background: var(--eps-gradient-primary);
+    color: var(--eps-white);
+    padding: 20px 0;
+    margin-top: 40px;
+    box-shadow: var(--eps-shadow-lg);
+}
+
+/* Alerts élégants - Design simple et élégant */
+.alert-eps-success {
+    background: var(--eps-white);
+    border: 1px solid var(--eps-primary);
+    color: var(--eps-primary);
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-weight: 500;
+    box-shadow: var(--eps-shadow-sm);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    border-left: 4px solid var(--eps-primary);
+}
+
+.alert-eps-warning {
+    background: var(--eps-white);
+    border: 1px solid var(--eps-light);
+    color: var(--eps-dark);
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-weight: 500;
+    box-shadow: var(--eps-shadow-sm);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    border-left: 4px solid var(--eps-light);
+}
+
+.alert-eps-danger {
+    background: var(--eps-white);
+    border: 1px solid var(--eps-gray-400);
+    color: var(--eps-gray-700);
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-weight: 500;
+    box-shadow: var(--eps-shadow-sm);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    border-left: 4px solid var(--eps-gray-400);
+}
+
+.alert-eps-info {
+    background: var(--eps-white);
+    border: 1px solid var(--eps-secondary);
+    color: var(--eps-primary);
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-weight: 500;
+    box-shadow: var(--eps-shadow-sm);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    border-left: 4px solid var(--eps-secondary);
+}
+
+/* Form elements élégants - Design simple et élégant */
+.form-control-eps {
+    border: 2px solid var(--eps-border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    transition: all 0.3s ease;
+    background-color: var(--eps-white);
+    color: var(--eps-text-primary);
+    font-weight: 500;
+    font-size: 1rem;
+    line-height: 1.5;
+    width: 100%;
+    min-height: 48px;
+}
+
+.form-control-eps:focus {
+    border-color: var(--eps-primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    outline: none;
+    background-color: var(--eps-white);
+}
+
+.form-control-eps:hover {
+    border-color: var(--eps-secondary);
+}
+
+.form-control-eps::placeholder {
+    color: var(--eps-text-muted);
+    font-weight: 400;
+}
+
+.form-control-eps:disabled {
+    background-color: var(--eps-gray-50);
+    border-color: var(--eps-gray-200);
+    color: var(--eps-text-muted);
+    cursor: not-allowed;
+}
+
+/* Labels pour les formulaires */
+.form-label-eps {
+    display: block;
+    font-weight: 600;
+    color: var(--eps-text-primary);
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+}
+
+/* Groupes de formulaires */
+.form-group-eps {
+    margin-bottom: 24px;
+}
+
+.form-group-eps label {
+    display: block;
+    font-weight: 600;
+    color: var(--eps-text-primary);
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+}
+
+/* Styles pour les pages d'upload */
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+@media (max-width: 768px) {
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+}
+
+/* Styles généraux pour toutes les pages */
+.container-fluid {
+    padding: 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Amélioration des cartes de documents */
+.action-card {
+    background: var(--eps-white);
+    border: 1px solid var(--eps-border);
+    border-radius: 12px;
+    box-shadow: var(--eps-shadow-md);
+    transition: all 0.3s ease;
+    overflow: hidden;
+    position: relative;
+}
+
+.action-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--eps-gradient-primary);
+}
+
+.action-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--eps-shadow-xl);
+}
+
+/* Amélioration des états vides */
+.empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    background: var(--eps-white);
+    border-radius: 12px;
+    box-shadow: var(--eps-shadow-sm);
+    border: 1px solid var(--eps-border);
+}
+
+.empty-icon {
+    font-size: 4rem;
+    color: var(--eps-primary);
+    margin-bottom: 24px;
+}
+
+.empty-state h3 {
+    color: var(--eps-text-primary);
+    font-weight: 700;
+    margin-bottom: 16px;
+}
+
+.empty-state p {
+    color: var(--eps-text-secondary);
+    margin-bottom: 24px;
+}
+
+/* Boutons petits */
+.btn-sm {
+    padding: 8px 16px;
+    font-size: 0.875rem;
+    min-height: 36px;
+    min-width: 80px;
+}
+
+/* Table élégante */
+.table-eps {
+    background: var(--eps-white);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: var(--eps-shadow-sm);
+    border: 1px solid var(--eps-border);
+}
+
+.table-eps thead th {
+    background: var(--eps-gradient-subtle);
+    color: var(--eps-text-primary);
+    font-weight: 600;
+    padding: 16px;
+    border-bottom: 1px solid var(--eps-border);
+}
+
+.table-eps tbody td {
+    padding: 16px;
+    border-bottom: 1px solid var(--eps-border-light);
+    vertical-align: middle;
+}
+
+.table-eps tbody tr:hover {
+    background: var(--eps-bg-hover);
+}
+
+.table-eps tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Header content pour les cartes */
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.header-title {
+    flex: 1;
+}
+
+.header-badge {
+    margin-left: 16px;
+}
+
+.card-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--eps-text-primary);
+}
+
+.card-subtitle {
+    margin: 8px 0 0 0;
+    color: var(--eps-text-secondary);
+    font-size: 1rem;
+    font-weight: 400;
+}
+
+/* Table EPS.SARL améliorée */
+.table-eps {
+    background: var(--eps-bg-primary);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+    border: 2px solid #e2e8f0;
+}
+
+.table-eps thead {
+    background: linear-gradient(135deg, var(--eps-primary), var(--eps-secondary));
+    color: white;
+    font-weight: 700;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.table-eps thead th {
+    padding: 16px 20px;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.table-eps tbody tr {
+    transition: all 0.3s ease;
+}
+
+.table-eps tbody tr:hover {
+    background: var(--eps-bg-accent);
+    transform: scale(1.01);
+}
+
+.table-eps tbody td {
+    padding: 14px 20px;
+    color: var(--eps-text-secondary);
+    font-weight: 500;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+/* Progress bar EPS.SARL */
+.progress-eps {
+    background: #e5e7eb;
+    border-radius: 10px;
+    overflow: hidden;
+    height: 8px;
+}
+
+.progress-eps-bar {
+    background: linear-gradient(135deg, var(--eps-secondary), var(--eps-primary));
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .navbar-brand img {
+        height: 32px;
+    }
+    
+    .btn-eps-primary,
+    .btn-eps-secondary,
+    .btn-eps-accent {
+        padding: 8px 16px;
+        font-size: 0.9rem;
+    }
+}

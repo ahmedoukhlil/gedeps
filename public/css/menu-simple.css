@@ -1,0 +1,206 @@
+/* Menu Simple - Design épuré et fonctionnel */
+
+/* Navigation principale */
+.sophisticated-nav {
+    background: #1e40af;
+    border-bottom: 1px solid #3b82f6;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    width: 100%;
+}
+
+/* Liens de navigation */
+.sophisticated-nav-link {
+    @apply flex items-center gap-2 px-4 py-2 rounded-lg text-white font-medium transition-colors duration-200;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Navigation desktop - horizontale */
+@media (min-width: 1024px) {
+    .sophisticated-nav {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+    }
+    
+    .sophisticated-nav .flex {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .sophisticated-nav #navbarNav {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+}
+
+.sophisticated-nav-link:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.sophisticated-nav-link-active {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* Menu mobile */
+#navbarNavMobile {
+    background: #1e40af;
+    z-index: 9999;
+}
+
+/* Menu mobile - Positionnement à gauche */
+#navbarNavMobile {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 300px;
+    max-width: 80vw;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    z-index: 9999;
+}
+
+#navbarNavMobile.show {
+    transform: translateX(0);
+}
+
+/* Overlay du menu mobile */
+#mobileMenuOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9998;
+}
+
+/* Panel du menu mobile */
+#navbarNavMobile .fixed {
+    position: relative;
+    height: 100%;
+    width: 100%;
+    overflow-y: auto;
+    background: #1e40af;
+    border-left: 1px solid #3b82f6;
+}
+
+/* Boutons d'action */
+.sophisticated-btn-secondary {
+    @apply flex items-center gap-2 px-4 py-2 text-white rounded-lg font-medium transition-colors duration-200;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.sophisticated-btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Informations utilisateur */
+.user-info {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 8px;
+}
+
+/* Badge de notification */
+.sophisticated-badge {
+    @apply bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full;
+}
+
+/* Menu hamburger */
+#mobileMenuToggle {
+    @apply lg:hidden;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+#mobileMenuToggle:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .sophisticated-nav-link {
+        @apply px-3 py-2 text-sm;
+    }
+    
+    /* Menu mobile - caché par défaut */
+    #navbarNav {
+        display: none;
+    }
+    
+    /* Bouton hamburger visible */
+    #mobileMenuToggle {
+        display: flex;
+    }
+}
+
+@media (max-width: 768px) {
+    .sophisticated-nav-link {
+        @apply px-2 py-1 text-xs;
+    }
+    
+    .sophisticated-nav-link span {
+        @apply hidden;
+    }
+    
+    /* Menu mobile - toujours caché sur mobile */
+    #navbarNav {
+        display: none;
+    }
+}
+
+/* Desktop - menu horizontal visible */
+@media (min-width: 1025px) {
+    #navbarNav {
+        display: flex;
+    }
+    
+    #mobileMenuToggle {
+        display: none;
+    }
+}
+
+/* États de focus pour l'accessibilité */
+.sophisticated-nav-link:focus {
+    outline: 2px solid rgba(255, 255, 255, 0.5);
+    outline-offset: 2px;
+}
+
+/* Icônes */
+.sophisticated-nav-link i {
+    @apply text-lg;
+}
+
+/* Transitions simples */
+* {
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+/* Compensation pour le menu fixe */
+body {
+    padding-top: 64px; /* Hauteur du menu fixe */
+}
+
+/* Panel du menu mobile - Correction pour position gauche */
+#navbarNavMobile .fixed {
+    position: relative;
+    height: 100%;
+    width: 100%;
+    overflow-y: auto;
+    background: #1e40af;
+    border-right: 1px solid #3b82f6; /* Bordure à droite au lieu de gauche */
+}
