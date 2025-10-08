@@ -1,0 +1,418 @@
+/* ========================================
+   CORRECTIONS DE TAILLES D'ICÔNES
+   Système de tailles d'icônes cohérent pour GEDEPS
+   ======================================== */
+
+/* ========================================
+   TAILLES D'ICÔNES STANDARDISÉES
+   ======================================== */
+
+/* Icônes extra petites */
+.icon-xs {
+    font-size: 0.75rem !important; /* 12px */
+    width: 0.75rem !important;
+    height: 0.75rem !important;
+}
+
+/* Icônes petites */
+.icon-sm {
+    font-size: 0.875rem !important; /* 14px */
+    width: 0.875rem !important;
+    height: 0.875rem !important;
+}
+
+/* Icônes moyennes */
+.icon-md {
+    font-size: 1rem !important; /* 16px */
+    width: 1rem !important;
+    height: 1rem !important;
+}
+
+/* Icônes grandes */
+.icon-lg {
+    font-size: 1.25rem !important; /* 20px */
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+}
+
+/* Icônes extra grandes */
+.icon-xl {
+    font-size: 1.5rem !important; /* 24px */
+    width: 1.5rem !important;
+    height: 1.5rem !important;
+}
+
+/* Icônes très grandes */
+.icon-2xl {
+    font-size: 2rem !important; /* 32px */
+    width: 2rem !important;
+    height: 2rem !important;
+}
+
+/* Icônes énormes */
+.icon-3xl {
+    font-size: 3rem !important; /* 48px */
+    width: 3rem !important;
+    height: 3rem !important;
+}
+
+/* ========================================
+   CORRECTIONS SPÉCIFIQUES PAR CONTEXTE
+   ======================================== */
+
+/* Icônes dans les boutons */
+.btn i,
+button i,
+a[class*="btn"] i {
+    font-size: 1rem !important;
+    width: 1rem !important;
+    height: 1rem !important;
+    line-height: 1 !important;
+}
+
+/* Icônes dans les badges */
+.badge i,
+.status i,
+[class*="badge"] i {
+    font-size: 0.875rem !important;
+    width: 0.875rem !important;
+    height: 0.875rem !important;
+    line-height: 1 !important;
+}
+
+/* Icônes dans les cartes de documents */
+.document-card i,
+.card i,
+[class*="card"] i {
+    font-size: 1.125rem !important;
+    width: 1.125rem !important;
+    height: 1.125rem !important;
+    line-height: 1 !important;
+}
+
+/* Icônes dans les en-têtes de cartes */
+.document-card .w-16 i,
+.card .w-16 i,
+[class*="w-16"] i {
+    font-size: 2rem !important;
+    width: 2rem !important;
+    height: 2rem !important;
+    line-height: 1 !important;
+}
+
+/* Icônes dans les sections d'information */
+.document-info i,
+.info-section i,
+[class*="info"] i {
+    font-size: 1rem !important;
+    width: 1rem !important;
+    height: 1rem !important;
+    line-height: 1 !important;
+}
+
+/* Icônes dans les sections de statut */
+.status-section i,
+[class*="status"] i {
+    font-size: 1.25rem !important;
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+    line-height: 1 !important;
+}
+
+/* Icônes dans la navigation */
+.nav i,
+.navbar i,
+[class*="nav"] i {
+    font-size: 1rem !important;
+    width: 1rem !important;
+    height: 1rem !important;
+    line-height: 1 !important;
+}
+
+/* Icônes dans les menus */
+.menu i,
+[class*="menu"] i {
+    font-size: 1.125rem !important;
+    width: 1.125rem !important;
+    height: 1.125rem !important;
+    line-height: 1 !important;
+}
+
+/* Icônes dans les statistiques */
+.stat i,
+[class*="stat"] i {
+    font-size: 1.5rem !important;
+    width: 1.5rem !important;
+    height: 1.5rem !important;
+    line-height: 1 !important;
+}
+
+/* ========================================
+   CORRECTIONS SPÉCIFIQUES GEDEPS
+   ======================================== */
+
+/* Icônes dans les cartes de documents GEDEPS */
+.sophisticated-card i {
+    font-size: 1.125rem !important;
+    width: 1.125rem !important;
+    height: 1.125rem !important;
+    line-height: 1 !important;
+}
+
+/* Icônes dans les en-têtes GEDEPS */
+.sophisticated-card-header i {
+    font-size: 1.5rem !important;
+    width: 1.5rem !important;
+    height: 1.5rem !important;
+    line-height: 1 !important;
+}
+
+/* Icônes dans les boutons GEDEPS */
+.sophisticated-btn i {
+    font-size: 1rem !important;
+    width: 1rem !important;
+    height: 1rem !important;
+    line-height: 1 !important;
+}
+
+/* Icônes dans la navigation GEDEPS */
+.sophisticated-nav i {
+    font-size: 1rem !important;
+    width: 1rem !important;
+    height: 1rem !important;
+    line-height: 1 !important;
+}
+
+/* ========================================
+   CORRECTIONS DES CLASSES TAILWIND
+   ======================================== */
+
+/* Correction des classes text-* pour les icônes */
+.fas.text-xs,
+.far.text-xs,
+.fab.text-xs,
+.fal.text-xs,
+.fad.text-xs {
+    font-size: 0.75rem !important;
+    width: 0.75rem !important;
+    height: 0.75rem !important;
+}
+
+.fas.text-sm,
+.far.text-sm,
+.fab.text-sm,
+.fal.text-sm,
+.fad.text-sm {
+    font-size: 0.875rem !important;
+    width: 0.875rem !important;
+    height: 0.875rem !important;
+}
+
+.fas.text-base,
+.far.text-base,
+.fab.text-base,
+.fal.text-base,
+.fad.text-base {
+    font-size: 1rem !important;
+    width: 1rem !important;
+    height: 1rem !important;
+}
+
+.fas.text-lg,
+.far.text-lg,
+.fab.text-lg,
+.fal.text-lg,
+.fad.text-lg {
+    font-size: 1.125rem !important;
+    width: 1.125rem !important;
+    height: 1.125rem !important;
+}
+
+.fas.text-xl,
+.far.text-xl,
+.fab.text-xl,
+.fal.text-xl,
+.fad.text-xl {
+    font-size: 1.25rem !important;
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+}
+
+.fas.text-2xl,
+.far.text-2xl,
+.fab.text-2xl,
+.fal.text-2xl,
+.fad.text-2xl {
+    font-size: 1.5rem !important;
+    width: 1.5rem !important;
+    height: 1.5rem !important;
+}
+
+.fas.text-3xl,
+.far.text-3xl,
+.fab.text-3xl,
+.fal.text-3xl,
+.fad.text-3xl {
+    font-size: 1.875rem !important;
+    width: 1.875rem !important;
+    height: 1.875rem !important;
+}
+
+/* ========================================
+   CORRECTIONS DES CONTENEURS D'ICÔNES
+   ======================================== */
+
+/* Conteneurs avec dimensions fixes */
+.w-8.h-8 i,
+.w-10.h-10 i,
+.w-12.h-12 i,
+.w-14.h-14 i,
+.w-16.h-16 i {
+    font-size: inherit !important;
+    width: 100% !important;
+    height: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* Ajustement spécifique pour les conteneurs */
+.w-8.h-8 {
+    width: 2rem !important;
+    height: 2rem !important;
+}
+
+.w-8.h-8 i {
+    font-size: 1rem !important;
+}
+
+.w-10.h-10 {
+    width: 2.5rem !important;
+    height: 2.5rem !important;
+}
+
+.w-10.h-10 i {
+    font-size: 1.25rem !important;
+}
+
+.w-12.h-12 {
+    width: 3rem !important;
+    height: 3rem !important;
+}
+
+.w-12.h-12 i {
+    font-size: 1.5rem !important;
+}
+
+.w-14.h-14 {
+    width: 3.5rem !important;
+    height: 3.5rem !important;
+}
+
+.w-14.h-14 i {
+    font-size: 1.75rem !important;
+}
+
+.w-16.h-16 {
+    width: 4rem !important;
+    height: 4rem !important;
+}
+
+.w-16.h-16 i {
+    font-size: 2rem !important;
+}
+
+/* ========================================
+   CORRECTIONS RESPONSIVE
+   ======================================== */
+
+@media (max-width: 768px) {
+    /* Icônes plus petites sur mobile */
+    .btn i,
+    button i,
+    a[class*="btn"] i {
+        font-size: 0.875rem !important;
+        width: 0.875rem !important;
+        height: 0.875rem !important;
+    }
+    
+    .document-card i,
+    .card i {
+        font-size: 1rem !important;
+        width: 1rem !important;
+        height: 1rem !important;
+    }
+    
+    .nav i,
+    .navbar i {
+        font-size: 0.875rem !important;
+        width: 0.875rem !important;
+        height: 0.875rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Icônes encore plus petites sur très petits écrans */
+    .btn i,
+    button i,
+    a[class*="btn"] i {
+        font-size: 0.75rem !important;
+        width: 0.75rem !important;
+        height: 0.75rem !important;
+    }
+    
+    .document-card i,
+    .card i {
+        font-size: 0.875rem !important;
+        width: 0.875rem !important;
+        height: 0.875rem !important;
+    }
+}
+
+/* ========================================
+   CORRECTIONS D'ACCESSIBILITÉ
+   ======================================== */
+
+/* Amélioration de la visibilité des icônes */
+.icon-accessible {
+    font-size: 1.125rem !important;
+    width: 1.125rem !important;
+    height: 1.125rem !important;
+    line-height: 1 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* Focus states pour les icônes interactives */
+.icon-interactive:focus {
+    outline: 2px solid #2563eb !important;
+    outline-offset: 2px !important;
+    border-radius: 2px !important;
+}
+
+/* ========================================
+   CORRECTIONS FINALES
+   ======================================== */
+
+/* Force l'alignement vertical des icônes */
+i {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    vertical-align: middle !important;
+}
+
+/* Correction des icônes dans les flexbox */
+.flex i {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* Correction des icônes dans les grilles */
+.grid i {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}

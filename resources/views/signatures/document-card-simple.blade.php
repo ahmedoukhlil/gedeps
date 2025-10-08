@@ -1,9 +1,9 @@
 @php
     $status = $document->status;
     $statusColors = [
-        'pending' => ['bg' => 'bg-red-500', 'text' => 'text-red-600', 'border' => 'border-red-200'],
-        'in_progress' => ['bg' => 'bg-indigo-500', 'text' => 'text-indigo-600', 'border' => 'border-indigo-200'],
-        'signed' => ['bg' => 'bg-emerald-500', 'text' => 'text-emerald-600', 'border' => 'border-emerald-200']
+        'pending' => ['bg' => 'bg-red-600', 'text' => 'text-red-700', 'border' => 'border-red-200'],
+        'in_progress' => ['bg' => 'bg-indigo-600', 'text' => 'text-indigo-700', 'border' => 'border-indigo-200'],
+        'signed' => ['bg' => 'bg-emerald-600', 'text' => 'text-emerald-700', 'border' => 'border-emerald-200']
     ];
     $colors = $statusColors[$status] ?? $statusColors['pending'];
 @endphp
@@ -43,11 +43,11 @@
                 </div>
 
                 <!-- Informations du document -->
-                <div class="bg-gray-50 rounded-xl p-4 mb-6 border border-gray-200">
+                <div class="bg-gray-50 rounded-xl p-4 mb-6 border border-gray-200 shadow-sm">
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div class="flex items-center">
-                            <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-                                <i class="fas fa-file-alt text-blue-600 text-sm"></i>
+                            <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center mr-3 shadow-md">
+                                <i class="fas fa-file-alt text-white text-sm"></i>
                             </div>
                             <div>
                                 <span class="text-xs font-medium text-gray-500 uppercase tracking-wide">Type</span>
@@ -55,8 +55,8 @@
                             </div>
                         </div>
                         <div class="flex items-center">
-                            <div class="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center mr-3">
-                                <i class="fas fa-calendar-plus text-emerald-600 text-sm"></i>
+                            <div class="w-10 h-10 bg-emerald-600 rounded-lg flex items-center justify-center mr-3 shadow-md">
+                                <i class="fas fa-calendar-plus text-white text-sm"></i>
                             </div>
                             <div>
                                 <span class="text-xs font-medium text-gray-500 uppercase tracking-wide">Créé le</span>
@@ -64,8 +64,8 @@
                             </div>
                         </div>
                         <div class="flex items-center">
-                            <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
-                                <i class="fas fa-edit text-purple-600 text-sm"></i>
+                            <div class="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center mr-3 shadow-md">
+                                <i class="fas fa-edit text-white text-sm"></i>
                             </div>
                             <div>
                                 <span class="text-xs font-medium text-gray-500 uppercase tracking-wide">Modifié le</span>
@@ -79,8 +79,8 @@
                 @if($status === 'pending')
                     <div class="bg-red-50 border border-red-300 rounded-xl p-4 mb-6 shadow-sm">
                         <div class="flex items-center">
-                            <div class="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center mr-3">
-                                <i class="fas fa-exclamation-triangle text-white"></i>
+                            <div class="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center mr-3 shadow-md">
+                                <i class="fas fa-exclamation-triangle text-white text-lg"></i>
                             </div>
                             <div>
                                 <p class="text-sm font-semibold text-red-800">Action requise</p>
@@ -91,8 +91,8 @@
                 @elseif($status === 'in_progress')
                     <div class="bg-indigo-50 border border-indigo-300 rounded-xl p-4 mb-6 shadow-sm">
                         <div class="flex items-center">
-                            <div class="w-10 h-10 bg-indigo-500 rounded-full flex items-center justify-center mr-3">
-                                <i class="fas fa-info-circle text-white"></i>
+                            <div class="w-12 h-12 bg-indigo-600 rounded-full flex items-center justify-center mr-3 shadow-md">
+                                <i class="fas fa-info-circle text-white text-lg"></i>
                             </div>
                             <div>
                                 <p class="text-sm font-semibold text-indigo-800">En cours</p>
@@ -103,8 +103,8 @@
                 @else
                     <div class="bg-emerald-50 border border-emerald-300 rounded-xl p-4 mb-6 shadow-sm">
                         <div class="flex items-center">
-                            <div class="w-10 h-10 bg-emerald-500 rounded-full flex items-center justify-center mr-3">
-                                <i class="fas fa-check-circle text-white"></i>
+                            <div class="w-12 h-12 bg-emerald-600 rounded-full flex items-center justify-center mr-3 shadow-md">
+                                <i class="fas fa-check-circle text-white text-lg"></i>
                             </div>
                             <div>
                                 <p class="text-sm font-semibold text-emerald-800">Terminé</p>
@@ -119,26 +119,26 @@
             <div class="flex flex-col gap-3 ml-6 min-w-[200px]">
                 @if($status === 'pending')
                     <a href="{{ route('documents.process.show', ['document' => $document, 'action' => 'sign']) }}" 
-                       class="inline-flex items-center justify-center px-6 py-3 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold">
-                        <i class="fas fa-pen-fancy mr-2"></i>
+                       class="inline-flex items-center justify-center px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold">
+                        <i class="fas fa-pen-fancy mr-2 text-white"></i>
                         Signer maintenant
                     </a>
                 @elseif($status === 'in_progress')
-                    <button disabled class="inline-flex items-center justify-center px-6 py-3 bg-gray-300 text-gray-500 rounded-xl cursor-not-allowed font-semibold">
+                    <button disabled class="inline-flex items-center justify-center px-6 py-3 bg-gray-400 text-gray-600 rounded-xl cursor-not-allowed font-semibold">
                         <i class="fas fa-clock mr-2"></i>
                         En cours
                     </button>
                 @else
                     <a href="{{ route('documents.process.show', ['document' => $document, 'action' => 'view']) }}" 
-                       class="inline-flex items-center justify-center px-6 py-3 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold">
-                        <i class="fas fa-eye mr-2"></i>
+                       class="inline-flex items-center justify-center px-6 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold">
+                        <i class="fas fa-eye mr-2 text-white"></i>
                         Voir le document signé
                     </a>
                 @endif
                 
                 <a href="{{ route('documents.view', $document) }}" 
-                   class="inline-flex items-center justify-center px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 font-medium border border-gray-300">
-                    <i class="fas fa-file-alt mr-2"></i>
+                   class="inline-flex items-center justify-center px-6 py-3 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold">
+                    <i class="fas fa-file-alt mr-2 text-white"></i>
                     Document original
                 </a>
             </div>

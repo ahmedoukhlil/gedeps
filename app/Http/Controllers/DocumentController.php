@@ -117,20 +117,9 @@ class DocumentController extends Controller
                 // Signatures séquentielles - créer les enregistrements et notifier le premier
                 $sequentialSigners = \App\Models\User::whereIn('id', $validated['sequential_signers'])->get();
                 
-                // Log pour déboguer l'ordre
-                \Log::info('Sequential signers order:', [
-                    'sequential_signers' => $validated['sequential_signers'],
-                    'sequential_signers_order' => $request->input('sequential_signers_order', []),
-                    'raw_request_data' => $request->all()
-                ]);
-                
                 // Créer les enregistrements de signatures séquentielles dans l'ordre correct
                 $signersWithOrder = [];
                 $orderArray = $request->input('sequential_signers_order', []);
-                
-                // Log pour déboguer
-                \Log::info('Order array from form:', $orderArray);
-                \Log::info('Sequential signers from form:', $validated['sequential_signers']);
                 
                 // Créer un mapping entre les IDs et l'ordre
                 $signerOrderMap = [];
@@ -158,22 +147,13 @@ class DocumentController extends Controller
                     return $a['order'] - $b['order'];
                 });
                 
-                // Log pour vérifier l'ordre final
-                \Log::info('Final signers order:', $signersWithOrder);
-                
                 // Créer les enregistrements dans l'ordre correct
                 foreach ($signersWithOrder as $signerData) {
-                    $sequentialSignature = \App\Models\SequentialSignature::create([
+                    \App\Models\SequentialSignature::create([
                         'document_id' => $document->id,
                         'user_id' => $signerData['user_id'],
                         'signature_order' => $signerData['order'],
                         'status' => 'pending'
-                    ]);
-                    \Log::info('Created sequential signature:', [
-                        'id' => $sequentialSignature->id,
-                        'user_id' => $signerData['user_id'],
-                        'signature_order' => $signerData['order'],
-                        'user_name' => $signerData['name']
                     ]);
                 }
                 
@@ -192,16 +172,11 @@ class DocumentController extends Controller
                 ->with('success', $successMessage);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
-            \Log::error('Erreur de validation:', $e->errors());
             return redirect()->back()
                 ->withErrors($e->errors())
                 ->withInput()
                 ->with('error', 'Erreur de validation. Veuillez vérifier les champs.');
         } catch (\Exception $e) {
-            \Log::error('Erreur lors de la soumission:', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
             return redirect()->back()
                 ->withInput()
                 ->with('error', 'Erreur lors de la soumission : ' . $e->getMessage());
@@ -275,13 +250,26 @@ class DocumentController extends Controller
                 ->with(['uploader', 'signatures.signer']);
         }
 
-        // Appliquer les filtres
+        // Appliquer la recherche globale
         if ($request->filled('search')) {
             $searchTerm = $request->search;
             $query->where(function($q) use ($searchTerm) {
+                // Recherche dans les champs du document
                 $q->where('filename_original', 'LIKE', "%{$searchTerm}%")
                   ->orWhere('document_name', 'LIKE', "%{$searchTerm}%")
-                  ->orWhere('description', 'LIKE', "%{$searchTerm}%");
+                  ->orWhere('description', 'LIKE', "%{$searchTerm}%")
+                  ->orWhere('type', 'LIKE', "%{$searchTerm}%")
+                  ->orWhere('status', 'LIKE', "%{$searchTerm}%");
+                
+                // Recherche dans les relations
+                $q->orWhereHas('uploader', function($subQuery) use ($searchTerm) {
+                    $subQuery->where('name', 'LIKE', "%{$searchTerm}%")
+                             ->orWhere('email', 'LIKE', "%{$searchTerm}%");
+                })
+                ->orWhereHas('signer', function($subQuery) use ($searchTerm) {
+                    $subQuery->where('name', 'LIKE', "%{$searchTerm}%")
+                             ->orWhere('email', 'LIKE', "%{$searchTerm}%");
+                });
             });
         }
 

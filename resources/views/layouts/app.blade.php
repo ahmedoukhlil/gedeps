@@ -26,9 +26,21 @@
     <!-- Menu Simple CSS -->
     <link rel="stylesheet" href="{{ asset('css/menu-simple.css') }}">
 
+    <!-- Color Fixes CSS - Corrections de couleurs -->
+    <link rel="stylesheet" href="{{ asset('css/color-fixes.css') }}">
+
+    <!-- Icon Sizes CSS - Corrections de tailles d'icônes -->
+    <link rel="stylesheet" href="{{ asset('css/icon-sizes.css') }}">
+
+    <!-- Search Improvements CSS - Améliorations de la recherche -->
+    <link rel="stylesheet" href="{{ asset('css/search-improvements.css') }}">
+
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script src="{{ asset('js/notification-system.js') }}" defer></script>
+    <script src="{{ asset('js/color-fixes.js') }}" defer></script>
+    <script src="{{ asset('js/icon-sizes.js') }}" defer></script>
+    <script src="{{ asset('js/search-improvements.js') }}" defer></script>
     
     <!-- Optimisations de performance -->
     <script>

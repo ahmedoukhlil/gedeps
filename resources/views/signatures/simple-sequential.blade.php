@@ -177,15 +177,10 @@
             <h3 class="text-lg font-medium text-gray-900 mb-2">Aucun document en attente</h3>
             <p class="text-gray-600 mb-6">Vous n'avez actuellement aucun document en attente de signature.</p>
             
-            <div class="flex justify-center gap-4">
+            <div class="flex justify-center">
                 <a href="{{ route('home') }}" class="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
                     <i class="fas fa-home mr-2"></i>
                     Retour à l'accueil
-                </a>
-                
-                <a href="/create-test-document" class="inline-flex items-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
-                    <i class="fas fa-plus mr-2"></i>
-                    Créer un document de test
                 </a>
             </div>
         </div>

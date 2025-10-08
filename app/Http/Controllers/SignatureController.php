@@ -151,40 +151,14 @@ class SignatureController extends Controller
         }
 
         // Récupérer la signature du document
-        $signature = $document->signatures()->latest()->first();
-        
-        \Log::info('downloadSigned - Vérification de la signature:', [
-            'document_id' => $document->id,
-            'document_filename' => $document->filename_original,
-            'document_status' => $document->status,
-            'signature_exists' => $signature ? true : false,
-            'signature_id' => $signature ? $signature->id : null,
-            'path_signed_pdf' => $signature ? $signature->path_signed_pdf : null,
-            'signature_attributes' => $signature ? $signature->toArray() : null,
-            'all_signatures_count' => $document->signatures()->count(),
-            'all_signatures' => $document->signatures()->get()->toArray(),
-            'user_id' => auth()->id(),
-            'user_name' => auth()->user()->name
-        ]);
-        
-        if (!$signature || !$signature->path_signed_pdf) {
+        $signature = $document->signatures()->latest()->first();if (!$signature || !$signature->path_signed_pdf) {
             return redirect()->back()->with('error', 'Aucun PDF signé trouvé pour ce document.');
         }
 
         // Chercher le fichier dans le nouveau répertoire documents/signed
         $signedDocumentsPath = storage_path('app/public/documents/signed');
         $fileName = basename($signature->path_signed_pdf);
-        $fullPath = $signedDocumentsPath . '/' . $fileName;
-        
-        \Log::info('downloadSigned - Recherche du fichier:', [
-            'path_signed_pdf' => $signature->path_signed_pdf,
-            'file_name' => $fileName,
-            'signed_documents_path' => $signedDocumentsPath,
-            'full_path' => $fullPath,
-            'file_exists' => file_exists($fullPath)
-        ]);
-        
-        if (!file_exists($fullPath)) {
+        $fullPath = $signedDocumentsPath . '/' . $fileName;if (!file_exists($fullPath)) {
             // Essayer de trouver le fichier par pattern (plus robuste)
             $alternativePath = null;
             if (is_dir($signedDocumentsPath)) {
@@ -202,25 +176,8 @@ class SignatureController extends Controller
                         break;
                     }
                 }
-            }
-            
-            \Log::error('downloadSigned - Fichier non trouvé:', [
-                'expected_file' => $fileName,
-                'expected_path' => $fullPath,
-                'alternative_path' => $alternativePath,
-                'directory_exists' => is_dir($signedDocumentsPath),
-                'files_in_directory' => $filesInDirectory,
-                'document_id' => $document->id,
-                'path_signed_pdf' => $signature->path_signed_pdf
-            ]);
-            
-            if ($alternativePath && file_exists($alternativePath)) {
-                $fullPath = $alternativePath;
-                \Log::info('downloadSigned - Fichier alternatif trouvé:', [
-                    'alternative_path' => $alternativePath,
-                    'file_exists' => file_exists($alternativePath)
-                ]);
-            } else {
+            }if ($alternativePath && file_exists($alternativePath)) {
+                $fullPath = $alternativePath;} else {
                 return redirect()->back()->with('error', 'Le fichier PDF signé n\'existe plus dans le répertoire documents/signed.');
             }
         }
@@ -277,41 +234,18 @@ class SignatureController extends Controller
     public function saveSignedPdf(Request $request)
     {
         try {
-            // Logs de debug pour voir ce qui est reçu
-            \Log::info('saveSignedPdf - Données reçues:', [
-                'all_input' => $request->all(),
-                'has_signed_pdf' => $request->hasFile('signed_pdf'),
-                'document_id' => $request->input('document_id'),
-                'signature_data' => $request->input('signature_data'),
-                'signature_x' => $request->input('signature_x'),
-                'signature_y' => $request->input('signature_y')
-            ]);
-            
-            // Valider les données
+            // Logs de debug pour voir ce qui est reçu// Valider les données
             $request->validate([
                 'signed_pdf' => 'required|file|mimes:pdf',
                 'document_id' => 'required|integer',
                 'signature_data' => 'required|string'
-            ]);
-            
-            \Log::info('saveSignedPdf - Validation réussie');
-
-            $documentId = $request->input('document_id');
+            ]);$documentId = $request->input('document_id');
             $signatureDataJson = $request->input('signature_data');
             $signatureData = json_decode($signatureDataJson, true);
             
             if (json_last_error() !== JSON_ERROR_NONE) {
                 throw new \Exception('Données de signature invalides: ' . json_last_error_msg());
-            }
-            
-            \Log::info('saveSignedPdf - Données multi-pages reçues:', [
-                'signature_data' => $signatureData,
-                'is_multi_page' => $signatureData['is_multi_page'] ?? false,
-                'total_pages' => $signatureData['total_pages'] ?? 1,
-                'signed_pages_count' => $signatureData['signed_pages_count'] ?? 0
-            ]);
-            
-            // Vérifier que le document existe et appartient à l'utilisateur
+            }// Vérifier que le document existe et appartient à l'utilisateur
             $document = Document::where('id', $documentId)
                 ->where('signer_id', auth()->id())
                 ->firstOrFail();
@@ -353,16 +287,7 @@ class SignatureController extends Controller
                 'signed_pdf_path' => $path
             ]);
 
-        } catch (\Exception $e) {
-            \Log::error('saveSignedPdf - Erreur détaillée:', [
-                'message' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString(),
-                'request_data' => $request->all()
-            ]);
-            
-            return response()->json([
+        } catch (\Exception $e) {return response()->json([
                 'success' => false,
                 'message' => 'Erreur lors de la sauvegarde : ' . $e->getMessage(),
                 'error_details' => [
@@ -499,34 +424,17 @@ class SignatureController extends Controller
         try {
             $user = auth()->user();
             
-            // Logs de debug
-            \Log::info('getUserSignature - Utilisateur connecté:', [
-                'user_id' => $user->id,
-                'user_name' => $user->name,
-                'signature_path' => $user->signature_path,
-                'has_signature' => $user->hasSignature()
-            ]);
+            if (!$user) {
+                return response()->json(['success' => false, 'message' => 'Utilisateur non authentifié'], 401);
+            }
             
             // Vérifier si l'utilisateur a une signature_path dans la base de données
             if ($user->signature_path && !empty($user->signature_path)) {
-                \Log::info('getUserSignature - Signature_path trouvée:', [
-                    'signature_path' => $user->signature_path
-                ]);
-                
                 // Vérifier que le fichier existe
                 if (Storage::disk('public')->exists($user->signature_path)) {
-                    // Forcer l'URL avec le port 8000 pour éviter les problèmes CORS
-                    $baseUrl = config('app.url', 'http://localhost:8000');
-                    if (strpos($baseUrl, ':8000') === false) {
-                        $baseUrl = 'http://localhost:8000';
-                    }
+                    // Construire l'URL de la signature
+                    $baseUrl = config('app.url');
                     $signatureUrl = $baseUrl . '/storage/' . $user->signature_path;
-                    
-                    \Log::info('getUserSignature - Fichier de signature trouvé:', [
-                        'signature_url' => $signatureUrl,
-                        'base_url' => $baseUrl,
-                        'signature_path' => $user->signature_path
-                    ]);
                     
                     return response()->json([
                         'success' => true,
@@ -536,11 +444,6 @@ class SignatureController extends Controller
                         'user_name' => $user->name
                     ]);
                 } else {
-                    \Log::warning('getUserSignature - Fichier de signature non trouvé:', [
-                        'signature_path' => $user->signature_path,
-                        'storage_path' => storage_path('app/public/' . $user->signature_path)
-                    ]);
-                    
                     return response()->json([
                         'success' => false,
                         'message' => 'Le fichier de signature n\'existe pas sur le serveur',
@@ -551,11 +454,6 @@ class SignatureController extends Controller
             }
             
             // Si aucune signature_path n'est définie
-            \Log::info('getUserSignature - Aucune signature_path définie pour l\'utilisateur:', [
-                'user_id' => $user->id,
-                'signature_path' => $user->signature_path
-            ]);
-            
             return response()->json([
                 'success' => false,
                 'message' => 'Aucune signature définie pour cet utilisateur',
@@ -564,11 +462,6 @@ class SignatureController extends Controller
             ], 404);
             
         } catch (\Exception $e) {
-            \Log::error('getUserSignature - Erreur:', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            
             return response()->json([
                 'success' => false,
                 'message' => 'Erreur lors de la récupération de la signature : ' . $e->getMessage()
@@ -615,14 +508,7 @@ class SignatureController extends Controller
                 'hasParaphe' => true
             ]);
             
-        } catch (\Exception $e) {
-            \Log::error('Erreur lors de la récupération du paraphe utilisateur', [
-                'user_id' => auth()->id(),
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            
-            return response()->json([
+        } catch (\Exception $e) {return response()->json([
                 'success' => false,
                 'message' => 'Erreur lors de la récupération du paraphe : ' . $e->getMessage()
             ], 500);

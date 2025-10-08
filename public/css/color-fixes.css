@@ -1,0 +1,480 @@
+/* ========================================
+   CORRECTIONS DE COULEURS UNIFIÉES
+   Système de couleurs cohérent pour GEDEPS
+   ======================================== */
+
+:root {
+  /* Palette de couleurs principale - Bleu professionnel */
+  --primary-600: #2563eb;      /* Bleu principal */
+  --primary-700: #1d4ed8;      /* Bleu foncé */
+  --primary-800: #1e40af;       /* Bleu très foncé */
+  --primary-500: #3b82f6;       /* Bleu clair */
+  --primary-400: #60a5fa;       /* Bleu très clair */
+  --primary-100: #dbeafe;       /* Bleu fond */
+  --primary-50: #eff6ff;        /* Bleu fond clair */
+
+  /* Couleurs de statut - Solides et visibles */
+  --success-600: #059669;      /* Vert succès */
+  --success-700: #047857;      /* Vert foncé */
+  --success-100: #d1fae5;      /* Vert fond */
+  --success-50: #ecfdf5;       /* Vert fond clair */
+
+  --warning-600: #d97706;       /* Orange attention */
+  --warning-700: #b45309;      /* Orange foncé */
+  --warning-100: #fef3c7;      /* Orange fond */
+  --warning-50: #fffbeb;       /* Orange fond clair */
+
+  --error-600: #dc2626;        /* Rouge erreur */
+  --error-700: #b91c1c;        /* Rouge foncé */
+  --error-100: #fee2e2;         /* Rouge fond */
+  --error-50: #fef2f2;         /* Rouge fond clair */
+
+  --info-600: #0891b2;         /* Cyan info */
+  --info-700: #0e7490;         /* Cyan foncé */
+  --info-100: #cffafe;         /* Cyan fond */
+  --info-50: #f0fdfa;          /* Cyan fond clair */
+
+  /* Couleurs neutres */
+  --gray-900: #111827;         /* Gris très foncé */
+  --gray-800: #1f2937;         /* Gris foncé */
+  --gray-700: #374151;         /* Gris moyen foncé */
+  --gray-600: #4b5563;         /* Gris moyen */
+  --gray-500: #6b7280;         /* Gris moyen clair */
+  --gray-400: #9ca3af;         /* Gris clair */
+  --gray-300: #d1d5db;         /* Gris très clair */
+  --gray-200: #e5e7eb;         /* Gris ultra clair */
+  --gray-100: #f3f4f6;         /* Gris fond */
+  --gray-50: #f9fafb;          /* Gris fond clair */
+
+  /* Couleurs spéciales */
+  --purple-600: #9333ea;       /* Violet */
+  --purple-700: #7c3aed;       /* Violet foncé */
+  --purple-100: #e9d5ff;       /* Violet fond */
+  --purple-50: #faf5ff;        /* Violet fond clair */
+
+  --indigo-600: #4f46e5;       /* Indigo */
+  --indigo-700: #4338ca;       /* Indigo foncé */
+  --indigo-100: #e0e7ff;       /* Indigo fond */
+  --indigo-50: #eef2ff;        /* Indigo fond clair */
+
+  --emerald-600: #059669;      /* Emerald */
+  --emerald-700: #047857;      /* Emerald foncé */
+  --emerald-100: #d1fae5;      /* Emerald fond */
+  --emerald-50: #ecfdf5;       /* Emerald fond clair */
+
+  /* Couleurs de texte */
+  --text-primary: var(--gray-900);
+  --text-secondary: var(--gray-700);
+  --text-tertiary: var(--gray-500);
+  --text-inverse: #ffffff;
+
+  /* Couleurs de fond */
+  --bg-primary: #ffffff;
+  --bg-secondary: var(--gray-50);
+  --bg-tertiary: var(--gray-100);
+
+  /* Bordures */
+  --border-primary: var(--gray-200);
+  --border-secondary: var(--gray-300);
+  --border-accent: var(--primary-300);
+}
+
+/* ========================================
+   CORRECTIONS GLOBALES
+   ======================================== */
+
+/* Suppression des dégradés problématiques */
+.bg-gradient-to-r,
+.bg-gradient-to-br,
+.bg-gradient-to-l,
+.bg-gradient-to-t,
+.bg-gradient-to-b {
+  background: var(--primary-600) !important;
+}
+
+/* Correction des couleurs de texte invisibles */
+.text-white {
+  color: var(--text-inverse) !important;
+}
+
+.text-gray-600,
+.text-gray-700,
+.text-gray-800 {
+  color: var(--text-secondary) !important;
+}
+
+.text-gray-500 {
+  color: var(--text-tertiary) !important;
+}
+
+/* ========================================
+   CORRECTIONS DES BOUTONS
+   ======================================== */
+
+/* Boutons principaux */
+.btn-primary,
+.bg-blue-600,
+.bg-blue-500 {
+  background-color: var(--primary-600) !important;
+  color: var(--text-inverse) !important;
+  border-color: var(--primary-600) !important;
+}
+
+.btn-primary:hover,
+.bg-blue-600:hover,
+.bg-blue-500:hover {
+  background-color: var(--primary-700) !important;
+  border-color: var(--primary-700) !important;
+}
+
+/* Boutons de succès */
+.btn-success,
+.bg-green-600,
+.bg-emerald-600 {
+  background-color: var(--success-600) !important;
+  color: var(--text-inverse) !important;
+  border-color: var(--success-600) !important;
+}
+
+.btn-success:hover,
+.bg-green-600:hover,
+.bg-emerald-600:hover {
+  background-color: var(--success-700) !important;
+  border-color: var(--success-700) !important;
+}
+
+/* Boutons d'avertissement */
+.btn-warning,
+.bg-yellow-600,
+.bg-orange-600 {
+  background-color: var(--warning-600) !important;
+  color: var(--text-inverse) !important;
+  border-color: var(--warning-600) !important;
+}
+
+.btn-warning:hover,
+.bg-yellow-600:hover,
+.bg-orange-600:hover {
+  background-color: var(--warning-700) !important;
+  border-color: var(--warning-700) !important;
+}
+
+/* Boutons d'erreur */
+.btn-danger,
+.bg-red-600 {
+  background-color: var(--error-600) !important;
+  color: var(--text-inverse) !important;
+  border-color: var(--error-600) !important;
+}
+
+.btn-danger:hover,
+.bg-red-600:hover {
+  background-color: var(--error-700) !important;
+  border-color: var(--error-700) !important;
+}
+
+/* Boutons d'information */
+.btn-info,
+.bg-cyan-600,
+.bg-indigo-600 {
+  background-color: var(--info-600) !important;
+  color: var(--text-inverse) !important;
+  border-color: var(--info-600) !important;
+}
+
+.btn-info:hover,
+.bg-cyan-600:hover,
+.bg-indigo-600:hover {
+  background-color: var(--info-700) !important;
+  border-color: var(--info-700) !important;
+}
+
+/* Boutons secondaires */
+.btn-secondary,
+.bg-gray-600,
+.bg-gray-500 {
+  background-color: var(--gray-600) !important;
+  color: var(--text-inverse) !important;
+  border-color: var(--gray-600) !important;
+}
+
+.btn-secondary:hover,
+.bg-gray-600:hover,
+.bg-gray-500:hover {
+  background-color: var(--gray-700) !important;
+  border-color: var(--gray-700) !important;
+}
+
+/* ========================================
+   CORRECTIONS DES BADGES ET STATUTS
+   ======================================== */
+
+/* Badges de statut */
+.badge-success,
+.bg-green-100,
+.bg-emerald-100 {
+  background-color: var(--success-100) !important;
+  color: var(--success-700) !important;
+  border-color: var(--success-200) !important;
+}
+
+.badge-warning,
+.bg-yellow-100,
+.bg-orange-100 {
+  background-color: var(--warning-100) !important;
+  color: var(--warning-700) !important;
+  border-color: var(--warning-200) !important;
+}
+
+.badge-danger,
+.bg-red-100 {
+  background-color: var(--error-100) !important;
+  color: var(--error-700) !important;
+  border-color: var(--error-200) !important;
+}
+
+.badge-info,
+.bg-blue-100,
+.bg-cyan-100 {
+  background-color: var(--info-100) !important;
+  color: var(--info-700) !important;
+  border-color: var(--info-200) !important;
+}
+
+/* ========================================
+   CORRECTIONS DES ICÔNES
+   ======================================== */
+
+/* Icônes dans les boutons */
+.btn i,
+button i,
+a i {
+  color: inherit !important;
+}
+
+/* Icônes dans les badges */
+.badge i,
+.status i {
+  color: inherit !important;
+}
+
+/* ========================================
+   CORRECTIONS DES CARTES
+   ======================================== */
+
+/* Cartes de documents */
+.document-card,
+.card {
+  border-color: var(--border-primary) !important;
+  background-color: var(--bg-primary) !important;
+}
+
+.document-card:hover,
+.card:hover {
+  border-color: var(--border-accent) !important;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15) !important;
+}
+
+/* ========================================
+   CORRECTIONS DES FORMULAIRES
+   ======================================== */
+
+/* Champs de formulaire */
+.form-control,
+input,
+select,
+textarea {
+  border-color: var(--border-primary) !important;
+  background-color: var(--bg-primary) !important;
+  color: var(--text-primary) !important;
+}
+
+.form-control:focus,
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--primary-600) !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1) !important;
+}
+
+/* Labels */
+.form-label,
+label {
+  color: var(--text-primary) !important;
+  font-weight: 600 !important;
+}
+
+/* ========================================
+   CORRECTIONS DES NAVIGATIONS
+   ======================================== */
+
+/* Navigation principale */
+.navbar,
+.nav {
+  background-color: var(--primary-600) !important;
+  color: var(--text-inverse) !important;
+}
+
+.nav-link {
+  color: var(--text-inverse) !important;
+}
+
+.nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: var(--text-inverse) !important;
+}
+
+.nav-link.active {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+  color: var(--text-inverse) !important;
+}
+
+/* ========================================
+   CORRECTIONS DES ALERTES
+   ======================================== */
+
+.alert-success {
+  background-color: var(--success-50) !important;
+  color: var(--success-700) !important;
+  border-color: var(--success-200) !important;
+}
+
+.alert-warning {
+  background-color: var(--warning-50) !important;
+  color: var(--warning-700) !important;
+  border-color: var(--warning-200) !important;
+}
+
+.alert-danger {
+  background-color: var(--error-50) !important;
+  color: var(--error-700) !important;
+  border-color: var(--error-200) !important;
+}
+
+.alert-info {
+  background-color: var(--info-50) !important;
+  color: var(--info-700) !important;
+  border-color: var(--info-200) !important;
+}
+
+/* ========================================
+   CORRECTIONS DES TABLES
+   ======================================== */
+
+.table thead th {
+  background-color: var(--primary-600) !important;
+  color: var(--text-inverse) !important;
+  border-color: var(--primary-700) !important;
+}
+
+.table tbody tr:hover {
+  background-color: var(--primary-50) !important;
+}
+
+/* ========================================
+   CORRECTIONS RESPONSIVE
+   ======================================== */
+
+@media (max-width: 768px) {
+  .btn,
+  button {
+    min-height: 44px !important;
+    padding: 12px 16px !important;
+  }
+  
+  .badge,
+  .status {
+    font-size: 0.875rem !important;
+    padding: 6px 12px !important;
+  }
+}
+
+/* ========================================
+   CORRECTIONS D'ACCESSIBILITÉ
+   ======================================== */
+
+/* Focus states */
+*:focus {
+  outline: 2px solid var(--primary-600) !important;
+  outline-offset: 2px !important;
+}
+
+/* Contraste amélioré */
+.text-muted {
+  color: var(--text-tertiary) !important;
+}
+
+.text-light {
+  color: var(--text-secondary) !important;
+}
+
+/* ========================================
+   CORRECTIONS SPÉCIFIQUES GEDEPS
+   ======================================== */
+
+/* Cartes de documents GEDEPS */
+.sophisticated-card {
+  border-color: var(--border-primary) !important;
+  background-color: var(--bg-primary) !important;
+}
+
+.sophisticated-card:hover {
+  border-color: var(--border-accent) !important;
+  box-shadow: 0 8px 25px rgba(37, 99, 235, 0.15) !important;
+}
+
+/* Boutons GEDEPS */
+.sophisticated-btn-primary {
+  background-color: var(--primary-600) !important;
+  color: var(--text-inverse) !important;
+  border-color: var(--primary-600) !important;
+}
+
+.sophisticated-btn-primary:hover {
+  background-color: var(--primary-700) !important;
+  border-color: var(--primary-700) !important;
+}
+
+/* Navigation GEDEPS */
+.sophisticated-nav {
+  background-color: var(--primary-600) !important;
+}
+
+.sophisticated-nav-link {
+  color: var(--text-inverse) !important;
+}
+
+.sophisticated-nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: var(--text-inverse) !important;
+}
+
+.sophisticated-nav-link-active {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+  color: var(--text-inverse) !important;
+}
+
+/* ========================================
+   CORRECTIONS FINALES
+   ======================================== */
+
+/* Force la visibilité des éléments critiques */
+.critical-element {
+  color: var(--text-primary) !important;
+  background-color: var(--bg-primary) !important;
+  border-color: var(--border-primary) !important;
+}
+
+/* Amélioration du contraste */
+.high-contrast {
+  color: var(--text-primary) !important;
+  background-color: var(--bg-primary) !important;
+  border: 2px solid var(--border-secondary) !important;
+}
+
+/* Correction des éléments invisibles */
+.invisible-fix {
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: block !important;
+}

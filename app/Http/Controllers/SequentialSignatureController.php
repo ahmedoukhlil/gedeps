@@ -27,10 +27,7 @@ class SequentialSignatureController extends Controller
         
         $userId = auth()->id();
         
-        // Log pour déboguer
-        \Log::info('SequentialSignatureController::index - User ID: ' . $userId);
-        
-        // Documents avec signatures séquentielles où l'utilisateur est le prochain à signer
+        // Log pour déboguer// Documents avec signatures séquentielles où l'utilisateur est le prochain à signer
         $documents = Document::where('sequential_signatures', true)
             ->where('status', 'in_progress')
             ->whereHas('sequentialSignatures', function($query) use ($userId) {
@@ -40,11 +37,7 @@ class SequentialSignatureController extends Controller
             })
             ->with(['sequentialSignatures.user', 'uploader'])
             ->orderBy('updated_at', 'desc')
-            ->paginate(10);
-            
-        \Log::info('SequentialSignatureController::index - Documents found: ' . $documents->count());
-
-        return view('signatures.sequential', compact('documents'));
+            ->paginate(10);return view('signatures.sequential', compact('documents'));
     }
 
     /**

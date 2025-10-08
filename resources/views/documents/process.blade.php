@@ -434,33 +434,39 @@
                         
                         <!-- Contrôles PDF simplifiés -->
                         <div class="flex items-center justify-center gap-4 p-4 bg-blue-600 rounded-lg">
+                            <!-- Navigation -->
                             <button type="button" id="prevPageBtn" class="p-2 text-white hover:bg-blue-500 rounded-md transition-colors" title="Page précédente">
                                 <i class="fas fa-chevron-left"></i>
-                                    </button>
+                            </button>
                             
                             <div class="text-white font-medium">
                                 <span id="currentPage">1</span> / <span id="totalPages">1</span>
-                                </div>
+                            </div>
                                 
                             <button type="button" id="nextPageBtn" class="p-2 text-white hover:bg-blue-500 rounded-md transition-colors" title="Page suivante">
                                 <i class="fas fa-chevron-right"></i>
-                                    </button>
+                            </button>
                             
+                            <!-- Zoom -->
                             <button type="button" id="zoomOutBtn" class="p-2 text-white hover:bg-blue-500 rounded-md transition-colors" title="Zoom arrière">
                                 <i class="fas fa-search-minus"></i>
-                                    </button>
+                            </button>
                             
                             <button type="button" id="zoomInBtn" class="p-2 text-white hover:bg-blue-500 rounded-md transition-colors" title="Zoom avant">
                                 <i class="fas fa-search-plus"></i>
-                                    </button>
+                            </button>
+                            
+                            <button type="button" id="resetZoomBtn" class="p-2 text-white hover:bg-blue-500 rounded-md transition-colors" title="Reset zoom">
+                                <i class="fas fa-search"></i>
+                            </button>
                                 </div>
                     </div>
                 </div>
                 </div>
                 
                 <!-- Zone PDF optimisée pour mobile -->
-                <div class="w-full max-w-full overflow-x-auto overflow-y-hidden relative sophisticated-bg-secondary rounded-lg shadow-lg border sophisticated-border">
-                    <div id="pdfViewer" class="w-full h-auto min-h-96 flex justify-center items-start p-4 bg-white rounded-lg relative">
+                <div class="w-full overflow-x-auto overflow-y-auto relative sophisticated-bg-secondary rounded-lg shadow-lg border sophisticated-border" style="min-height: auto; max-height: none; height: auto; max-width: none; width: 100%;">
+                    <div id="pdfViewer" class="w-full h-auto flex justify-center items-start p-4 bg-white rounded-lg relative" style="min-height: auto; max-height: none; height: auto; max-width: none; width: 100%;">
                         <div class="flex flex-col items-center justify-center py-12 text-center">
                             <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
                             <div class="text-lg font-medium text-white mb-2">Chargement du PDF...</div>
@@ -796,7 +802,7 @@
 }
 
 .pdf-viewer-mobile canvas {
-    max-width: 100% !important;
+    max-width: none !important;
     height: auto !important;
     border-radius: 4px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -835,7 +841,7 @@
     }
     
     .pdf-viewer-mobile canvas {
-        max-width: 95%;
+        max-width: none;
     }
 }
 
@@ -851,7 +857,7 @@
     }
     
     .pdf-viewer-mobile canvas {
-        max-width: 100%;
+        max-width: none;
         border-radius: 0;
     }
     
@@ -869,7 +875,7 @@
     }
     
     .pdf-viewer-mobile canvas {
-        max-width: 100%;
+        max-width: none;
     }
     
     .mobile-zoom-indicator {
@@ -1959,7 +1965,9 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
 
 // Prévenir les instances multiples d'Alpine.js
 if (window.Alpine) {
-    console.warn('Alpine.js déjà chargé, évitement des conflits...');
+    console.warn('⚠️ Alpine.js déjà chargé, évitement des conflits...');
+    // Ne pas réinitialiser Alpine si déjà chargé
+    window.Alpine = window.Alpine;
 }
 
 // Initialiser le module unifié simplifié
@@ -1991,10 +1999,13 @@ document.addEventListener('DOMContentLoaded', function() {
         zoomOutBtnId: 'zoomOutBtn',
         resetZoomBtnId: 'resetZoomBtn',
         autoFitBtnId: 'autoFitBtn',
+        a4FitBtnId: 'a4FitBtn',
+        completeRenderBtnId: 'completeRenderBtn',
         prevPageBtnId: 'prevPageBtn',
         nextPageBtnId: 'nextPageBtn',
         pageInfoId: 'pageInfo',
         pdfContainerId: 'pdfViewer',
+        qualitySelectId: 'qualitySelect',
         allowSignature: {{ $allowSignature ? 'true' : 'false' }},
         allowParaphe: {{ $allowParaphe ? 'true' : 'false' }},
         allowBoth: {{ $allowBoth ? 'true' : 'false' }},
@@ -2005,6 +2016,12 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('🔧 Configuration uploadUrl:', config.uploadUrl);
     console.log('🔧 Configuration redirectUrl:', config.redirectUrl);
 
+    // Vérifier que la classe est disponible
+    if (typeof PDFOverlayUnifiedModule === 'undefined') {
+        console.error('❌ PDFOverlayUnifiedModule non trouvé. Vérifiez que le script est chargé.');
+        return;
+    }
+    
     const unifiedModule = new PDFOverlayUnifiedModule(config);
     unifiedModule.init();
     

@@ -124,11 +124,7 @@ class User extends Authenticatable
     public function getSignatureUrl(): ?string
     {
         if ($this->hasSignature()) {
-            // Forcer l'URL avec le port 8000 pour le développement
-            $baseUrl = config('app.url', 'http://localhost:8000');
-            if (strpos($baseUrl, ':8000') === false) {
-                $baseUrl = 'http://localhost:8000';
-            }
+            $baseUrl = config('app.url');
             return $baseUrl . '/storage/' . $this->signature_path;
         }
         return null;
@@ -148,11 +144,7 @@ class User extends Authenticatable
     public function getParapheUrl(): ?string
     {
         if ($this->hasParaphe()) {
-            // Forcer l'URL avec le port 8000 pour le développement
-            $baseUrl = config('app.url', 'http://localhost:8000');
-            if (strpos($baseUrl, ':8000') === false) {
-                $baseUrl = 'http://localhost:8000';
-            }
+            $baseUrl = config('app.url');
             return $baseUrl . '/storage/' . $this->paraphe_path;
         }
         return null;

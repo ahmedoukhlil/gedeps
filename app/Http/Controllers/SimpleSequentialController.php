@@ -33,13 +33,14 @@ class SimpleSequentialController extends Controller
             
             // Récupérer tous les documents avec signatures séquentielles (paginés)
             $allDocuments = Document::where('sequential_signatures', true)
-                ->where('status', 'in_progress')
+                ->whereIn('status', ['in_progress', 'pending'])
                 ->whereHas('sequentialSignatures', function($query) use ($userId) {
                     $query->where('user_id', $userId);
                 })
                 ->with(['sequentialSignatures.user', 'uploader'])
                 ->orderBy('updated_at', 'desc')
                 ->paginate(10);
+                
             
             // Catégoriser les documents de la page actuelle
             $documentsToSign = collect();
@@ -64,7 +65,7 @@ class SimpleSequentialController extends Controller
             
             // Statistiques (pour toutes les pages)
             $totalStats = Document::where('sequential_signatures', true)
-                ->where('status', 'in_progress')
+                ->whereIn('status', ['in_progress', 'pending'])
                 ->whereHas('sequentialSignatures', function($query) use ($userId) {
                     $query->where('user_id', $userId);
                 })
@@ -124,6 +125,11 @@ class SimpleSequentialController extends Controller
         if (!$user) {
             return redirect()->route('login')
                 ->with('error', 'Vous devez être connecté pour accéder à cette page.');
+        }
+        
+        // Détecter automatiquement l'action 'view' si l'URL contient '/view'
+        if (request()->is('*view*') || $action === 'view') {
+            $action = 'view';
         }
         
         // Si l'action est 'view', afficher le document signé (comme DocumentProcessController)
@@ -239,6 +245,13 @@ class SimpleSequentialController extends Controller
             $latestSignature = $document->signatures()->latest()->first();
             if ($latestSignature && $latestSignature->path_signed_pdf) {
                 $displayPdfUrl = Storage::url($latestSignature->path_signed_pdf);
+                // Debug temporaire
+                \Log::info('SimpleSequentialController - displayPdfUrl généré', [
+                    'document_id' => $document->id,
+                    'status' => $document->status,
+                    'path_signed_pdf' => $latestSignature->path_signed_pdf,
+                    'displayPdfUrl' => $displayPdfUrl
+                ]);
             }
         }
 
@@ -442,11 +455,6 @@ class SimpleSequentialController extends Controller
             // Retourner une réponse avec redirection vers la page de visualisation (comme DocumentProcessController)
             $redirectUrl = route('signatures.simple.show.action', ['document' => $document, 'action' => 'view']);
             
-            \Log::info('SimpleSequentialController::saveSignedPdf - Redirection:', [
-                'document_id' => $document->id,
-                'redirect_url' => $redirectUrl,
-                'user_id' => $user->id
-            ]);
             
             return response()->json([
                 'success' => true,
@@ -548,11 +556,6 @@ class SimpleSequentialController extends Controller
             // Retourner une réponse avec redirection vers la page de visualisation (comme DocumentProcessController)
             $redirectUrl = route('signatures.simple.show.action', ['document' => $document, 'action' => 'view']);
             
-            \Log::info('SimpleSequentialController::uploadSignedPdf - Redirection:', [
-                'document_id' => $document->id,
-                'redirect_url' => $redirectUrl,
-                'user_id' => $user->id
-            ]);
             
             return response()->json([
                 'success' => true,
@@ -574,10 +577,10 @@ class SimpleSequentialController extends Controller
             $agent = $document->uploader;
             if ($agent) {
                 // Ici vous pouvez ajouter une notification email ou autre
-                \Log::info("Document {$document->id} complètement signé. Agent notifié: {$agent->name}");
+                // Document complètement signé
             }
         } catch (\Exception $e) {
-            \Log::error("Erreur notification document complété: " . $e->getMessage());
+            // Erreur notification
         }
     }
 
@@ -588,9 +591,9 @@ class SimpleSequentialController extends Controller
     {
         try {
             // Ici vous pouvez ajouter une notification email ou autre
-            \Log::info("Prochain signataire pour document {$document->id}: {$nextSigner->name}. Signé par: {$currentUser->name}");
+            // Prochain signataire notifié
         } catch (\Exception $e) {
-            \Log::error("Erreur notification prochain signataire: " . $e->getMessage());
+            // Erreur notification
         }
     }
 
@@ -599,68 +602,36 @@ class SimpleSequentialController extends Controller
      */
     private function getSignedPdfUrl(Document $document)
     {
-        try {
-            // Chercher la dernière signature
-            $latestSignature = $document->signatures()->latest()->first();
-            
-            if ($latestSignature && $latestSignature->path_signed_pdf) {
-                return Storage::url($latestSignature->path_signed_pdf);
-            }
-            
-            // Si pas de PDF signé, retourner l'original
-            return Storage::url($document->path_original);
-            
-        } catch (\Exception $e) {
-            \Log::error("Erreur génération URL PDF signé: " . $e->getMessage());
-            return Storage::url($document->path_original);
+        // Vérifier s'il existe un PDF signé stocké côté serveur
+        $signedPdfPath = $this->getSignedPdfPath($document);
+        
+        if ($signedPdfPath && Storage::disk('public')->exists($signedPdfPath)) {
+            // Utiliser Storage::url() qui génère l'URL correcte via le lien symbolique
+            return Storage::url($signedPdfPath);
         }
+        
+        // Si pas de PDF signé stocké, afficher le PDF original
+        return Storage::url($document->path_original);
     }
 
     /**
-     * Créer un document de test avec signatures séquentielles
+     * Obtenir le chemin du PDF signé
      */
-    public function createTestDocument()
+    private function getSignedPdfPath(Document $document)
     {
-        if (!auth()->check()) {
-            return 'Non authentifié';
+        // Chercher dans les signatures
+        $signature = \App\Models\DocumentSignature::where('document_id', $document->id)->first();
+        if ($signature && $signature->path_signed_pdf && $signature->path_signed_pdf !== 'frontend_generated') {
+            return $signature->path_signed_pdf;
         }
         
-        // Vérifier qu'il y a des signataires
-        $signers = User::whereHas('role', function($q) { 
-            $q->where('name', 'signataire'); 
-        })->get();
-        
-        if ($signers->count() < 2) {
-            return 'Erreur: Il faut au moins 2 signataires pour tester les signatures séquentielles.';
+        // Chercher dans les paraphes
+        $paraphe = \App\Models\DocumentParaphe::where('document_id', $document->id)->first();
+        if ($paraphe && $paraphe->path_paraphed_pdf && $paraphe->path_paraphed_pdf !== 'frontend_generated') {
+            return $paraphe->path_paraphed_pdf;
         }
         
-        // Créer un document de test
-        $document = Document::create([
-            'document_name' => 'Document de Test - Signatures Séquentielles',
-            'type' => 'contrat',
-            'description' => 'Document de test pour les signatures séquentielles',
-            'filename_original' => 'test-sequential.pdf',
-            'path_original' => 'documents/test-sequential.pdf',
-            'file_size' => 1024,
-            'mime_type' => 'application/pdf',
-            'status' => 'in_progress',
-            'uploaded_by' => auth()->id(),
-            'sequential_signatures' => true,
-            'current_signature_index' => 0,
-            'signature_queue' => $signers->pluck('id')->toArray(),
-            'completed_signatures' => []
-        ]);
-        
-        // Créer les signatures séquentielles
-        foreach ($signers as $index => $signer) {
-            SequentialSignature::create([
-                'document_id' => $document->id,
-                'user_id' => $signer->id,
-                'signature_order' => $index + 1,
-                'status' => 'pending'
-            ]);
-        }
-        
-        return "Document de test créé avec succès ! ID: {$document->id}, Signataires: " . $signers->pluck('name')->join(', ');
+        return null;
     }
+
 }

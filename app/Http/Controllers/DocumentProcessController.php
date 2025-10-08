@@ -30,14 +30,6 @@ class DocumentProcessController extends Controller
         }
 
         // Si le document est déjà signé/paraphé, afficher en mode lecture seule
-        \Log::info('DocumentProcessController::show - Vérification du statut:', [
-            'document_id' => $document->id,
-            'status' => $document->status,
-            'isSigned' => $document->isSigned(),
-            'isParaphed' => $document->isParaphed(),
-            'isFullyProcessed' => $document->isFullyProcessed()
-        ]);
-        
         if ($document->isSigned() || $document->isParaphed() || $document->isFullyProcessed()) {
             // Générer l'URL du PDF signé
             $pdfUrl = null;
@@ -107,19 +99,13 @@ class DocumentProcessController extends Controller
         return view('documents.process', $viewData);
     }
 
-
     /**
      * Traiter l'action sur le document
      */
     public function store(Request $request, Document $document)
     {
-        // Log des données reçues
-        \Log::info('DocumentProcessController::store - Données reçues:', $request->all());
-        
-        // Vérifier les permissions
-        if (!$this->canProcess($document)) {
-            \Log::error('DocumentProcessController::store - Permissions refusées pour document: ' . $document->id);
-            return redirect()->route('documents.pending')
+        // Log des données reçues// Vérifier les permissions
+        if (!$this->canProcess($document)) {return redirect()->route('documents.pending')
                 ->with('error', 'Vous n\'avez pas l\'autorisation de traiter ce document.');
         }
 
@@ -141,23 +127,13 @@ class DocumentProcessController extends Controller
             
             // Assurer que les commentaires ont des valeurs par défaut
             $validated['signature_comment'] = $validated['signature_comment'] ?? '';
-            $validated['paraphe_comment'] = $validated['paraphe_comment'] ?? '';
-            
-            \Log::info('DocumentProcessController::store - Validation réussie:', $validated);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            \Log::error('DocumentProcessController::store - Erreur de validation:', $e->errors());
-            return redirect()->back()
+            $validated['paraphe_comment'] = $validated['paraphe_comment'] ?? '';} catch (\Illuminate\Validation\ValidationException $e) {return redirect()->back()
                 ->withErrors($e->errors())
                 ->withInput();
         }
 
-        try {
-            \Log::info('DocumentProcessController::store - Début du traitement après validation');
-            $actionType = $validated['action_type'];
-            $user = auth()->user();
-            \Log::info('DocumentProcessController::store - Action type: ' . $actionType . ', User: ' . $user->id);
-
-            // Déterminer les positions
+        try {$actionType = $validated['action_type'];
+            $user = auth()->user();// Déterminer les positions
             $signaturePosition = null;
             $paraphePosition = null;
 
@@ -178,23 +154,9 @@ class DocumentProcessController extends Controller
             $processedPdfPath = null;
 
             // Le PDF signé est généré côté frontend et envoyé via uploadPdfToServer
-            // Le backend ne fait que recevoir les coordonnées pour validation
-            \Log::info('DocumentProcessController::store - PDF signé généré côté frontend');
-            \Log::info('DocumentProcessController::store - Coordonnées reçues pour validation:', [
-                'signature_x' => $validated['signature_x'] ?? null,
-                'signature_y' => $validated['signature_y'] ?? null,
-                'paraphe_x' => $validated['paraphe_x'] ?? null,
-                'paraphe_y' => $validated['paraphe_y'] ?? null,
-                'action_type' => $actionType
-            ]);
-            
-            // Le PDF signé sera envoyé par le frontend via la route upload-signed-pdf
+            // Le backend ne fait que recevoir les coordonnées pour validation// Le PDF signé sera envoyé par le frontend via la route upload-signed-pdf
             // Attendre que le frontend envoie le PDF signé
-            $processedPdfPath = null; // Sera défini par uploadSignedPdf
-            
-            \Log::info('DocumentProcessController::store - Attente du PDF signé du frontend');
-            
-            // Les enregistrements de signature/paraphe seront créés par uploadSignedPdf
+            $processedPdfPath = null; // Sera défini par uploadSignedPdf// Les enregistrements de signature/paraphe seront créés par uploadSignedPdf
             // quand le frontend enverra le PDF signé
             
             // Pour l'instant, on ne fait que valider les données
@@ -282,25 +244,10 @@ class DocumentProcessController extends Controller
                     case 'both':
                         $notificationService->notifyDocumentFullyProcessed($document, $signer, $agent);
                         break;
-                }
+                }});
 
-                \Log::info('Notifications envoyées (asynchrone)', [
-                    'document_id' => $document->id,
-                    'action_type' => $actionType,
-                    'signer' => $signer->name,
-                    'agent' => $agent->name
-                ]);
-            });
-
-        } catch (\Exception $e) {
-            \Log::error('Erreur lors de l\'envoi des notifications', [
-                'document_id' => $document->id,
-                'action_type' => $actionType,
-                'error' => $e->getMessage()
-            ]);
-        }
+        } catch (\Exception $e) {}
     }
-
 
     /**
      * Télécharger un document paraphé
@@ -362,21 +309,8 @@ class DocumentProcessController extends Controller
         // Vérifier s'il existe un PDF signé stocké côté serveur
         $signedPdfPath = $this->getSignedPdfPath($document);
         
-        if ($signedPdfPath && Storage::disk('public')->exists($signedPdfPath)) {
-            \Log::info('PDF signé trouvé', [
-                'document_id' => $document->id,
-                'path' => $signedPdfPath,
-                'url' => route('storage.signed', ['filename' => basename($signedPdfPath)])
-            ]);
-            return route('storage.signed', ['filename' => basename($signedPdfPath)]);
-        }
-        
-        \Log::info('PDF signé non trouvé, utilisation du PDF original', [
-            'document_id' => $document->id,
-            'original_path' => $document->path_original
-        ]);
-        
-        // Si pas de PDF signé stocké, afficher le PDF original
+        if ($signedPdfPath && Storage::disk('public')->exists($signedPdfPath)) {return route('storage.signed', ['filename' => basename($signedPdfPath)]);
+        }// Si pas de PDF signé stocké, afficher le PDF original
         return route('storage.documents', ['filename' => basename($document->path_original)]);
     }
 
@@ -387,35 +321,13 @@ class DocumentProcessController extends Controller
     {
         // Chercher dans les signatures
         $signature = DocumentSignature::where('document_id', $document->id)->first();
-        if ($signature && $signature->path_signed_pdf && $signature->path_signed_pdf !== 'frontend_generated') {
-            \Log::info('PDF signé trouvé dans signature', [
-                'document_id' => $document->id,
-                'signature_id' => $signature->id,
-                'path' => $signature->path_signed_pdf
-            ]);
-            return $signature->path_signed_pdf;
+        if ($signature && $signature->path_signed_pdf && $signature->path_signed_pdf !== 'frontend_generated') {return $signature->path_signed_pdf;
         }
         
         // Chercher dans les paraphes
         $paraphe = DocumentParaphe::where('document_id', $document->id)->first();
-        if ($paraphe && $paraphe->path_paraphed_pdf && $paraphe->path_paraphed_pdf !== 'frontend_generated') {
-            \Log::info('PDF signé trouvé dans paraphe', [
-                'document_id' => $document->id,
-                'paraphe_id' => $paraphe->id,
-                'path' => $paraphe->path_paraphed_pdf
-            ]);
-            return $paraphe->path_paraphed_pdf;
-        }
-        
-        \Log::info('Aucun PDF signé trouvé', [
-            'document_id' => $document->id,
-            'signature_exists' => $signature ? true : false,
-            'paraphe_exists' => $paraphe ? true : false,
-            'signature_path' => $signature ? $signature->path_signed_pdf : null,
-            'paraphe_path' => $paraphe ? $paraphe->path_paraphed_pdf : null
-        ]);
-        
-        return null;
+        if ($paraphe && $paraphe->path_paraphed_pdf && $paraphe->path_paraphed_pdf !== 'frontend_generated') {return $paraphe->path_paraphed_pdf;
+        }return null;
     }
 
     /**
@@ -423,14 +335,7 @@ class DocumentProcessController extends Controller
      */
     public function uploadSignedPdf(Request $request)
     {
-        try {
-            \Log::info('Upload PDF signé - Début', [
-                'document_id' => $request->document_id,
-                'has_file' => $request->hasFile('signed_pdf'),
-                'file_size' => $request->hasFile('signed_pdf') ? $request->file('signed_pdf')->getSize() : 0
-            ]);
-
-            $request->validate([
+        try {$request->validate([
                 'signed_pdf' => 'required|file|mimes:pdf|max:10240', // 10MB max
                 'document_id' => 'required|integer|exists:documents,id'
             ]);
@@ -455,21 +360,10 @@ class DocumentProcessController extends Controller
             // Vérifier que le répertoire existe
             $signedDir = storage_path('app/public/documents/signed');
             if (!file_exists($signedDir)) {
-                mkdir($signedDir, 0755, true);
-                \Log::info('Répertoire signed créé: ' . $signedDir);
-            }
+                mkdir($signedDir, 0755, true);}
             
             // Stocker le fichier dans le répertoire signed
-            $path = $uploadedFile->storeAs('documents/signed', $filename, 'public');
-            
-            \Log::info('PDF signé stocké', [
-                'path' => $path,
-                'filename' => $filename,
-                'full_path' => storage_path('app/public/' . $path),
-                'exists' => file_exists(storage_path('app/public/' . $path))
-            ]);
-            
-            // Créer ou mettre à jour les enregistrements de signature/paraphe avec le chemin du PDF signé
+            $path = $uploadedFile->storeAs('documents/signed', $filename, 'public');// Créer ou mettre à jour les enregistrements de signature/paraphe avec le chemin du PDF signé
             $user = auth()->user();
             
             // Créer ou mettre à jour l'enregistrement de signature
@@ -482,39 +376,21 @@ class DocumentProcessController extends Controller
                     'signature_comment' => 'PDF généré côté client',
                     'path_signed_pdf' => $path,
                     'signature_type' => 'client_generated'
-                ]);
-                \Log::info('Signature créée', ['signature_id' => $signature->id, 'path' => $path]);
-            } else {
-                $signature->update(['path_signed_pdf' => $path]);
-                \Log::info('Signature mise à jour', ['signature_id' => $signature->id, 'path' => $path]);
-            }
+                ]);} else {
+                $signature->update(['path_signed_pdf' => $path]);}
             
             // Mettre à jour le statut du document
             $document->update([
                 'status' => 'signed',
                 'signed_at' => now()
-            ]);
-            
-            \Log::info('Document mis à jour', [
-                'document_id' => $document->id,
-                'status' => 'signed',
-                'path' => $path
-            ]);
-
-            return response()->json([
+            ]);return response()->json([
                 'success' => true,
                 'message' => 'PDF signé stocké avec succès',
                 'path' => $path,
                 'filename' => $filename
             ]);
 
-        } catch (\Exception $e) {
-            \Log::error('Erreur lors de l\'upload du PDF signé: ' . $e->getMessage(), [
-                'document_id' => $request->document_id,
-                'trace' => $e->getTraceAsString()
-            ]);
-            
-            return response()->json([
+        } catch (\Exception $e) {return response()->json([
                 'success' => false,
                 'message' => 'Erreur lors du stockage: ' . $e->getMessage()
             ], 500);

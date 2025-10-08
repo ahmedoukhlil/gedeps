@@ -8,17 +8,49 @@ class PDFSignatureModule {
         this.pdfDoc = null;
         this.currentPage = 1;
         this.totalPages = 1;
-        this.scale = 1.0;
+        this.scale = 1.2; // Increased default scale for better quality
         this.fabricCanvas = null;
         this.userSignature = null;
         this.signatures = {};
         this.isInitialized = false;
+        this.devicePixelRatio = window.devicePixelRatio || 1; // High DPI support
+        this.qualityMode = 'high'; // Quality mode: 'low', 'medium', 'high', 'ultra'
         
         // Configuration PDF.js
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
         
         console.log('🚀 Module PDF Signature initialisé');
         this.init();
+    }
+
+    /**
+     * Obtenir le ratio de pixels pour la qualité
+     */
+    getQualityPixelRatio() {
+        const baseRatio = this.devicePixelRatio;
+        
+        switch (this.qualityMode) {
+            case 'low':
+                return Math.min(baseRatio, 1.0);
+            case 'medium':
+                return Math.min(baseRatio, 1.5);
+            case 'high':
+                return Math.min(baseRatio, 2.0);
+            case 'ultra':
+                return Math.min(baseRatio, 3.0);
+            default:
+                return Math.min(baseRatio, 2.0);
+        }
+    }
+
+    /**
+     * Changer le mode de qualité
+     */
+    setQualityMode(mode) {
+        this.qualityMode = mode;
+        if (this.pdfDoc) {
+            this.renderPage(this.currentPage);
+        }
     }
     
     async init() {
@@ -124,9 +156,15 @@ class PDFSignatureModule {
             const pdfCanvas = document.getElementById('pdfCanvas');
             const fabricCanvas = document.getElementById('fabricCanvas');
             
-            // Configurer le canvas PDF
-            pdfCanvas.width = viewport.width;
-            pdfCanvas.height = viewport.height;
+            // Configuration haute qualité avec support DPI
+            const pixelRatio = this.getQualityPixelRatio();
+            const scaledViewport = page.getViewport({ scale: this.scale * pixelRatio });
+            
+            // Configurer le canvas PDF avec qualité améliorée
+            pdfCanvas.width = scaledViewport.width;
+            pdfCanvas.height = scaledViewport.height;
+            pdfCanvas.style.width = viewport.width + 'px';
+            pdfCanvas.style.height = viewport.height + 'px';
             
             // Configurer le canvas Fabric
             fabricCanvas.width = viewport.width;
@@ -134,11 +172,18 @@ class PDFSignatureModule {
             fabricCanvas.style.width = viewport.width + 'px';
             fabricCanvas.style.height = viewport.height + 'px';
             
-            // Rendre la page PDF
+            // Rendre la page PDF avec qualité améliorée
             const context = pdfCanvas.getContext('2d');
+            context.scale(pixelRatio, pixelRatio);
+            context.imageSmoothingEnabled = true;
+            context.imageSmoothingQuality = 'high';
+            
             const renderContext = {
                 canvasContext: context,
-                viewport: viewport
+                viewport: scaledViewport,
+                intent: 'display',
+                enableWebGL: false,
+                renderInteractiveForms: false
             };
             
             await page.render(renderContext).promise;

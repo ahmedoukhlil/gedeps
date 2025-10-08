@@ -21,6 +21,32 @@ class PDFOverlayUnifiedModule {
         this.liveSignatureData = null;
         this.liveParapheData = null;
         this.isPositioningActive = false;
+        this.devicePixelRatio = window.devicePixelRatio || 1; // Support haute résolution
+        this.qualityMode = 'ultra'; // Mode qualité: 'low', 'medium', 'high', 'ultra'
+    }
+
+    /**
+     * Calculer le ratio de pixels pour la qualité
+     */
+    getQualityPixelRatio() {
+        const baseRatio = this.devicePixelRatio;
+        switch (this.qualityMode) {
+            case 'low': return baseRatio * 1.0;
+            case 'medium': return baseRatio * 1.2;
+            case 'high': return baseRatio * 1.5;
+            case 'ultra': return baseRatio * 2.0;
+            default: return baseRatio * 1.2;
+        }
+    }
+
+    /**
+     * Changer le mode de qualité
+     */
+    setQualityMode(mode) {
+        this.qualityMode = mode;
+        if (this.pdfDoc) {
+            this.renderPage(this.currentPage);
+        }
     }
 
     async init() {
@@ -129,9 +155,21 @@ class PDFOverlayUnifiedModule {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         
-        // Rendu simple et fiable
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
+        // Configuration haute qualité avec support DPI
+        const pixelRatio = this.getQualityPixelRatio();
+        
+        // Dimensions du canvas pour le rendu haute qualité
+        canvas.width = viewport.width * pixelRatio;
+        canvas.height = viewport.height * pixelRatio;
+        
+        // Dimensions d'affichage (conservation des dimensions originales)
+        canvas.style.width = viewport.width + 'px';
+        canvas.style.height = viewport.height + 'px';
+        
+        // Configuration du contexte pour la qualité
+        ctx.scale(pixelRatio, pixelRatio);
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
         canvas.style.width = '100%';
         canvas.style.height = 'auto';
         canvas.style.border = '1px solid #ddd';
@@ -173,7 +211,10 @@ class PDFOverlayUnifiedModule {
 
         const renderContext = {
             canvasContext: ctx,
-            viewport: viewport
+            viewport: viewport,
+            intent: 'display', // Optimisé pour l'affichage
+            enableWebGL: false, // Désactiver WebGL pour la compatibilité
+            renderInteractiveForms: false // Désactiver les formulaires interactifs pour les performances
         };
 
         try {
@@ -719,14 +760,7 @@ class PDFOverlayUnifiedModule {
             }
         }
 
-        if (this.config.autoFitBtnId) {
-            const autoFitBtn = document.getElementById(this.config.autoFitBtnId);
-            if (autoFitBtn) {
-                autoFitBtn.addEventListener('click', () => {
-                    this.forceFit();
-                });
-            }
-        }
+
 
         if (this.config.prevPageBtnId) {
             const prevPageBtn = document.getElementById(this.config.prevPageBtnId);
