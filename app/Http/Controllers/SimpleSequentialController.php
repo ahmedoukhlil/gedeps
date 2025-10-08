@@ -12,6 +12,42 @@ use Illuminate\Support\Facades\Storage;
 class SimpleSequentialController extends Controller
 {
     /**
+     * Diagnostic des signatures séquentielles
+     */
+    public function debugSequentialSignatures()
+    {
+        $user = auth()->user();
+        $userId = $user->id;
+        
+        $documents = Document::where('sequential_signatures', true)
+            ->whereIn('status', ['in_progress', 'pending'])
+            ->whereHas('sequentialSignatures', function($query) use ($userId) {
+                $query->where('user_id', $userId);
+            })
+            ->with(['sequentialSignatures.user'])
+            ->get();
+        
+        $debug = [];
+        foreach ($documents as $document) {
+            $userSignature = $document->sequentialSignatures()
+                ->where('user_id', $userId)
+                ->first();
+            
+            $debug[] = [
+                'document_id' => $document->id,
+                'document_name' => $document->document_name,
+                'current_signature_index' => $document->current_signature_index,
+                'user_signature_order' => $userSignature->signature_order,
+                'user_signature_status' => $userSignature->status,
+                'is_current_turn' => $userSignature->signature_order == $document->current_signature_index + 1,
+                'should_show' => $userSignature->status === 'pending' && $userSignature->signature_order == $document->current_signature_index + 1
+            ];
+        }
+        
+        return response()->json($debug);
+    }
+
+    /**
      * Afficher la liste des documents en attente de signature séquentielle
      */
     public function index()
@@ -31,6 +67,12 @@ class SimpleSequentialController extends Controller
             
             $userId = $user->id;
             
+            // Log de débogage
+            \Log::info('SimpleSequentialController::index - Utilisateur connecté', [
+                'user_id' => $userId,
+                'user_name' => $user->name
+            ]);
+            
             // Récupérer tous les documents avec signatures séquentielles (paginés)
             $allDocuments = Document::where('sequential_signatures', true)
                 ->whereIn('status', ['in_progress', 'pending'])
@@ -40,6 +82,13 @@ class SimpleSequentialController extends Controller
                 ->with(['sequentialSignatures.user', 'uploader'])
                 ->orderBy('updated_at', 'desc')
                 ->paginate(10);
+            
+            // Log de débogage
+            \Log::info('SimpleSequentialController::index - Documents trouvés', [
+                'user_id' => $userId,
+                'total_documents' => $allDocuments->count(),
+                'documents' => $allDocuments->pluck('id', 'document_name')->toArray()
+            ]);
                 
             
             // Catégoriser les documents de la page actuelle
@@ -55,13 +104,33 @@ class SimpleSequentialController extends Controller
                 if ($userSignature) {
                     if ($userSignature->status === 'signed') {
                         $documentsCompleted->push($document);
-                    } elseif ($userSignature->signature_order == $document->current_signature_index + 1) {
+                    } elseif ($userSignature->status === 'pending' && $userSignature->signature_order == $document->current_signature_index + 1) {
                         $documentsToSign->push($document);
                     } else {
                         $documentsWaiting->push($document);
                     }
+                    
+                    // Log de débogage pour chaque document
+                    \Log::info('SimpleSequentialController::index - Document catégorisé', [
+                        'document_id' => $document->id,
+                        'document_name' => $document->document_name,
+                        'user_signature_status' => $userSignature->status,
+                        'user_signature_order' => $userSignature->signature_order,
+                        'current_signature_index' => $document->current_signature_index,
+                        'is_current_turn' => $userSignature->signature_order == $document->current_signature_index + 1,
+                        'category' => $userSignature->status === 'signed' ? 'completed' : 
+                                   ($userSignature->status === 'pending' && $userSignature->signature_order == $document->current_signature_index + 1 ? 'to_sign' : 'waiting')
+                    ]);
                 }
             }
+            
+            // Log de débogage final
+            \Log::info('SimpleSequentialController::index - Catégorisation terminée', [
+                'user_id' => $userId,
+                'documents_to_sign' => $documentsToSign->count(),
+                'documents_waiting' => $documentsWaiting->count(),
+                'documents_completed' => $documentsCompleted->count()
+            ]);
             
             // Statistiques (pour toutes les pages)
             $totalStats = Document::where('sequential_signatures', true)
@@ -83,7 +152,7 @@ class SimpleSequentialController extends Controller
                 if ($userSignature) {
                     if ($userSignature->status === 'signed') {
                         $totalCompleted++;
-                    } elseif ($userSignature->signature_order == $document->current_signature_index + 1) {
+                    } elseif ($userSignature->status === 'pending' && $userSignature->signature_order == $document->current_signature_index + 1) {
                         $totalToSign++;
                     } else {
                         $totalWaiting++;
@@ -205,7 +274,8 @@ class SimpleSequentialController extends Controller
         }
 
         // Variables identiques à documents/process.blade.php
-        $pdfUrl = Storage::url($document->path_original);
+        // CORRECTION : Utiliser le document avec les signatures précédentes
+        $pdfUrl = $this->getDocumentPdfUrl($document);
         $signatureUrl = '/signatures/user-signature';
         $parapheUrl = '/signatures/user-paraphe';
         $formAction = route('signatures.simple.save-signed-pdf', $document);
@@ -576,11 +646,20 @@ class SimpleSequentialController extends Controller
             // Notifier l'agent qui a uploadé le document
             $agent = $document->uploader;
             if ($agent) {
-                // Ici vous pouvez ajouter une notification email ou autre
-                // Document complètement signé
+                $notificationService = new \App\Services\NotificationService();
+                $notificationService->notifySequentialSignatureCompleted($document, $agent);
+                
+                \Log::info('SimpleSequentialController - Notification de finalisation envoyée', [
+                    'document_id' => $document->id,
+                    'agent_email' => $agent->email,
+                    'agent_name' => $agent->name
+                ]);
             }
         } catch (\Exception $e) {
-            // Erreur notification
+            \Log::error('SimpleSequentialController - Erreur notification de finalisation', [
+                'document_id' => $document->id,
+                'error' => $e->getMessage()
+            ]);
         }
     }
 
@@ -590,10 +669,22 @@ class SimpleSequentialController extends Controller
     private function notifyNextSigner(Document $document, $nextSigner, $currentUser)
     {
         try {
-            // Ici vous pouvez ajouter une notification email ou autre
-            // Prochain signataire notifié
+            $notificationService = new \App\Services\NotificationService();
+            $notificationService->notifyNextSequentialSigner($document, $nextSigner, $currentUser);
+            
+            \Log::info('SimpleSequentialController - Notification au prochain signataire envoyée', [
+                'document_id' => $document->id,
+                'next_signer_email' => $nextSigner->email,
+                'next_signer_name' => $nextSigner->name,
+                'previous_signer_name' => $currentUser->name,
+                'current_index' => $document->current_signature_index
+            ]);
         } catch (\Exception $e) {
-            // Erreur notification
+            \Log::error('SimpleSequentialController - Erreur notification au prochain signataire', [
+                'document_id' => $document->id,
+                'next_signer_email' => $nextSigner->email,
+                'error' => $e->getMessage()
+            ]);
         }
     }
 
@@ -632,6 +723,34 @@ class SimpleSequentialController extends Controller
         }
         
         return null;
+    }
+    
+    /**
+     * Obtenir l'URL du PDF à afficher (document original ou avec signatures précédentes)
+     */
+    private function getDocumentPdfUrl($document)
+    {
+        // Si c'est le premier signataire, afficher le document original
+        if ($document->current_signature_index == 0) {
+            \Log::info('SimpleSequentialController - Premier signataire, document original', [
+                'document_id' => $document->id,
+                'current_signature_index' => $document->current_signature_index
+            ]);
+            return Storage::url($document->path_original);
+        }
+        
+        // Sinon, chercher le document avec les signatures précédentes
+        // Utiliser la méthode existante getSignedPdfUrl
+        $signedPdfUrl = $this->getSignedPdfUrl($document);
+        
+        \Log::info('SimpleSequentialController - PDF à afficher déterminé', [
+            'document_id' => $document->id,
+            'current_signature_index' => $document->current_signature_index,
+            'signed_pdf_url' => $signedPdfUrl,
+            'is_signed_document' => $signedPdfUrl !== Storage::url($document->path_original)
+        ]);
+        
+        return $signedPdfUrl;
     }
 
 }

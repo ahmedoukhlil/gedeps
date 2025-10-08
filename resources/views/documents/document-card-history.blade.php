@@ -3,9 +3,20 @@
         'pending' => ['bg' => 'bg-orange-600', 'text' => 'text-orange-700', 'border' => 'border-orange-200', 'label' => 'En attente', 'bg_light' => 'bg-orange-50'],
         'signed' => ['bg' => 'bg-emerald-600', 'text' => 'text-emerald-700', 'border' => 'border-emerald-200', 'label' => 'Signé', 'bg_light' => 'bg-emerald-50'],
         'paraphed' => ['bg' => 'bg-purple-600', 'text' => 'text-purple-700', 'border' => 'border-purple-200', 'label' => 'Paraphé', 'bg_light' => 'bg-purple-50'],
-        'signed_and_paraphed' => ['bg' => 'bg-indigo-600', 'text' => 'text-indigo-700', 'border' => 'border-indigo-200', 'label' => 'Signé et paraphé', 'bg_light' => 'bg-indigo-50']
+        'signed_and_paraphed' => ['bg' => 'bg-indigo-600', 'text' => 'text-indigo-700', 'border' => 'border-indigo-200', 'label' => 'Signé et paraphé', 'bg_light' => 'bg-indigo-50'],
+        'in_progress' => ['bg' => 'bg-blue-600', 'text' => 'text-blue-700', 'border' => 'border-blue-200', 'label' => 'En cours', 'bg_light' => 'bg-blue-50']
     ];
-    $colors = $statusColors[$document->status] ?? $statusColors['pending'];
+    
+    // Gérer les signatures séquentielles
+    if ($document->sequential_signatures) {
+        if ($document->status === 'in_progress') {
+            $colors = $statusColors['in_progress'];
+        } else {
+            $colors = $statusColors['signed'];
+        }
+    } else {
+        $colors = $statusColors[$document->status] ?? $statusColors['pending'];
+    }
 @endphp
 
 <div class="bg-white border border-gray-200 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
@@ -20,7 +31,13 @@
                     <div class="flex-1">
                         <h3 class="text-xl font-bold text-gray-900 mb-1">{{ $document->document_name ?? $document->filename_original }}</h3>
                         <p class="text-sm text-gray-600 font-medium">
-                            @if(auth()->user()->isAdmin())
+                            @if($document->sequential_signatures)
+                                <i class="fas fa-users text-purple-600 mr-1"></i>
+                                Signatures séquentielles
+                                @if($document->sequentialSignatures && $document->sequentialSignatures->count() > 0)
+                                    ({{ $document->sequentialSignatures->where('status', 'signed')->count() }}/{{ $document->sequentialSignatures->count() }} signées)
+                                @endif
+                            @elseif(auth()->user()->isAdmin())
                                 <i class="fas fa-user-upload text-blue-600 mr-1"></i>
                                 Uploadé par {{ $document->uploader->name ?? 'Utilisateur inconnu' }}
                             @elseif(auth()->user()->isAgent())
@@ -86,7 +103,25 @@
                 @endif
 
                 <!-- Informations spécifiques au statut -->
-                @if($document->status === 'pending')
+                @if($document->sequential_signatures && $document->status === 'in_progress')
+                    <div class="bg-blue-50 border border-blue-300 rounded-xl p-4 mb-6 shadow-sm">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mr-3 shadow-md">
+                                <i class="fas fa-users text-white text-lg"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-semibold text-blue-800">Signatures séquentielles en cours</p>
+                                <p class="text-xs text-blue-700">
+                                    @if($document->sequentialSignatures)
+                                        {{ $document->sequentialSignatures->where('status', 'signed')->count() }}/{{ $document->sequentialSignatures->count() }} signatures terminées
+                                    @else
+                                        Processus de signature en cours
+                                    @endif
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                @elseif($document->status === 'pending')
                     <div class="bg-orange-50 border border-orange-300 rounded-xl p-4 mb-6 shadow-sm">
                         <div class="flex items-center">
                             <div class="w-12 h-12 bg-orange-600 rounded-full flex items-center justify-center mr-3 shadow-md">
@@ -139,7 +174,21 @@
 
             <!-- Actions -->
             <div class="flex flex-col gap-3 ml-6 min-w-[200px]">
-                @if($document->status === 'pending')
+                @if($document->sequential_signatures)
+                    @if($document->status === 'in_progress')
+                        <a href="{{ route('signatures.simple.show', $document) }}" 
+                           class="inline-flex items-center justify-center px-6 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold">
+                            <i class="fas fa-users mr-2 text-white"></i>
+                            Voir le processus
+                        </a>
+                    @else
+                        <a href="{{ route('signatures.simple.show.action', ['document' => $document, 'action' => 'view']) }}" 
+                           class="inline-flex items-center justify-center px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold">
+                            <i class="fas fa-eye mr-2 text-white"></i>
+                            Voir le document
+                        </a>
+                    @endif
+                @elseif($document->status === 'pending')
                     <a href="{{ route('documents.process.show', ['document' => $document, 'action' => 'sign']) }}" 
                        class="inline-flex items-center justify-center px-6 py-3 bg-orange-600 text-white rounded-xl hover:bg-orange-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold">
                         <i class="fas fa-pen-fancy mr-2 text-white"></i>

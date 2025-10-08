@@ -219,35 +219,50 @@ class DocumentController extends Controller
      */
     public function history(Request $request)
     {
+        $userId = auth()->id();
+        
         // Récupérer les documents selon le rôle de l'utilisateur
         if (auth()->user()->isAdmin()) {
-            // Admin voit tous les documents (signed, pending, paraphed, signed_and_paraphed)
+            // Admin voit tous les documents (signed, pending, paraphed, signed_and_paraphed, in_progress)
             $query = Document::whereIn('status', [
                 Document::STATUS_SIGNED, 
                 Document::STATUS_PENDING, 
                 Document::STATUS_PARAPHED, 
-                Document::STATUS_SIGNED_AND_PARAPHED
-            ])->with(['uploader', 'signer', 'signatures.signer']);
+                Document::STATUS_SIGNED_AND_PARAPHED,
+                'in_progress'  // Ajouter in_progress pour les signatures séquentielles
+            ])->with(['uploader', 'signer', 'signatures.signer', 'sequentialSignatures.user']);
         } elseif (auth()->user()->isAgent()) {
-            // Agent voit ses documents uploadés (signed, pending, paraphed, signed_and_paraphed)
-            $query = Document::where('uploaded_by', auth()->id())
+            // Agent voit ses documents uploadés (signed, pending, paraphed, signed_and_paraphed, in_progress)
+            $query = Document::where('uploaded_by', $userId)
                 ->whereIn('status', [
                     Document::STATUS_SIGNED, 
                     Document::STATUS_PENDING, 
                     Document::STATUS_PARAPHED, 
-                    Document::STATUS_SIGNED_AND_PARAPHED
+                    Document::STATUS_SIGNED_AND_PARAPHED,
+                    'in_progress'  // Ajouter in_progress pour les signatures séquentielles
                 ])
-                ->with(['signer', 'signatures.signer']);
+                ->with(['signer', 'signatures.signer', 'sequentialSignatures.user']);
         } else {
-            // Autres utilisateurs voient les documents qui leur sont assignés (signed, pending, paraphed, signed_and_paraphed)
-            $query = Document::where('signer_id', auth()->id())
-                ->whereIn('status', [
-                    Document::STATUS_SIGNED, 
-                    Document::STATUS_PENDING, 
-                    Document::STATUS_PARAPHED, 
-                    Document::STATUS_SIGNED_AND_PARAPHED
-                ])
-                ->with(['uploader', 'signatures.signer']);
+            // Autres utilisateurs voient les documents qui leur sont assignés OU les documents séquentiels où ils ont participé
+            $query = Document::where(function($q) use ($userId) {
+                // Documents assignés directement
+                $q->where('signer_id', $userId)
+                  ->whereIn('status', [
+                      Document::STATUS_SIGNED, 
+                      Document::STATUS_PENDING, 
+                      Document::STATUS_PARAPHED, 
+                      Document::STATUS_SIGNED_AND_PARAPHED
+                  ]);
+            })
+            ->orWhere(function($q) use ($userId) {
+                // Documents avec signatures séquentielles où l'utilisateur a participé
+                $q->where('sequential_signatures', true)
+                  ->whereIn('status', ['in_progress', 'signed'])
+                  ->whereHas('sequentialSignatures', function($subQuery) use ($userId) {
+                      $subQuery->where('user_id', $userId);
+                  });
+            })
+            ->with(['uploader', 'signatures.signer', 'sequentialSignatures.user']);
         }
 
         // Appliquer la recherche globale

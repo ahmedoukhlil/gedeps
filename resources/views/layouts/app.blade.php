@@ -34,6 +34,9 @@
 
     <!-- Search Improvements CSS - Améliorations de la recherche -->
     <link rel="stylesheet" href="{{ asset('css/search-improvements.css') }}">
+    
+    <!-- Signatures Responsive CSS - Améliorations responsive pour les signatures -->
+    <link rel="stylesheet" href="{{ asset('css/signatures-responsive.css') }}">
 
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -41,6 +44,7 @@
     <script src="{{ asset('js/color-fixes.js') }}" defer></script>
     <script src="{{ asset('js/icon-sizes.js') }}" defer></script>
     <script src="{{ asset('js/search-improvements.js') }}" defer></script>
+    <script src="{{ asset('js/signatures-responsive.js') }}" defer></script>
     
     <!-- Optimisations de performance -->
     <script>

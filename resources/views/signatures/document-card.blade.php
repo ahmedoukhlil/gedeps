@@ -5,24 +5,26 @@
     $percentage = $total > 0 ? ($progress / $total) * 100 : 0;
 @endphp
 
-<div class="bg-white border border-gray-200 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-    <div class="p-6">
-        <div class="flex items-start justify-between">
-            <div class="flex-1">
-                <!-- En-tête du document -->
-                <div class="flex items-center mb-6">
-                    <div class="w-14 h-14 rounded-xl flex items-center justify-center mr-4 shadow-lg
-                        @if($status === 'to_sign') bg-red-500
-                        @elseif($status === 'waiting') bg-indigo-600
-                        @else bg-emerald-700 @endif">
-                        <i class="fas fa-file-pdf text-white text-xl"></i>
+<div class="document-card-responsive bg-white border border-gray-200 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+    <div class="p-4 sm:p-6">
+        <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+            <div class="flex-1 min-w-0">
+                <!-- En-tête du document - Responsive -->
+                <div class="document-header flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+                    <div class="flex items-center gap-3 sm:gap-4">
+                        <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0
+                            @if($status === 'to_sign') bg-red-500
+                            @elseif($status === 'waiting') bg-indigo-600
+                            @else bg-emerald-700 @endif">
+                            <i class="fas fa-file-pdf text-white text-lg sm:text-xl"></i>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <h3 class="text-lg sm:text-xl font-bold text-gray-900 mb-1 truncate">{{ $document->document_name }}</h3>
+                            <p class="text-xs sm:text-sm text-gray-600 font-medium truncate">Créé par {{ $document->uploader->name }}</p>
+                        </div>
                     </div>
-                    <div class="flex-1">
-                        <h3 class="text-xl font-bold text-gray-900 mb-1">{{ $document->document_name }}</h3>
-                        <p class="text-sm text-gray-600 font-medium">Créé par {{ $document->uploader->name }}</p>
-                    </div>
-                    <!-- Badge de statut avec style EPS-One -->
-                    <div class="ml-4">
+                    <!-- Badge de statut avec style EPS-One - Responsive -->
+                    <div class="flex-shrink-0">
                         @if($status === 'to_sign')
                             <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold bg-red-100 text-red-800 border border-red-300 shadow-sm">
                                 <i class="fas fa-pen-fancy mr-2 text-red-600"></i>
@@ -42,42 +44,42 @@
                     </div>
                 </div>
 
-                <!-- Informations du document -->
-                <div class="bg-gray-50 rounded-xl p-4 mb-6 border border-gray-200 shadow-sm">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- Informations du document - Responsive -->
+                <div class="bg-gray-50 rounded-xl p-3 sm:p-4 mb-4 sm:mb-6 border border-gray-200 shadow-sm">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                         <div class="flex items-center">
-                            <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center mr-3 shadow-md">
-                                <i class="fas fa-file-alt text-white text-sm"></i>
+                            <div class="w-8 h-8 sm:w-10 sm:h-10 bg-blue-600 rounded-lg flex items-center justify-center mr-2 sm:mr-3 shadow-md flex-shrink-0">
+                                <i class="fas fa-file-alt text-white text-xs sm:text-sm"></i>
                             </div>
-                            <div>
+                            <div class="min-w-0 flex-1">
                                 <span class="text-xs font-medium text-gray-500 uppercase tracking-wide">Type</span>
-                                <p class="text-sm font-semibold text-gray-900">{{ $document->type_name }}</p>
+                                <p class="text-sm font-semibold text-gray-900 truncate">{{ $document->type_name }}</p>
                             </div>
                         </div>
                         <div class="flex items-center">
-                            <div class="w-10 h-10 bg-emerald-600 rounded-lg flex items-center justify-center mr-3 shadow-md">
-                                <i class="fas fa-calendar-plus text-white text-sm"></i>
+                            <div class="w-8 h-8 sm:w-10 sm:h-10 bg-emerald-600 rounded-lg flex items-center justify-center mr-2 sm:mr-3 shadow-md flex-shrink-0">
+                                <i class="fas fa-calendar-plus text-white text-xs sm:text-sm"></i>
                             </div>
-                            <div>
+                            <div class="min-w-0 flex-1">
                                 <span class="text-xs font-medium text-gray-500 uppercase tracking-wide">Créé le</span>
-                                <p class="text-sm font-semibold text-gray-900">{{ $document->created_at->format('d/m/Y H:i') }}</p>
+                                <p class="text-sm font-semibold text-gray-900 truncate">{{ $document->created_at->format('d/m/Y H:i') }}</p>
                             </div>
                         </div>
                         <div class="flex items-center">
-                            <div class="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center mr-3 shadow-md">
-                                <i class="fas fa-edit text-white text-sm"></i>
+                            <div class="w-8 h-8 sm:w-10 sm:h-10 bg-purple-600 rounded-lg flex items-center justify-center mr-2 sm:mr-3 shadow-md flex-shrink-0">
+                                <i class="fas fa-edit text-white text-xs sm:text-sm"></i>
                             </div>
-                            <div>
+                            <div class="min-w-0 flex-1">
                                 <span class="text-xs font-medium text-gray-500 uppercase tracking-wide">Modifié le</span>
-                                <p class="text-sm font-semibold text-gray-900">{{ $document->updated_at->format('d/m/Y H:i') }}</p>
+                                <p class="text-sm font-semibold text-gray-900 truncate">{{ $document->updated_at->format('d/m/Y H:i') }}</p>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Progression des signatures -->
-                <div class="bg-blue-50 rounded-xl p-4 mb-6 border border-blue-200">
-                    <div class="flex items-center justify-between mb-3">
+                <!-- Progression des signatures - Responsive -->
+                <div class="bg-blue-50 rounded-xl p-3 sm:p-4 mb-4 sm:mb-6 border border-blue-200">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 mb-3">
                         <div class="flex items-center">
                             <i class="fas fa-chart-line text-blue-600 mr-2"></i>
                             <span class="text-sm font-semibold text-gray-800">Progression des signatures</span>
@@ -100,26 +102,26 @@
                     </div>
                 </div>
 
-                <!-- Liste des signataires -->
-                <div class="bg-white border border-gray-200 rounded-xl p-4 mb-6">
-                    <div class="flex items-center mb-4">
+                <!-- Liste des signataires - Responsive -->
+                <div class="bg-white border border-gray-200 rounded-xl p-3 sm:p-4 mb-4 sm:mb-6">
+                    <div class="flex items-center mb-3 sm:mb-4">
                         <i class="fas fa-users text-gray-600 mr-2"></i>
                         <h4 class="text-sm font-semibold text-gray-800">Ordre des signatures</h4>
                     </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <div class="signers-grid">
                         @foreach($document->sequentialSignatures->sortBy('signature_order') as $signature)
-                            <div class="flex items-center p-3 rounded-lg border transition-all duration-200
-                                @if($signature->status === 'signed') bg-emerald-50 border-emerald-200 shadow-sm
-                                @elseif($signature->signature_order == $document->current_signature_index + 1) bg-red-50 border-red-200 shadow-md
-                                @else bg-indigo-50 border-indigo-200 @endif">
-                                <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold mr-3 shadow-sm
+                            <div class="signer-item
+                                @if($signature->status === 'signed') signer-signed
+                                @elseif($signature->signature_order == $document->current_signature_index + 1) signer-current
+                                @else signer-waiting @endif">
+                                <div class="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs font-bold mr-2 sm:mr-3 shadow-sm flex-shrink-0
                                     @if($signature->status === 'signed') bg-emerald-700 text-white
                                     @elseif($signature->signature_order == $document->current_signature_index + 1) bg-red-500 text-white
                                     @else bg-indigo-600 text-white @endif">
                                     {{ $signature->signature_order }}
                                 </div>
                                 <div class="flex-1 min-w-0">
-                                    <p class="text-sm font-medium text-gray-900 truncate">{{ $signature->user->name }}</p>
+                                    <p class="text-xs sm:text-sm font-medium text-gray-900 truncate">{{ $signature->user->name }}</p>
                                     @if($signature->status === 'signed' && $signature->signed_at)
                                         <p class="text-xs text-emerald-600">{{ \Carbon\Carbon::parse($signature->signed_at)->format('d/m H:i') }}</p>
                                     @elseif($signature->signature_order == $document->current_signature_index + 1)
@@ -128,13 +130,13 @@
                                         <p class="text-xs text-indigo-600">En attente</p>
                                     @endif
                                 </div>
-                                <div class="ml-2">
+                                <div class="ml-1 sm:ml-2 flex-shrink-0">
                                     @if($signature->status === 'signed')
-                                        <i class="fas fa-check-circle text-emerald-500"></i>
+                                        <i class="fas fa-check-circle text-emerald-500 text-sm"></i>
                                     @elseif($signature->signature_order == $document->current_signature_index + 1)
-                                        <i class="fas fa-clock text-red-500"></i>
+                                        <i class="fas fa-clock text-red-500 text-sm"></i>
                                     @else
-                                        <i class="fas fa-circle text-indigo-400"></i>
+                                        <i class="fas fa-circle text-indigo-400 text-sm"></i>
                                     @endif
                                 </div>
                             </div>
@@ -182,31 +184,35 @@
                 @endif
             </div>
 
-            <!-- Actions -->
-            <div class="flex flex-col gap-3 ml-6 min-w-[200px]">
+            <!-- Actions - Responsive -->
+            <div class="document-actions flex flex-col sm:flex-row lg:flex-col gap-3 mt-4 lg:mt-0 lg:ml-6 lg:min-w-[200px]">
                 @if($status === 'to_sign')
                     <a href="{{ route('signatures.simple.show', $document) }}" 
-                       class="inline-flex items-center justify-center px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold">
+                       class="action-button bg-red-600 text-white hover:bg-red-700 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
                         <i class="fas fa-pen-fancy mr-2 text-white"></i>
-                        Signer maintenant
+                        <span class="hidden sm:inline">Signer maintenant</span>
+                        <span class="sm:hidden">Signer</span>
                     </a>
                 @elseif($status === 'waiting')
-                    <button disabled class="inline-flex items-center justify-center px-6 py-3 bg-gray-400 text-gray-600 rounded-xl cursor-not-allowed font-semibold">
+                    <button disabled class="action-button bg-gray-400 text-gray-600 cursor-not-allowed">
                         <i class="fas fa-clock mr-2"></i>
-                        En attente
+                        <span class="hidden sm:inline">En attente</span>
+                        <span class="sm:hidden">Attente</span>
                     </button>
                 @else
                     <a href="{{ route('signatures.simple.show.action', ['document' => $document, 'action' => 'view']) }}" 
-                       class="inline-flex items-center justify-center px-6 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold">
+                       class="action-button bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
                         <i class="fas fa-eye mr-2 text-white"></i>
-                        Voir le document signé
+                        <span class="hidden sm:inline">Voir le document signé</span>
+                        <span class="sm:hidden">Voir</span>
                     </a>
                 @endif
                 
                 <a href="{{ route('documents.view', $document) }}" 
-                   class="inline-flex items-center justify-center px-6 py-3 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold">
+                   class="action-button bg-gray-600 text-white hover:bg-gray-700 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
                     <i class="fas fa-file-alt mr-2 text-white"></i>
-                    Document original
+                    <span class="hidden sm:inline">Document original</span>
+                    <span class="sm:hidden">Original</span>
                 </a>
             </div>
         </div>

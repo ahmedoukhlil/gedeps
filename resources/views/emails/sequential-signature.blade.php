@@ -52,7 +52,7 @@
         @endif
 
         <div style="text-align: center;">
-            <a href="{{ route('signatures.sequential.show', $document->id) }}" class="button">
+            <a href="{{ route('signatures.simple.show', $document->id) }}" class="button">
                 📝 Signer le Document
             </a>
         </div>

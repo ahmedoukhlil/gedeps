@@ -262,6 +262,7 @@ Route::get('/api/signers', function () {
 
 // Routes pour les signatures séquentielles
 Route::get('/signatures-simple', [App\Http\Controllers\SimpleSequentialController::class, 'index'])->name('signatures.simple.index');
+Route::get('/signatures-simple/debug', [App\Http\Controllers\SimpleSequentialController::class, 'debugSequentialSignatures'])->name('signatures.simple.debug');
 
 Route::get('/signatures-simple/{document}', [App\Http\Controllers\SimpleSequentialController::class, 'show'])->name('signatures.simple.show');
 Route::get('/signatures-simple/{document}/view', [App\Http\Controllers\SimpleSequentialController::class, 'show'])->name('signatures.simple.view');
