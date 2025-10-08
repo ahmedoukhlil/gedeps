@@ -79,10 +79,15 @@ class PDFOverlayUnifiedModule {
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
                     'Accept': 'application/json'
-                }
+                },
+                credentials: 'same-origin' // Inclure les cookies de session
             });
             
             if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    console.log('⚠️ Utilisateur non authentifié, signature non disponible');
+                    return null;
+                }
                 throw new Error(`Erreur API: ${response.status}`);
             }
             
@@ -100,7 +105,10 @@ class PDFOverlayUnifiedModule {
             
         } catch (error) {
             console.error('❌ Erreur chargement signature:', error);
-            this.showStatus(`Erreur signature: ${error.message}`, 'error');
+            // Ne pas afficher d'erreur si l'utilisateur n'est pas authentifié
+            if (!error.message.includes('401') && !error.message.includes('403')) {
+                this.showStatus(`Erreur signature: ${error.message}`, 'error');
+            }
             this.userSignatureUrl = null;
         }
     }

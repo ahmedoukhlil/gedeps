@@ -149,7 +149,33 @@ Route::middleware(['auth'])->group(function () {
     
 // API pour récupérer la signature de l'utilisateur connecté
 Route::get('/api/user-signature', [App\Http\Controllers\SignatureController::class, 'getUserSignature'])
-     ->name('api.user-signature');
+    ->name('api.user-signature');
+
+// Route de test pour les signatures
+Route::get('/test-signature', function() {
+    return response()->json([
+        'success' => true,
+        'message' => 'Route de test fonctionnelle',
+        'user_authenticated' => auth()->check(),
+        'user_id' => auth()->id(),
+        'app_url' => config('app.url')
+    ]);
+});
+
+// Route de test simple pour les signatures
+Route::get('/test-signature-simple', function() {
+    return response()->json(['success' => true, 'message' => 'Route simple fonctionnelle']);
+});
+
+// Route publique pour tester les signatures (SANS middleware auth)
+Route::get('/public/user-signature', function() {
+    return response()->json([
+        'success' => true,
+        'message' => 'Route publique fonctionnelle',
+        'authenticated' => auth()->check(),
+        'user_id' => auth()->id()
+    ]);
+});
 
 // Route pour sauvegarder le PDF signé
 Route::post('/signatures/save-signed-pdf', [App\Http\Controllers\SignatureController::class, 'saveSignedPdf'])
