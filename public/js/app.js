@@ -1,5 +1,5 @@
-// App JS - Version statique
-console.log('GEDEPS App loaded');
+// App JS - Version statique améliorée
+console.log('🚀 GEDEPS App loaded');
 
 // Fonctionnalités de base
 document.addEventListener('DOMContentLoaded', function() {
@@ -11,6 +11,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Gestion des notifications
     initializeNotifications();
+    
+    // Améliorations UX
+    initializeUXEnhancements();
+    
+    // Animations
+    initializeAnimations();
 });
 
 function initializeComponents() {
@@ -128,8 +134,149 @@ function showNotification(message, type = 'info') {
     }, 3000);
 }
 
+// Améliorations UX
+function initializeUXEnhancements() {
+    console.log('🎨 Initializing UX enhancements...');
+    
+    // Améliorer les interactions
+    enhanceInteractions();
+    
+    // Améliorer la navigation
+    enhanceNavigation();
+    
+    // Améliorer les formulaires
+    enhanceForms();
+}
+
+function initializeAnimations() {
+    console.log('✨ Initializing animations...');
+    
+    // Animation d'entrée pour les éléments
+    const elements = document.querySelectorAll('.card, .btn-primary, .btn-secondary');
+    elements.forEach((element, index) => {
+        element.style.opacity = '0';
+        element.style.transform = 'translateY(20px)';
+        
+        setTimeout(() => {
+            element.style.transition = 'all 0.5s ease';
+            element.style.opacity = '1';
+            element.style.transform = 'translateY(0)';
+        }, index * 100);
+    });
+}
+
+function enhanceInteractions() {
+    // Améliorer les boutons
+    const buttons = document.querySelectorAll('.btn-primary, .btn-secondary');
+    buttons.forEach(button => {
+        button.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px)';
+        });
+        
+        button.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+    
+    // Améliorer les cards
+    const cards = document.querySelectorAll('.card');
+    cards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-4px)';
+            this.style.boxShadow = '0 10px 25px rgba(0,0,0,0.15)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+        });
+    });
+}
+
+function enhanceNavigation() {
+    // Améliorer les liens de navigation
+    const navLinks = document.querySelectorAll('.nav-link');
+    navLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            // Animation de clic
+            this.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                this.style.transform = 'scale(1)';
+            }, 150);
+        });
+    });
+    
+    // Gestion du menu mobile
+    initializeMobileMenu();
+}
+
+function initializeMobileMenu() {
+    const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+    const mobileMenu = document.getElementById('navbarNavMobile');
+    const mobileMenuClose = document.getElementById('mobileMenuClose');
+    const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
+    
+    if (mobileMenuToggle && mobileMenu) {
+        // Ouvrir le menu mobile
+        mobileMenuToggle.addEventListener('click', function() {
+            mobileMenu.classList.remove('hidden');
+            mobileMenu.classList.add('mobile-menu', 'active');
+            document.body.style.overflow = 'hidden';
+        });
+        
+        // Fermer le menu mobile
+        function closeMobileMenu() {
+            mobileMenu.classList.remove('active');
+            setTimeout(() => {
+                mobileMenu.classList.add('hidden');
+                mobileMenu.classList.remove('mobile-menu');
+            }, 300);
+            document.body.style.overflow = '';
+        }
+        
+        if (mobileMenuClose) {
+            mobileMenuClose.addEventListener('click', closeMobileMenu);
+        }
+        
+        if (mobileMenuOverlay) {
+            mobileMenuOverlay.addEventListener('click', closeMobileMenu);
+        }
+        
+        // Fermer avec la touche Escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && mobileMenu.classList.contains('active')) {
+                closeMobileMenu();
+            }
+        });
+        
+        // Fermer en cliquant sur un lien
+        const mobileMenuLinks = mobileMenu.querySelectorAll('.mobile-menu-link');
+        mobileMenuLinks.forEach(link => {
+            link.addEventListener('click', function() {
+                setTimeout(closeMobileMenu, 100);
+            });
+        });
+    }
+}
+
+function enhanceForms() {
+    // Améliorer les inputs
+    const inputs = document.querySelectorAll('.form-input');
+    inputs.forEach(input => {
+        input.addEventListener('focus', function() {
+            this.parentElement.classList.add('focused');
+        });
+        
+        input.addEventListener('blur', function() {
+            this.parentElement.classList.remove('focused');
+        });
+    });
+}
+
 // Export pour utilisation globale
 window.GEDEPS = {
     showNotification,
-    validateForm
+    validateForm,
+    initializeUXEnhancements,
+    initializeAnimations
 };

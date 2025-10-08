@@ -8,46 +8,27 @@
     <title>@yield('title', 'GEDEPS') - Gestion Électronique de Documents</title>
 
     <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700&display=swap" rel="stylesheet" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Modern Theme CSS -->
-    <link rel="stylesheet" href="{{ asset('css/modern-theme.css') }}">
+    <!-- CSS Principal Amélioré -->
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
     
-    <!-- Corporate Colors CSS -->
-    <link rel="stylesheet" href="{{ asset('css/corporate-colors.css') }}">
-    
-    <!-- Sophisticated Theme CSS -->
-    <link rel="stylesheet" href="{{ asset('css/sophisticated-theme.css') }}">
-
-    <!-- Menu Simple CSS -->
-    <link rel="stylesheet" href="{{ asset('css/menu-simple.css') }}">
-
-    <!-- Color Fixes CSS - Corrections de couleurs -->
-    <link rel="stylesheet" href="{{ asset('css/color-fixes.css') }}">
-
-    <!-- Icon Sizes CSS - Corrections de tailles d'icônes -->
+    <!-- CSS Spécialisés -->
+    <link rel="stylesheet" href="{{ asset('css/search-improvements.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/signatures-responsive.css') }}">
     <link rel="stylesheet" href="{{ asset('css/icon-sizes.css') }}">
 
-    <!-- Search Improvements CSS - Améliorations de la recherche -->
-    <link rel="stylesheet" href="{{ asset('css/search-improvements.css') }}">
-    
-    <!-- Signatures Responsive CSS - Améliorations responsive pour les signatures -->
-    <link rel="stylesheet" href="{{ asset('css/signatures-responsive.css') }}">
-
     <!-- Scripts -->
-    <!-- Vite désactivé temporairement -->
-    <!-- @vite(['resources/css/app.css', 'resources/js/app.js']) -->
-    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
     <script src="{{ asset('js/app.js') }}" defer></script>
     <script src="{{ asset('js/notification-system.js') }}" defer></script>
-    <script src="{{ asset('js/color-fixes.js') }}" defer></script>
-    <script src="{{ asset('js/icon-sizes.js') }}" defer></script>
     <script src="{{ asset('js/search-improvements.js') }}" defer></script>
     <script src="{{ asset('js/signatures-responsive.js') }}" defer></script>
+    <script src="{{ asset('js/icon-sizes.js') }}" defer></script>
     
     <!-- Optimisations de performance -->
     <script>
@@ -94,14 +75,13 @@
     
     @livewireStyles
 </head>
-<body class="font-sans antialiased">
+<body class="font-sans antialiased bg-gray-50">
     <!-- Skip links pour l'accessibilité -->
-    <a href="#main-content" class="skip-link">Aller au contenu principal</a>
-    <a href="#navigation" class="skip-link">Aller à la navigation</a>
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-blue-600 text-white px-4 py-2 rounded-md z-50">Aller au contenu principal</a>
     
-    <div class="min-h-screen" style="background: var(--bg-secondary);">
+    <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
         <!-- Navigation moderne responsive -->
-        <nav class="sophisticated-nav sticky top-0 z-50" id="navigation" role="navigation" aria-label="Navigation principale">
+        <nav class="navbar sticky top-0 z-50 shadow-lg" id="navigation" role="navigation" aria-label="Navigation principale">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between h-16">
                     <div class="flex items-center gap-4 lg:gap-6">
@@ -111,7 +91,7 @@
                         </a>
 
                         <!-- Menu hamburger pour mobile -->
-                        <button class="lg:hidden sophisticated-nav-link" id="mobileMenuToggle" aria-label="Menu principal">
+                        <button class="lg:hidden nav-link flex items-center gap-2 px-3 py-2 rounded-md" id="mobileMenuToggle" aria-label="Menu principal">
                             <i class="fas fa-bars text-lg"></i>
                             <span class="font-medium">Menu</span>
                         </button>
@@ -121,45 +101,45 @@
                             @auth
                                 @if(!auth()->user()->isAdmin())
                                     <a href="{{ route('documents.upload') }}" 
-                                       class="sophisticated-nav-link {{ request()->routeIs('documents.upload') ? 'sophisticated-nav-link-active' : '' }}">
+                                       class="nav-link {{ request()->routeIs('documents.upload') ? 'active' : '' }}">
                                         <i class="fas fa-upload"></i>
                                         <span>Soumettre</span>
                                     </a>
 
                                     <a href="{{ route('signatures.index') }}" 
-                                       class="sophisticated-nav-link {{ request()->routeIs('signatures.index') ? 'sophisticated-nav-link-active' : '' }}">
+                                       class="nav-link {{ request()->routeIs('signatures.index') ? 'active' : '' }}">
                                         <i class="fas fa-pen-fancy"></i>
                                         <span>Signatures Simples</span>
                                     </a>
                                     
                                     <a href="{{ route('signatures.simple.index') }}" 
-                                       class="sophisticated-nav-link {{ request()->routeIs('signatures.simple.*') ? 'sophisticated-nav-link-active' : '' }}">
+                                       class="nav-link {{ request()->routeIs('signatures.simple.*') ? 'active' : '' }}">
                                         <i class="fas fa-list-ol"></i>
                                         <span>Signatures Séquentielles</span>
                                     </a>
                                 @endif
 
                                 <a href="{{ route('documents.pending') }}" 
-                                   class="sophisticated-nav-link {{ request()->routeIs('documents.pending') ? 'sophisticated-nav-link-active' : '' }}">
+                                   class="nav-link {{ request()->routeIs('documents.pending') ? 'active' : '' }}">
                                     <i class="fas fa-clock"></i>
                                     <span>En Attente</span>
                                 </a>
 
                                 <a href="{{ route('documents.history') }}" 
-                                   class="sophisticated-nav-link {{ request()->routeIs('documents.history') ? 'sophisticated-nav-link-active' : '' }}">
+                                   class="nav-link {{ request()->routeIs('documents.history') ? 'active' : '' }}">
                                     <i class="fas fa-history"></i>
                                     <span>Historique</span>
                                 </a>
 
                                 <a href="{{ route('profile.index') }}" 
-                                   class="sophisticated-nav-link {{ request()->routeIs('profile.*') ? 'sophisticated-nav-link-active' : '' }}">
+                                   class="nav-link {{ request()->routeIs('profile.*') ? 'active' : '' }}">
                                     <i class="fas fa-user"></i>
                                     <span>Profil</span>
                                 </a>
 
                                 @if(auth()->user()->isAdmin())
                                     <a href="{{ route('admin.dashboard') }}" 
-                                       class="sophisticated-nav-link {{ request()->routeIs('admin.*') ? 'sophisticated-nav-link-active' : '' }}">
+                                       class="nav-link {{ request()->routeIs('admin.*') ? 'active' : '' }}">
                                         <i class="fas fa-cog"></i>
                                         <span>Administration</span>
                                     </a>
@@ -195,13 +175,13 @@
                             <!-- Bouton de déconnexion -->
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
-                                <button type="submit" class="sophisticated-nav-link">
+                                <button type="submit" class="nav-link">
                                     <i class="fas fa-sign-out-alt"></i>
                                     <span class="hidden sm:inline">Déconnexion</span>
                                 </button>
                             </form>
                         @else
-                            <a href="{{ route('login') }}" class="sophisticated-btn-secondary">
+                            <a href="{{ route('login') }}" class="btn-secondary">
                                 <i class="fas fa-sign-in-alt"></i>
                                 <span class="hidden sm:inline">Connexion</span>
                             </a>
@@ -210,22 +190,22 @@
                 </div>
                 
                 <!-- Menu mobile amélioré -->
-                <div class="lg:hidden fixed inset-0 z-50 hidden" id="navbarNavMobile">
+                <div class="lg:hidden mobile-menu hidden" id="navbarNavMobile">
                     <!-- Overlay -->
                     <div class="fixed inset-0 bg-black bg-opacity-50" id="mobileMenuOverlay"></div>
                     
                     <!-- Menu Panel -->
-                    <div class="fixed top-0 left-0 h-full w-80 max-w-[80vw] shadow-lg">
+                    <div class="mobile-menu-panel">
                         @auth
                             <!-- Header mobile avec bouton fermer -->
-                            <div class="flex items-center justify-between p-4 border-b border-white border-opacity-20">
-                                <div class="flex items-center gap-3 user-info">
-                                    <div class="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                            <div class="mobile-menu-header">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
                                         <span class="text-white text-sm font-semibold">{{ substr(Auth::user()->name ?? 'U', 0, 1) }}</span>
                                     </div>
                                     <div>
-                                        <div class="text-sm font-medium text-white">{{ Auth::user()->name ?? 'Utilisateur' }}</div>
-                                        <div class="text-xs text-blue-100">
+                                        <div class="text-sm font-medium text-gray-900">{{ Auth::user()->name ?? 'Utilisateur' }}</div>
+                                        <div class="text-xs text-gray-500">
                                             @if(auth()->user()->isAdmin())
                                                 <i class="fas fa-crown mr-1"></i>Administrateur
                                             @elseif(auth()->user()->isSignataire())
@@ -236,76 +216,77 @@
                                         </div>
                                     </div>
                                 </div>
-                                <button class="sophisticated-nav-link" id="mobileMenuClose" aria-label="Fermer le menu">
+                                <button class="nav-link" id="mobileMenuClose" aria-label="Fermer le menu">
                                     <i class="fas fa-times text-lg"></i>
                                 </button>
                             </div>
                         
                         <!-- Navigation mobile organisée -->
-                        <div class="flex-1 overflow-y-auto">
+                        <div class="mobile-menu-content">
                             <!-- Section Actions Principales -->
-                            <div class="p-4">
-                                <h3 class="text-xs font-semibold text-white text-opacity-80 uppercase tracking-wider mb-3">Actions Principales</h3>
-                                <div class="space-y-1">
-                                    @if(!auth()->user()->isAdmin())
-                                        <a href="{{ route('documents.upload') }}" 
-                                           class="sophisticated-nav-link {{ request()->routeIs('documents.upload') ? 'sophisticated-nav-link-active' : '' }}">
-                                            <i class="fas fa-upload text-white"></i>
-                                            <span>Soumettre Document</span>
-                                            <i class="fas fa-chevron-right ml-auto text-blue-200"></i>
-                                        </a>
+                            <div class="mobile-menu-section">
+                                <h3>Actions Principales</h3>
+                                @if(!auth()->user()->isAdmin())
+                                    <a href="{{ route('documents.upload') }}" 
+                                       class="mobile-menu-link {{ request()->routeIs('documents.upload') ? 'active' : '' }}">
+                                        <i class="fas fa-upload"></i>
+                                        <span>Soumettre Document</span>
+                                    </a>
 
-                                        <a href="{{ route('signatures.index') }}" 
-                                           class="sophisticated-nav-link {{ request()->routeIs('signatures.index') ? 'sophisticated-nav-link-active' : '' }}">
-                                            <i class="fas fa-pen-fancy text-white"></i>
-                                            <span>Signatures Simples</span>
-                                            <i class="fas fa-chevron-right ml-auto text-blue-200"></i>
-                                        </a>
+                                    <a href="{{ route('signatures.index') }}" 
+                                       class="mobile-menu-link {{ request()->routeIs('signatures.index') ? 'active' : '' }}">
+                                        <i class="fas fa-pen-fancy"></i>
+                                        <span>Signatures Simples</span>
+                                    </a>
                                         
-                                        <a href="{{ route('signatures.simple.index') }}" 
-                                           class="sophisticated-nav-link {{ request()->routeIs('signatures.simple.*') ? 'sophisticated-nav-link-active' : '' }}">
-                                            <i class="fas fa-list-ol text-white"></i>
-                                            <span>Signatures Séquentielles</span>
-                                            <i class="fas fa-chevron-right ml-auto text-blue-200"></i>
-                                        </a>
-                                    @endif
-                                </div>
+                                    <a href="{{ route('signatures.simple.index') }}" 
+                                       class="mobile-menu-link {{ request()->routeIs('signatures.simple.*') ? 'active' : '' }}">
+                                        <i class="fas fa-list-ol"></i>
+                                        <span>Signatures Séquentielles</span>
+                                    </a>
+                                @endif
                             </div>
 
                             <!-- Section Navigation -->
-                            <div class="p-4 border-t border-white border-opacity-20">
-                                <h3 class="text-xs font-semibold text-white text-opacity-80 uppercase tracking-wider mb-3">Navigation</h3>
-                                <div class="space-y-1">
-                                    <a href="{{ route('documents.pending') }}" 
-                                       class="sophisticated-nav-link {{ request()->routeIs('documents.pending') ? 'sophisticated-nav-link-active' : '' }}">
-                                        <i class="fas fa-clock text-white"></i>
-                                        <span>En Attente</span>
-                                        <span class="ml-auto sophisticated-badge">{{ $stats['pending_documents'] ?? 0 }}</span>
-                                    </a>
+                            <div class="mobile-menu-section">
+                                <h3>Navigation</h3>
+                                <a href="{{ route('documents.pending') }}" 
+                                   class="mobile-menu-link {{ request()->routeIs('documents.pending') ? 'active' : '' }}">
+                                    <i class="fas fa-clock"></i>
+                                    <span>En Attente</span>
+                                    <span class="ml-auto bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">{{ $stats['pending_documents'] ?? 0 }}</span>
+                                </a>
 
-                                    <a href="{{ route('documents.history') }}" 
-                                       class="sophisticated-nav-link {{ request()->routeIs('documents.history') ? 'sophisticated-nav-link-active' : '' }}">
-                                        <i class="fas fa-history text-white"></i>
-                                        <span>Historique</span>
-                                        <i class="fas fa-chevron-right ml-auto text-blue-200"></i>
-                                    </a>
+                                <a href="{{ route('documents.history') }}" 
+                                   class="mobile-menu-link {{ request()->routeIs('documents.history') ? 'active' : '' }}">
+                                    <i class="fas fa-history"></i>
+                                    <span>Historique</span>
+                                </a>
 
-                                    <a href="{{ route('profile.index') }}" 
-                                       class="sophisticated-nav-link {{ request()->routeIs('profile.*') ? 'sophisticated-nav-link-active' : '' }}">
-                                        <i class="fas fa-user text-white"></i>
-                                        <span>Mon Profil</span>
-                                        <i class="fas fa-chevron-right ml-auto text-blue-200"></i>
-                                    </a>
+                                <a href="{{ route('profile.index') }}" 
+                                   class="mobile-menu-link {{ request()->routeIs('profile.*') ? 'active' : '' }}">
+                                    <i class="fas fa-user"></i>
+                                    <span>Mon Profil</span>
+                                </a>
 
-                                    @if(auth()->user()->isAdmin())
-                                        <a href="{{ route('admin.dashboard') }}" 
-                                           class="sophisticated-nav-link {{ request()->routeIs('admin.*') ? 'sophisticated-nav-link-active' : '' }}">
-                                            <i class="fas fa-cog text-white"></i>
-                                            <span>Administration</span>
-                                            <i class="fas fa-chevron-right ml-auto text-blue-200"></i>
-                                        </a>
-                                    @endif
-                                </div>
+                                @if(auth()->user()->isAdmin())
+                                    <a href="{{ route('admin.dashboard') }}" 
+                                       class="mobile-menu-link {{ request()->routeIs('admin.*') ? 'active' : '' }}">
+                                        <i class="fas fa-cog"></i>
+                                        <span>Administration</span>
+                                    </a>
+                                @endif
+                            </div>
+                            
+                            <!-- Section Déconnexion -->
+                            <div class="mobile-menu-section border-t border-gray-200 pt-4">
+                                <form method="POST" action="{{ route('logout') }}">
+                                    @csrf
+                                    <button type="submit" class="mobile-menu-link w-full text-left">
+                                        <i class="fas fa-sign-out-alt text-red-500"></i>
+                                        <span>Déconnexion</span>
+                                    </button>
+                                </form>
                             </div>
                         </div>
                     @endauth

@@ -162,12 +162,11 @@ Route::get('/test-signature', function() {
     ]);
 });
 
-// Route de test simple pour les signatures
+// Routes publiques pour les tests (AVANT tout middleware)
 Route::get('/test-signature-simple', function() {
     return response()->json(['success' => true, 'message' => 'Route simple fonctionnelle']);
 });
 
-// Route publique pour tester les signatures (SANS middleware auth)
 Route::get('/public/user-signature', function() {
     return response()->json([
         'success' => true,
