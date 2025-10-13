@@ -2011,8 +2011,8 @@
     
     /* Optimisations pour la signature sur mobile */
     .pdf-viewer canvas {
-        /* Mode signature : désactiver le défilement pour la précision */
-        touch-action: none !important;
+        /* Mode signature : permettre le zoom et le défilement */
+        touch-action: pan-x pan-y pinch-zoom !important;
         user-select: none !important;
         -webkit-user-select: none !important;
         -moz-user-select: none !important;
@@ -2021,9 +2021,9 @@
         -webkit-tap-highlight-color: transparent !important;
     }
     
-    /* Mode lecture : permettre le défilement */
+    /* Mode lecture : permettre le défilement et le zoom */
     .pdf-viewer-mobile:not(.signature-mode) canvas {
-        touch-action: manipulation !important;
+        touch-action: pan-x pan-y pinch-zoom !important;
         -webkit-overflow-scrolling: touch !important;
     }
     
@@ -2057,17 +2057,18 @@
 }
 
 .pdf-container-mobile.signature-mode {
-    overflow: hidden;
-    touch-action: none;
+    overflow: auto;
+    touch-action: pan-x pan-y pinch-zoom;
+    -webkit-overflow-scrolling: touch;
 }
 
 .pdf-container-mobile.signature-mode .pdf-viewer-mobile canvas {
-    touch-action: none !important;
+    touch-action: pan-x pan-y pinch-zoom !important;
     pointer-events: auto;
 }
 
 .pdf-container-mobile.scroll-mode .pdf-viewer-mobile canvas {
-    touch-action: manipulation !important;
+    touch-action: pan-x pan-y pinch-zoom !important;
     pointer-events: auto;
 }
 
@@ -2446,8 +2447,8 @@ document.addEventListener('DOMContentLoaded', function() {
         function enableSignatureMode() {
             pdfContainer.classList.remove('scroll-mode');
             pdfContainer.classList.add('signature-mode');
-            // Désactiver le défilement du body
-            document.body.style.overflow = 'hidden';
+            // Ne PAS désactiver le défilement du body pour permettre le zoom
+            // document.body.style.overflow = 'hidden'; // Commenté pour permettre le zoom
         }
         
         function enableScrollMode() {
@@ -2456,16 +2457,16 @@ document.addEventListener('DOMContentLoaded', function() {
             pdfContainer.classList.add('scroll-mode');
             // Réactiver le défilement du body
             document.body.style.overflow = '';
-            // Forcer la réactivation des propriétés CSS
-            pdfContainer.style.touchAction = 'pan-x pan-y';
-            pdfContainer.style.overflow = 'visible';
-            // Réactiver le défilement sur le canvas
+            // Forcer la réactivation des propriétés CSS pour permettre zoom et défilement
+            pdfContainer.style.touchAction = 'pan-x pan-y pinch-zoom';
+            pdfContainer.style.overflow = 'auto';
+            // Réactiver le défilement et zoom sur le canvas
             const canvas = pdfContainer.querySelector('canvas');
             if (canvas) {
-                canvas.style.touchAction = 'manipulation';
+                canvas.style.touchAction = 'pan-x pan-y pinch-zoom';
                 canvas.style.pointerEvents = 'auto';
             }
-            console.log('✅ Mode défilement réactivé');
+            console.log('✅ Mode défilement et zoom réactivé');
         }
         
         // Événements pour activer le mode signature
@@ -2499,20 +2500,12 @@ document.addEventListener('DOMContentLoaded', function() {
             enableScrollMode();
         });
         
-        // Fallback : réactiver le mode défilement après un délai
-        let signatureModeTimeout = null;
+        // Approche simplifiée : ne jamais bloquer complètement le défilement
+        // Le mode signature ne bloque plus le défilement, il ajoute juste des fonctionnalités
         const originalEnableSignatureMode = enableSignatureMode;
         enableSignatureMode = function() {
             originalEnableSignatureMode();
-            // Annuler le timeout précédent s'il existe
-            if (signatureModeTimeout) {
-                clearTimeout(signatureModeTimeout);
-            }
-            // Réactiver automatiquement le mode défilement après 5 secondes (plus rapide)
-            signatureModeTimeout = setTimeout(() => {
-                console.log('⏰ Timeout de sécurité : réactivation du mode défilement');
-                enableScrollMode();
-            }, 5000);
+            console.log('📱 Mode signature activé - défilement et zoom toujours disponibles');
         };
         
         // Fallback supplémentaire : détecter la création d'éléments
@@ -2609,25 +2602,17 @@ document.addEventListener('DOMContentLoaded', function() {
         }, { passive: true });
         
         pdfViewer.addEventListener('touchmove', function(e) {
+            // Permettre le défilement et le zoom en permanence
+            // Ne plus bloquer les gestes tactiles
             if (pdfContainer.classList.contains('signature-mode')) {
-                // En mode signature, vérifier si l'utilisateur essaie de faire défiler
-                // Si oui, réactiver le mode défilement
-                const touch = e.touches[0];
-                const startY = touchStartY;
-                const currentY = touch.clientY;
-                const deltaY = Math.abs(currentY - startY);
-                
-                // Si l'utilisateur fait un geste de défilement significatif
-                if (deltaY > 20) {
-                    console.log('📱 Geste de défilement détecté en mode signature, réactivation du mode défilement');
-                    enableScrollMode();
-                }
+                // En mode signature, permettre quand même le défilement et le zoom
+                // Ne pas empêcher les gestes naturels
                 return;
             }
             
             // Permettre le défilement naturel
-            e.preventDefault();
-        }, { passive: false });
+            // e.preventDefault(); // Commenté pour permettre le défilement
+        }, { passive: true });
     }
 });
 </script>
