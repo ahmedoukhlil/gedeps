@@ -2524,6 +2524,9 @@ class PDFOverlayUnifiedModule {
         
         // Activer le glisser-déposer pour cette signature
         this.enableDragAndDrop(signature.id, 'signature');
+        
+        // Désactiver le mode signature pour permettre le défilement
+        this.disableSignatureMode();
     }
 
     /**
@@ -2575,6 +2578,9 @@ class PDFOverlayUnifiedModule {
         
         // Activer le glisser-déposer pour ce paraphe
         this.enableDragAndDrop(paraphe.id, 'paraphe');
+        
+        // Désactiver le mode signature pour permettre le défilement
+        this.disableSignatureMode();
     }
 
     /**
@@ -2618,6 +2624,26 @@ class PDFOverlayUnifiedModule {
         
         // Activer le glisser-déposer pour ce cachet
         this.enableDragAndDrop(cachet.id, 'cachet');
+        
+        // Désactiver le mode signature pour permettre le défilement
+        this.disableSignatureMode();
+    }
+
+    /**
+     * Désactiver le mode signature pour permettre le défilement
+     */
+    disableSignatureMode() {
+        console.log('🔄 Désactivation du mode signature...');
+        
+        // Désactiver le flag de positionnement
+        this.isPositioningActive = false;
+        
+        // Déclencher l'événement de désactivation du mode signature
+        document.dispatchEvent(new CustomEvent('signatureModeDisabled', {
+            detail: { timestamp: Date.now() }
+        }));
+        
+        console.log('✅ Mode signature désactivé - défilement autorisé');
     }
 
     /**

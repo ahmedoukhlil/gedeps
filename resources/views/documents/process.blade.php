@@ -2500,6 +2500,12 @@ document.addEventListener('DOMContentLoaded', function() {
             enableScrollMode();
         });
         
+        // Détecter la désactivation du mode signature
+        document.addEventListener('signatureModeDisabled', function(e) {
+            console.log('🔄 Mode signature désactivé par le module PDF');
+            enableScrollMode();
+        });
+        
         // Approche simplifiée : ne jamais bloquer complètement le défilement
         // Le mode signature ne bloque plus le défilement, il ajoute juste des fonctionnalités
         const originalEnableSignatureMode = enableSignatureMode;
