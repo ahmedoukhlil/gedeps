@@ -61,7 +61,7 @@
                 </div>
 
                 <!-- Informations du document élégantes -->
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
                     <div class="bg-gradient-to-br from-white to-primary-50 rounded-lg p-3 border border-primary-200 hover:shadow-md transition-shadow">
                         <div class="flex items-center gap-2 mb-1">
                             <i class="fas fa-tag text-primary-500 text-sm"></i>
@@ -124,19 +124,19 @@
                 </div>
 
                 <!-- Liste des signataires élégante -->
-                <div class="bg-white border border-gray-200 rounded-xl p-4 mb-4 sm:mb-6">
-                    <div class="flex items-center gap-2 mb-4">
+                <div class="bg-white border border-gray-200 rounded-xl p-3 sm:p-4 mb-4 sm:mb-6">
+                    <div class="flex items-center gap-2 mb-3 sm:mb-4">
                         <i class="fas fa-users text-primary-500"></i>
                         <h4 class="text-sm font-bold text-gray-900">Ordre des signatures</h4>
                     </div>
-                    <div class="space-y-2 max-h-64 overflow-y-auto">
+                    <div class="space-y-2 max-h-48 sm:max-h-64 overflow-y-auto">
                         @foreach($document->sequentialSignatures->sortBy('signature_order') as $signature)
-                            <div class="flex items-center gap-3 p-2 rounded-lg transition-all
+                            <div class="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg transition-all
                                 @if($signature->status === 'signed') bg-success-50 border border-success-200
                                 @elseif($signature->signature_order == $document->current_signature_index + 1) bg-danger-50 border border-danger-200
                                 @else bg-gray-50 border border-gray-200 @endif">
                                 <!-- Numéro avec dégradé -->
-                                <div class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shadow-sm flex-shrink-0
+                                <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-xs font-bold shadow-sm flex-shrink-0
                                     @if($signature->status === 'signed') bg-gradient-to-br from-success-500 to-success-700 text-white
                                     @elseif($signature->signature_order == $document->current_signature_index + 1) bg-gradient-to-br from-danger-500 to-danger-700 text-white
                                     @else bg-gradient-to-br from-gray-400 to-gray-600 text-white @endif">
@@ -167,15 +167,15 @@
                                 <!-- Badge de statut -->
                                 <div class="flex-shrink-0">
                                     @if($signature->status === 'signed')
-                                        <div class="w-6 h-6 rounded-full bg-success-500 flex items-center justify-center">
+                                        <div class="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-success-500 flex items-center justify-center">
                                             <i class="fas fa-check text-white text-xs"></i>
                                         </div>
                                     @elseif($signature->signature_order == $document->current_signature_index + 1)
-                                        <div class="w-6 h-6 rounded-full bg-danger-500 flex items-center justify-center animate-pulse">
+                                        <div class="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-danger-500 flex items-center justify-center animate-pulse">
                                             <i class="fas fa-pen text-white text-xs"></i>
                                         </div>
                                     @else
-                                        <div class="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center">
+                                        <div class="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gray-300 flex items-center justify-center">
                                             <i class="fas fa-ellipsis-h text-gray-600 text-xs"></i>
                                         </div>
                                     @endif
@@ -187,36 +187,36 @@
 
                 <!-- Alerte selon le statut -->
                 @if($status === 'to_sign')
-                    <div class="alert bg-danger-50 border-2 border-danger-300 rounded-xl p-4">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 bg-danger-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <i class="fas fa-exclamation-triangle text-white"></i>
+                    <div class="alert bg-danger-50 border-2 border-danger-300 rounded-xl p-3 sm:p-4">
+                        <div class="flex items-center gap-2 sm:gap-3">
+                            <div class="w-8 h-8 sm:w-10 sm:h-10 bg-danger-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i class="fas fa-exclamation-triangle text-white text-sm sm:text-base"></i>
                             </div>
-                            <div class="flex-1">
+                            <div class="flex-1 min-w-0">
                                 <p class="text-sm font-bold text-danger-800">Action requise</p>
                                 <p class="text-xs text-danger-700">C'est votre tour de signer ce document</p>
                             </div>
                         </div>
                     </div>
                 @elseif($status === 'waiting')
-                    <div class="alert bg-warning-50 border-2 border-warning-300 rounded-xl p-4">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 bg-warning-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <i class="fas fa-info-circle text-white"></i>
+                    <div class="alert bg-warning-50 border-2 border-warning-300 rounded-xl p-3 sm:p-4">
+                        <div class="flex items-center gap-2 sm:gap-3">
+                            <div class="w-8 h-8 sm:w-10 sm:h-10 bg-warning-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i class="fas fa-info-circle text-white text-sm sm:text-base"></i>
                             </div>
-                            <div class="flex-1">
+                            <div class="flex-1 min-w-0">
                                 <p class="text-sm font-bold text-warning-800">En attente</p>
                                 <p class="text-xs text-warning-700">Attendez que les signataires précédents signent</p>
                             </div>
                         </div>
                     </div>
                 @else
-                    <div class="alert bg-success-50 border-2 border-success-300 rounded-xl p-4">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 bg-success-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <i class="fas fa-check-circle text-white"></i>
+                    <div class="alert bg-success-50 border-2 border-success-300 rounded-xl p-3 sm:p-4">
+                        <div class="flex items-center gap-2 sm:gap-3">
+                            <div class="w-8 h-8 sm:w-10 sm:h-10 bg-success-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i class="fas fa-check-circle text-white text-sm sm:text-base"></i>
                             </div>
-                            <div class="flex-1">
+                            <div class="flex-1 min-w-0">
                                 <p class="text-sm font-bold text-success-800">Terminé</p>
                                 <p class="text-xs text-success-700">Vous avez déjà signé ce document</p>
                             </div>
@@ -226,32 +226,213 @@
             </div>
 
             <!-- Boutons d'action élégants -->
-            <div class="flex flex-col sm:flex-row lg:flex-col gap-2 lg:w-40">
+            <div class="flex flex-col sm:flex-row lg:flex-col gap-2 lg:w-40 w-full sm:w-auto">
                 @if($status === 'to_sign')
                     <a href="{{ route('signatures.simple.show', $document) }}" 
-                       class="group flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-danger-500 to-danger-600 hover:from-danger-600 hover:to-danger-700 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                       class="group flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-danger-500 to-danger-600 hover:from-danger-600 hover:to-danger-700 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 min-h-[48px]">
                         <i class="fas fa-pen-fancy group-hover:scale-110 transition-transform"></i>
-                        <span class="font-semibold text-sm">Signer maintenant</span>
+                        <span class="font-semibold text-sm sm:text-base">Signer maintenant</span>
                     </a>
                 @elseif($status === 'waiting')
-                    <button disabled class="flex items-center justify-center gap-2 px-4 py-3 bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed opacity-60">
+                    <button disabled class="flex items-center justify-center gap-2 px-4 py-3 bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed opacity-60 min-h-[48px]">
                         <i class="fas fa-clock"></i>
-                        <span class="font-semibold text-sm">En attente</span>
+                        <span class="font-semibold text-sm sm:text-base">En attente</span>
                     </button>
                 @else
                     <a href="{{ route('signatures.simple.show.action', ['document' => $document, 'action' => 'view']) }}" 
-                       class="group flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-success-500 to-success-600 hover:from-success-600 hover:to-success-700 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                       class="group flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-success-500 to-success-600 hover:from-success-600 hover:to-success-700 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 min-h-[48px]">
                         <i class="fas fa-eye group-hover:scale-110 transition-transform"></i>
-                        <span class="font-semibold text-sm">Voir signé</span>
+                        <span class="font-semibold text-sm sm:text-base">Voir signé</span>
                     </a>
                 @endif
                 
                 <a href="{{ route('documents.view', $document) }}" 
-                   class="group flex items-center justify-center gap-2 px-4 py-3 bg-white hover:bg-gray-50 border-2 border-gray-300 hover:border-gray-400 text-gray-700 hover:text-gray-900 rounded-lg shadow-sm hover:shadow-md transition-all duration-300">
+                   class="group flex items-center justify-center gap-2 px-4 py-3 bg-white hover:bg-gray-50 border-2 border-gray-300 hover:border-gray-400 text-gray-700 hover:text-gray-900 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 min-h-[48px]">
                     <i class="fas fa-file-alt text-sm group-hover:scale-110 transition-transform"></i>
-                    <span class="font-semibold text-sm">Original</span>
+                    <span class="font-semibold text-sm sm:text-base">Original</span>
                 </a>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+/* Améliorations de responsivité pour la carte document */
+@media (max-width: 640px) {
+    .card {
+        margin: 0 -0.5rem;
+        border-radius: 0;
+    }
+    
+    .card .p-4 {
+        padding: 1rem;
+    }
+    
+    /* Améliorer la lisibilité des textes sur mobile */
+    .text-sm {
+        font-size: 0.875rem;
+    }
+    
+    .text-xs {
+        font-size: 0.75rem;
+    }
+    
+    /* Optimiser les boutons pour le tactile */
+    .min-h-\[48px\] {
+        min-height: 48px;
+        touch-action: manipulation;
+    }
+    
+    /* Améliorer l'espacement des éléments */
+    .gap-2 {
+        gap: 0.5rem;
+    }
+    
+    .gap-3 {
+        gap: 0.75rem;
+    }
+    
+    /* Optimiser la grille des informations */
+    .grid-cols-1 {
+        grid-template-columns: 1fr;
+    }
+    
+    /* Améliorer la progression */
+    .h-3 {
+        height: 0.75rem;
+    }
+    
+    /* Optimiser les badges de statut */
+    .w-7 {
+        width: 1.75rem;
+    }
+    
+    .h-7 {
+        height: 1.75rem;
+    }
+    
+    /* Améliorer la lisibilité des alertes */
+    .alert {
+        margin-bottom: 1rem;
+    }
+    
+    .alert .w-8 {
+        width: 2rem;
+    }
+    
+    .alert .h-8 {
+        height: 2rem;
+    }
+}
+
+/* Améliorations pour les très petits écrans */
+@media (max-width: 480px) {
+    .card .p-4 {
+        padding: 0.75rem;
+    }
+    
+    /* Réduire les espacements sur très petits écrans */
+    .mb-4 {
+        margin-bottom: 0.75rem;
+    }
+    
+    .mb-6 {
+        margin-bottom: 1rem;
+    }
+    
+    /* Optimiser les boutons */
+    .px-4 {
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+    }
+    
+    .py-3 {
+        padding-top: 0.75rem;
+        padding-bottom: 0.75rem;
+    }
+    
+    /* Améliorer la lisibilité des textes */
+    .text-base {
+        font-size: 0.875rem;
+    }
+    
+    .text-lg {
+        font-size: 1rem;
+    }
+    
+    /* Optimiser les icônes */
+    .text-2xl {
+        font-size: 1.25rem;
+    }
+    
+    .text-3xl {
+        font-size: 1.5rem;
+    }
+}
+
+/* Améliorations pour les écrans tactiles */
+@media (hover: none) and (pointer: coarse) {
+    .card-hover:hover {
+        transform: none;
+    }
+    
+    .group-hover\:scale-110:hover {
+        transform: none;
+    }
+    
+    .group-hover\:-translate-y-1:hover {
+        transform: none;
+    }
+    
+    /* Améliorer la réactivité tactile */
+    .min-h-\[48px\] {
+        min-height: 48px;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Optimiser les interactions tactiles */
+    .flex-shrink-0 {
+        flex-shrink: 0;
+    }
+    
+    .min-w-0 {
+        min-width: 0;
+    }
+}
+
+/* Améliorations pour les écrans haute résolution */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .card {
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    
+    .shadow-lg {
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+}
+
+/* Mode sombre */
+@media (prefers-color-scheme: dark) {
+    .card {
+        background-color: #1f2937;
+        border-color: #374151;
+    }
+    
+    .text-gray-900 {
+        color: #f9fafb;
+    }
+    
+    .text-gray-600 {
+        color: #d1d5db;
+    }
+    
+    .bg-white {
+        background-color: #1f2937;
+    }
+    
+    .border-gray-200 {
+        border-color: #374151;
+    }
+}
+</style>

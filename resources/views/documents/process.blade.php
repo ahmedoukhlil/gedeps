@@ -520,8 +520,8 @@
                 </div>
                 
                 <!-- Zone PDF optimisée pour mobile -->
-                <div class="w-full overflow-x-auto overflow-y-auto relative sophisticated-bg-secondary rounded-lg shadow-lg border sophisticated-border" style="min-height: auto; max-height: none; height: auto; max-width: none; width: 100%;">
-                    <div id="pdfViewer" class="w-full h-auto flex justify-center items-start p-4 bg-white rounded-lg relative" style="min-height: auto; max-height: none; height: auto; max-width: none; width: 100%;">
+                <div class="pdf-container-mobile">
+                    <div id="pdfViewer" class="pdf-viewer-mobile">
                         <div class="flex flex-col items-center justify-center py-12 text-center">
                             <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
                             <div class="text-lg font-medium text-white mb-2">Chargement du PDF...</div>
@@ -530,7 +530,7 @@
                     </div>
                     
                     <!-- Indicateur de zoom mobile -->
-                    <div class="fixed top-1/2 right-4 transform -translate-y-1/2 bg-black bg-opacity-80 text-white px-4 py-2 rounded-full text-sm font-semibold z-50 transition-opacity duration-300 hidden" id="mobileZoomIndicator">
+                    <div class="mobile-zoom-indicator hidden" id="mobileZoomIndicator">
                         <span id="zoomLevel">100%</span>
                     </div>
                 </div>
@@ -835,12 +835,14 @@
 .pdf-container-mobile {
     width: 100%;
     max-width: 100%;
-    overflow-x: auto;
-    overflow-y: hidden;
+    overflow: visible;
     position: relative;
     background: #f8fafc;
     border-radius: 8px;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    /* Amélioration du défilement mobile */
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
 }
 
 .pdf-viewer-mobile {
@@ -854,6 +856,10 @@
     background: #ffffff;
     border-radius: 8px;
     position: relative;
+    /* Amélioration du défilement mobile */
+    overflow: visible;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
 }
 
 .pdf-viewer-mobile canvas {
@@ -943,15 +949,26 @@
 /* Amélioration de l'expérience tactile */
 @media (hover: none) and (pointer: coarse) {
     .pdf-viewer-mobile canvas {
-        touch-action: pan-x pan-y;
+        /* Permettre le défilement naturel sur mobile */
+        touch-action: manipulation;
         user-select: none;
         -webkit-user-select: none;
         -moz-user-select: none;
         -ms-user-select: none;
+        /* Améliorer la réactivité tactile */
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
     }
     
     .pdf-viewer-mobile canvas:active {
-        transform: scale(1.05);
+        transform: scale(1.02);
+        transition: transform 0.1s ease;
+    }
+    
+    /* Améliorer le défilement du conteneur */
+    .pdf-container-mobile {
+        touch-action: pan-x pan-y;
+        -webkit-overflow-scrolling: touch;
     }
 }
 
@@ -1123,8 +1140,13 @@
     position: relative;
     background: #f8fafc;
     border-radius: 12px;
-    overflow: hidden;
+    overflow: visible;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    /* Améliorations pour le défilement mobile */
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    /* Prévenir les conflits de défilement */
+    contain: layout style paint;
 }
 
 .pdf-viewer-mobile {
@@ -1138,6 +1160,13 @@
     border-radius: 8px;
     margin: 1rem;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    /* Améliorations pour le défilement mobile */
+    overflow: visible;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    /* Optimiser les performances de rendu */
+    will-change: transform;
+    transform: translateZ(0);
 }
 
 .pdf-loading {
@@ -1982,6 +2011,7 @@
     
     /* Optimisations pour la signature sur mobile */
     .pdf-viewer canvas {
+        /* Mode signature : désactiver le défilement pour la précision */
         touch-action: none !important;
         user-select: none !important;
         -webkit-user-select: none !important;
@@ -1989,6 +2019,12 @@
         -ms-user-select: none !important;
         -webkit-touch-callout: none !important;
         -webkit-tap-highlight-color: transparent !important;
+    }
+    
+    /* Mode lecture : permettre le défilement */
+    .pdf-viewer-mobile:not(.signature-mode) canvas {
+        touch-action: manipulation !important;
+        -webkit-overflow-scrolling: touch !important;
     }
     
     /* Amélioration de la précision tactile */
@@ -2010,6 +2046,56 @@
     .btn-eps-primary:active, .btn-eps-secondary:active, .btn-eps-accent:active {
         transform: scale(0.98);
         transition: transform 0.1s ease;
+    }
+}
+
+/* Gestion des modes de défilement mobile */
+.pdf-container-mobile.scroll-mode {
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: auto;
+}
+
+.pdf-container-mobile.signature-mode {
+    overflow: hidden;
+    touch-action: none;
+}
+
+.pdf-container-mobile.signature-mode .pdf-viewer-mobile canvas {
+    touch-action: none !important;
+    pointer-events: auto;
+}
+
+.pdf-container-mobile.scroll-mode .pdf-viewer-mobile canvas {
+    touch-action: manipulation !important;
+    pointer-events: auto;
+}
+
+/* Amélioration du défilement pour les petits écrans */
+@media (max-width: 480px) {
+    .pdf-container-mobile {
+        margin: 0;
+        border-radius: 0;
+        min-height: 100vh;
+    }
+    
+    .pdf-viewer-mobile {
+        margin: 0;
+        border-radius: 0;
+        min-height: 50vh;
+        padding: 0.5rem;
+    }
+    
+    /* Optimiser le défilement vertical */
+    body {
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+    }
+    
+    /* Prévenir le zoom automatique sur les champs de saisie */
+    input, textarea, select {
+        font-size: 16px !important;
+        transform: translateZ(0);
     }
 }
 </style>
@@ -2341,6 +2427,88 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialiser l'indicateur
     updatePageIndicator();
+});
+
+// Gestion des modes de défilement mobile
+document.addEventListener('DOMContentLoaded', function() {
+    const pdfContainer = document.querySelector('.pdf-container-mobile');
+    const pdfViewer = document.querySelector('.pdf-viewer-mobile');
+    
+    if (pdfContainer && pdfViewer) {
+        // Mode par défaut : défilement
+        pdfContainer.classList.add('scroll-mode');
+        
+        // Détecter les interactions de signature
+        const signatureBtn = document.getElementById('addSignatureBtn');
+        const parapheBtn = document.getElementById('addParapheBtn');
+        const cachetBtn = document.getElementById('addCachetBtn');
+        
+        function enableSignatureMode() {
+            pdfContainer.classList.remove('scroll-mode');
+            pdfContainer.classList.add('signature-mode');
+            // Désactiver le défilement du body
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function enableScrollMode() {
+            pdfContainer.classList.remove('signature-mode');
+            pdfContainer.classList.add('scroll-mode');
+            // Réactiver le défilement du body
+            document.body.style.overflow = '';
+        }
+        
+        // Événements pour activer le mode signature
+        if (signatureBtn) {
+            signatureBtn.addEventListener('click', enableSignatureMode);
+        }
+        if (parapheBtn) {
+            parapheBtn.addEventListener('click', enableSignatureMode);
+        }
+        if (cachetBtn) {
+            cachetBtn.addEventListener('click', enableSignatureMode);
+        }
+        
+        // Événements pour revenir au mode défilement
+        const clearBtn = document.getElementById('clearAllBtn');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', enableScrollMode);
+        }
+        
+        // Détecter la fin de la signature via les événements du module PDF
+        document.addEventListener('signatureCompleted', enableScrollMode);
+        document.addEventListener('parapheCompleted', enableScrollMode);
+        document.addEventListener('cachetCompleted', enableScrollMode);
+        
+        // Gestion du redimensionnement
+        window.addEventListener('resize', function() {
+            if (window.innerWidth >= 768) {
+                // Sur desktop, toujours en mode défilement
+                enableScrollMode();
+            }
+        });
+        
+        // Gestion des gestes tactiles pour améliorer l'expérience
+        let touchStartY = 0;
+        let touchStartX = 0;
+        
+        pdfViewer.addEventListener('touchstart', function(e) {
+            if (pdfContainer.classList.contains('signature-mode')) {
+                return; // En mode signature, laisser le module gérer
+            }
+            
+            touchStartY = e.touches[0].clientY;
+            touchStartX = e.touches[0].clientX;
+        }, { passive: true });
+        
+        pdfViewer.addEventListener('touchmove', function(e) {
+            if (pdfContainer.classList.contains('signature-mode')) {
+                return; // En mode signature, laisser le module gérer
+            }
+            
+            // Permettre le défilement naturel
+            e.preventDefault();
+        }, { passive: false });
+    }
 });
 </script>
 @endsection
