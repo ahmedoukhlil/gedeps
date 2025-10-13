@@ -519,15 +519,15 @@
                 </div>
                 </div>
                 
-                <!-- Zone PDF optimisée pour mobile -->
-                <div class="pdf-container-mobile">
-                    <div id="pdfViewer" class="pdf-viewer-mobile">
-                        <div class="flex flex-col items-center justify-center py-12 text-center">
-                            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-                            <div class="text-lg font-medium text-white mb-2">Chargement du PDF...</div>
-                            <div class="text-sm text-white">Veuillez patienter</div>
-                        </div>
-                    </div>
+    <!-- Zone PDF optimisée pour mobile -->
+    <div class="pdf-container-mobile">
+        <div id="pdfViewer" class="pdf-viewer-mobile">
+            <div class="flex flex-col items-center justify-center py-12 text-center">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+                <div class="text-lg font-medium text-white mb-2">Chargement du PDF...</div>
+                <div class="text-sm text-white">Veuillez patienter</div>
+            </div>
+        </div>
                     
                     <!-- Indicateur de zoom mobile -->
                     <div class="mobile-zoom-indicator hidden" id="mobileZoomIndicator">
@@ -856,10 +856,11 @@
     background: #ffffff;
     border-radius: 8px;
     position: relative;
-    /* Amélioration du défilement mobile */
-    overflow: visible;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior: contain;
+    /* Défilement mobile simplifié */
+    overflow: visible; /* Pas de scrollbar sur le conteneur */
+    touch-action: pan-y pinch-zoom; /* Défilement vertical et zoom seulement */
+    /* Permettre le défilement naturel */
+    touch-action: pan-x pan-y pinch-zoom;
 }
 
 .pdf-viewer-mobile canvas {
@@ -868,6 +869,17 @@
     border-radius: 4px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     transition: transform 0.2s ease;
+    /* Permettre le défilement sur le canvas */
+    touch-action: pan-x pan-y pinch-zoom !important;
+    pointer-events: auto !important;
+    /* Forcer le défilement */
+    overflow: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: auto !important;
+    /* Supprimer tous les blocages */
+    user-select: auto !important;
+    -webkit-user-select: auto !important;
+    -webkit-touch-callout: default !important;
 }
 
 .pdf-viewer-mobile canvas:hover {
@@ -950,7 +962,7 @@
 @media (hover: none) and (pointer: coarse) {
     .pdf-viewer-mobile canvas {
         /* Permettre le défilement naturel sur mobile */
-        touch-action: manipulation;
+        touch-action: pan-x pan-y pinch-zoom !important; /* Changé de manipulation à pan-x pan-y pinch-zoom */
         user-select: none;
         -webkit-user-select: none;
         -moz-user-select: none;
@@ -958,6 +970,8 @@
         /* Améliorer la réactivité tactile */
         -webkit-tap-highlight-color: transparent;
         -webkit-touch-callout: none;
+        /* Permettre le défilement */
+        pointer-events: auto !important;
     }
     
     .pdf-viewer-mobile canvas:active {
@@ -992,6 +1006,117 @@
     
     .mobile-zoom-indicator {
         transition: none;
+    }
+}
+
+/* ===== BARRE DE DÉFILEMENT PERSONNALISÉE POUR TOUTE LA PAGE ===== */
+.custom-scrollbar {
+    position: fixed;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 80vh;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    pointer-events: auto;
+}
+
+.scrollbar-track {
+    width: 4px;
+    height: 60vh;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 2px;
+    position: relative;
+    cursor: pointer;
+}
+
+.scrollbar-thumb {
+    width: 100%;
+    background: #3b82f6;
+    border-radius: 2px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    min-height: 20px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.scrollbar-thumb:hover {
+    background: #2563eb;
+    transform: scaleX(1.5);
+}
+
+.scrollbar-arrows {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.scrollbar-arrow {
+    width: 20px;
+    height: 20px;
+    background: rgba(59, 130, 246, 0.8);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 10px;
+}
+
+.scrollbar-arrow:hover {
+    background: #2563eb;
+    transform: scale(1.1);
+}
+
+.scrollbar-arrow:active {
+    transform: scale(0.95);
+}
+
+/* Responsive pour la barre de défilement */
+@media (max-width: 768px) {
+    .custom-scrollbar {
+        right: 4px;
+        width: 16px;
+        height: 150px;
+    }
+    
+    .scrollbar-track {
+        width: 3px;
+        height: 120px;
+    }
+    
+    .scrollbar-arrow {
+        width: 16px;
+        height: 16px;
+        font-size: 8px;
+    }
+}
+
+@media (max-width: 480px) {
+    .custom-scrollbar {
+        right: 2px;
+        width: 14px;
+        height: 120px;
+    }
+    
+    .scrollbar-track {
+        width: 2px;
+        height: 100px;
+    }
+    
+    .scrollbar-arrow {
+        width: 14px;
+        height: 14px;
+        font-size: 7px;
     }
 }
 
@@ -1140,13 +1265,12 @@
     position: relative;
     background: #f8fafc;
     border-radius: 12px;
-    overflow: visible;
+    overflow: visible; /* Pas de scrollbar sur le conteneur */
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    /* Améliorations pour le défilement mobile */
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior: contain;
-    /* Prévenir les conflits de défilement */
-    contain: layout style paint;
+    /* Défilement mobile simplifié */
+    touch-action: pan-y pinch-zoom; /* Défilement vertical et zoom seulement */
+    /* Permettre le défilement naturel */
+    touch-action: pan-x pan-y pinch-zoom;
 }
 
 .pdf-viewer-mobile {
@@ -1160,10 +1284,11 @@
     border-radius: 8px;
     margin: 1rem;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    /* Améliorations pour le défilement mobile */
-    overflow: visible;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior: contain;
+    /* Défilement mobile simplifié */
+    overflow: visible; /* Pas de scrollbar sur le viewer */
+    touch-action: pan-y pinch-zoom; /* Défilement vertical et zoom seulement */
+    /* Permettre le défilement naturel */
+    touch-action: pan-x pan-y pinch-zoom;
     /* Optimiser les performances de rendu */
     will-change: transform;
     transform: translateZ(0);
@@ -2011,7 +2136,7 @@
     
     /* Optimisations pour la signature sur mobile */
     .pdf-viewer canvas {
-        /* Mode signature : permettre le zoom et le défilement */
+        /* Permettre le zoom et le défilement en permanence */
         touch-action: pan-x pan-y pinch-zoom !important;
         user-select: none !important;
         -webkit-user-select: none !important;
@@ -2019,6 +2144,8 @@
         -ms-user-select: none !important;
         -webkit-touch-callout: none !important;
         -webkit-tap-highlight-color: transparent !important;
+        /* Permettre le défilement naturel */
+        pointer-events: auto !important;
     }
     
     /* Mode lecture : permettre le défilement et le zoom */
@@ -2049,26 +2176,26 @@
     }
 }
 
-/* Gestion des modes de défilement mobile */
-.pdf-container-mobile.scroll-mode {
-    overflow: auto;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior: auto;
+    /* SOLUTION ULTRA-RADICALE : Défilement forcé partout */
+/* SOLUTION SIMPLIFIÉE : Défilement propre sans conflits */
+body {
+    overflow-x: hidden; /* Pas de défilement horizontal */
+    overflow-y: auto; /* Défilement vertical naturel */
+    touch-action: pan-y pinch-zoom; /* Défilement vertical et zoom seulement */
 }
 
-.pdf-container-mobile.signature-mode {
-    overflow: auto;
-    touch-action: pan-x pan-y pinch-zoom;
-    -webkit-overflow-scrolling: touch;
+.pdf-container-mobile {
+    overflow: visible; /* Pas de scrollbar sur le conteneur */
+    touch-action: pan-y pinch-zoom; /* Défilement vertical et zoom */
 }
 
-.pdf-container-mobile.signature-mode .pdf-viewer-mobile canvas {
-    touch-action: pan-x pan-y pinch-zoom !important;
-    pointer-events: auto;
+.pdf-container-mobile .pdf-viewer-mobile {
+    overflow: visible; /* Pas de scrollbar sur le viewer */
+    touch-action: pan-y pinch-zoom; /* Défilement vertical et zoom */
 }
 
-.pdf-container-mobile.scroll-mode .pdf-viewer-mobile canvas {
-    touch-action: pan-x pan-y pinch-zoom !important;
+.pdf-container-mobile .pdf-viewer-mobile canvas {
+    touch-action: pan-y pinch-zoom; /* Défilement vertical et zoom seulement */
     pointer-events: auto;
 }
 
@@ -2090,7 +2217,8 @@
     /* Optimiser le défilement vertical */
     body {
         -webkit-overflow-scrolling: touch;
-        overscroll-behavior: contain;
+        overscroll-behavior: auto; /* Changé de contain à auto */
+        touch-action: pan-x pan-y pinch-zoom; /* Permettre le défilement naturel */
     }
     
     /* Prévenir le zoom automatique sur les champs de saisie */
@@ -2430,196 +2558,314 @@ document.addEventListener('DOMContentLoaded', function() {
     updatePageIndicator();
 });
 
-// Gestion des modes de défilement mobile
+// SOLUTION DÉFINITIVE : Gestion du défilement mobile
 document.addEventListener('DOMContentLoaded', function() {
     const pdfContainer = document.querySelector('.pdf-container-mobile');
     const pdfViewer = document.querySelector('.pdf-viewer-mobile');
     
     if (pdfContainer && pdfViewer) {
-        // Mode par défaut : défilement
-        pdfContainer.classList.add('scroll-mode');
+        console.log('📱 SOLUTION DÉFINITIVE - Initialisation du défilement mobile');
         
-        // Détecter les interactions de signature
-        const signatureBtn = document.getElementById('addSignatureBtn');
-        const parapheBtn = document.getElementById('addParapheBtn');
-        const cachetBtn = document.getElementById('addCachetBtn');
-        
-        function enableSignatureMode() {
-            pdfContainer.classList.remove('scroll-mode');
-            pdfContainer.classList.add('signature-mode');
-            // Ne PAS désactiver le défilement du body pour permettre le zoom
-            // document.body.style.overflow = 'hidden'; // Commenté pour permettre le zoom
-        }
-        
-        function enableScrollMode() {
-            console.log('🔄 Réactivation du mode défilement...');
-            pdfContainer.classList.remove('signature-mode');
-            pdfContainer.classList.add('scroll-mode');
-            // Réactiver le défilement du body
-            document.body.style.overflow = '';
-            // Forcer la réactivation des propriétés CSS pour permettre zoom et défilement
-            pdfContainer.style.touchAction = 'pan-x pan-y pinch-zoom';
+        // SOLUTION RADICALE : Forcer le défilement en permanence
+        const forceScrollMode = () => {
+            // Supprimer toutes les classes de mode
+            pdfContainer.classList.remove('signature-mode', 'scroll-mode');
+            
+            // Forcer les propriétés CSS pour le défilement
             pdfContainer.style.overflow = 'auto';
-            // Réactiver le défilement et zoom sur le canvas
+            pdfContainer.style.touchAction = 'pan-x pan-y pinch-zoom';
+            pdfContainer.style.webkitOverflowScrolling = 'touch';
+            pdfContainer.style.overscrollBehavior = 'auto';
+            
+            // Forcer les propriétés sur le canvas
             const canvas = pdfContainer.querySelector('canvas');
             if (canvas) {
                 canvas.style.touchAction = 'pan-x pan-y pinch-zoom';
                 canvas.style.pointerEvents = 'auto';
-            }
-            console.log('✅ Mode défilement et zoom réactivé');
-        }
-        
-        // Événements pour activer le mode signature
-        if (signatureBtn) {
-            signatureBtn.addEventListener('click', enableSignatureMode);
-        }
-        if (parapheBtn) {
-            parapheBtn.addEventListener('click', enableSignatureMode);
-        }
-        if (cachetBtn) {
-            cachetBtn.addEventListener('click', enableSignatureMode);
-        }
-        
-        // Événements pour revenir au mode défilement
-        const clearBtn = document.getElementById('clearAllBtn');
-        if (clearBtn) {
-            clearBtn.addEventListener('click', enableScrollMode);
-        }
-        
-        // Détecter la fin de la signature via les événements du module PDF
-        document.addEventListener('signatureCompleted', function(e) {
-            console.log('🎉 Événement signatureCompleted reçu:', e.detail);
-            enableScrollMode();
-        });
-        document.addEventListener('parapheCompleted', function(e) {
-            console.log('🎉 Événement parapheCompleted reçu:', e.detail);
-            enableScrollMode();
-        });
-        document.addEventListener('cachetCompleted', function(e) {
-            console.log('🎉 Événement cachetCompleted reçu:', e.detail);
-            enableScrollMode();
-        });
-        
-        // Détecter la désactivation du mode signature
-        document.addEventListener('signatureModeDisabled', function(e) {
-            console.log('🔄 Mode signature désactivé par le module PDF');
-            enableScrollMode();
-        });
-        
-        // Approche simplifiée : ne jamais bloquer complètement le défilement
-        // Le mode signature ne bloque plus le défilement, il ajoute juste des fonctionnalités
-        const originalEnableSignatureMode = enableSignatureMode;
-        enableSignatureMode = function() {
-            originalEnableSignatureMode();
-            console.log('📱 Mode signature activé - défilement et zoom toujours disponibles');
-        };
-        
-        // Fallback supplémentaire : détecter la création d'éléments
-        const observer = new MutationObserver(function(mutations) {
-            mutations.forEach(function(mutation) {
-                if (mutation.type === 'childList') {
-                    // Vérifier si un élément de signature/paraphe/cachet a été ajouté
-                    const addedNodes = Array.from(mutation.addedNodes);
-                    const hasSignatureElement = addedNodes.some(node => 
-                        node.nodeType === 1 && (
-                            node.classList.contains('signature-element') ||
-                            node.classList.contains('paraphe-element') ||
-                            node.classList.contains('cachet-element') ||
-                            node.querySelector('.signature-element, .paraphe-element, .cachet-element')
-                        )
-                    );
-                    
-                    if (hasSignatureElement && pdfContainer.classList.contains('signature-mode')) {
-                        console.log('🔍 Élément de signature détecté, réactivation du mode défilement');
-                        setTimeout(() => enableScrollMode(), 1000);
-                    }
-                }
-            });
-        });
-        
-        // Observer les changements dans le conteneur PDF
-        if (pdfContainer) {
-            observer.observe(pdfContainer, { childList: true, subtree: true });
-        }
-        
-        // Bouton de secours pour forcer la réactivation (visible uniquement en mode signature)
-        const createEmergencyButton = () => {
-            const emergencyBtn = document.createElement('button');
-            emergencyBtn.id = 'emergency-scroll-btn';
-            emergencyBtn.innerHTML = '🔄 Réactiver le défilement';
-            emergencyBtn.style.cssText = `
-                position: fixed;
-                top: 10px;
-                right: 10px;
-                z-index: 9999;
-                background: #dc3545;
-                color: white;
-                border: none;
-                padding: 10px 15px;
-                border-radius: 5px;
-                font-size: 12px;
-                cursor: pointer;
-                box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-                display: none;
-            `;
-            emergencyBtn.addEventListener('click', () => {
-                console.log('🚨 Bouton d\'urgence activé');
-                enableScrollMode();
-                emergencyBtn.style.display = 'none';
-            });
-            document.body.appendChild(emergencyBtn);
-            return emergencyBtn;
-        };
-        
-        const emergencyBtn = createEmergencyButton();
-        
-        // Afficher le bouton d'urgence en mode signature
-        const originalEnableSignatureMode2 = enableSignatureMode;
-        enableSignatureMode = function() {
-            originalEnableSignatureMode2();
-            emergencyBtn.style.display = 'block';
-        };
-        
-        const originalEnableScrollMode = enableScrollMode;
-        enableScrollMode = function() {
-            originalEnableScrollMode();
-            emergencyBtn.style.display = 'none';
-        };
-        
-        // Gestion du redimensionnement
-        window.addEventListener('resize', function() {
-            if (window.innerWidth >= 768) {
-                // Sur desktop, toujours en mode défilement
-                enableScrollMode();
-            }
-        });
-        
-        // Gestion des gestes tactiles pour améliorer l'expérience
-        let touchStartY = 0;
-        let touchStartX = 0;
-        
-        pdfViewer.addEventListener('touchstart', function(e) {
-            if (pdfContainer.classList.contains('signature-mode')) {
-                return; // En mode signature, laisser le module gérer
+                canvas.style.overflow = 'auto';
+                canvas.style.webkitOverflowScrolling = 'touch';
+                canvas.style.overscrollBehavior = 'auto';
             }
             
-            touchStartY = e.touches[0].clientY;
-            touchStartX = e.touches[0].clientX;
+            // S'assurer que le body permet le défilement
+            document.body.style.overflow = '';
+            document.body.style.touchAction = 'pan-x pan-y pinch-zoom';
+            
+            console.log('✅ Défilement forcé - mode unifié activé');
+        };
+
+        // SOLUTION RADICALE : Intercepter et bloquer l'activation du mode signature
+        const originalAddEventListener = document.addEventListener;
+        document.addEventListener = function(type, listener, options) {
+            if (type === 'signatureModeEnabled' || type === 'signatureModeActivated') {
+                console.log('🚫 Blocage de l\'activation du mode signature');
+                return;
+            }
+            return originalAddEventListener.call(this, type, listener, options);
+        };
+
+        // SOLUTION RADICALE : Forcer la désactivation du mode signature toutes les 100ms
+        setInterval(() => {
+            if (pdfContainer.classList.contains('signature-mode')) {
+                console.log('🚨 Mode signature détecté - désactivation forcée');
+                forceScrollMode();
+            }
+        }, 100);
+
+        // SOLUTION SIMPLIFIÉE : Défilement propre sans conflits
+        console.log('📱 Solution simplifiée - défilement propre activé');
+        
+        // ===== BARRE DE DÉFILEMENT PERSONNALISÉE =====
+        initCustomScrollbar();
+
+        // SOLUTION PRATIQUE : Désactiver le mode signature en cliquant en dehors
+        document.addEventListener('click', (e) => {
+            // Vérifier si on est en mode signature
+            if (pdfContainer.classList.contains('signature-mode')) {
+                // Vérifier si le clic est en dehors des éléments de signature
+                const isSignatureElement = e.target.closest('.signature-element, .paraphe-element, .cachet-element');
+                const isPdfContainer = e.target.closest('.pdf-container-mobile');
+                
+                // Si on clique en dehors des éléments de signature mais dans le conteneur PDF
+                if (!isSignatureElement && isPdfContainer) {
+                    console.log('👆 Clic en dehors des éléments - désactivation du mode signature');
+                    forceScrollMode();
+                }
+            }
+        });
+
+        // SOLUTION PRATIQUE : Désactiver le mode signature en touchant en dehors
+        document.addEventListener('touchstart', (e) => {
+            // Vérifier si on est en mode signature
+            if (pdfContainer.classList.contains('signature-mode')) {
+                // Vérifier si le touch est en dehors des éléments de signature
+                const isSignatureElement = e.target.closest('.signature-element, .paraphe-element, .cachet-element');
+                const isPdfContainer = e.target.closest('.pdf-container-mobile');
+                
+                // Si on touche en dehors des éléments de signature mais dans le conteneur PDF
+                if (!isSignatureElement && isPdfContainer) {
+                    console.log('👆 Touch en dehors des éléments - désactivation du mode signature');
+                    forceScrollMode();
+                }
+            }
         }, { passive: true });
         
-        pdfViewer.addEventListener('touchmove', function(e) {
-            // Permettre le défilement et le zoom en permanence
-            // Ne plus bloquer les gestes tactiles
+        // Appliquer immédiatement
+        forceScrollMode();
+        
+        // Observer pour maintenir le défilement
+        const scrollObserver = new MutationObserver(() => {
+            // Réappliquer les propriétés de défilement si nécessaire
+            if (pdfContainer.style.overflow !== 'auto') {
+                forceScrollMode();
+            }
+        });
+        
+        scrollObserver.observe(pdfContainer, { 
+            attributes: true, 
+            attributeFilter: ['style', 'class'] 
+        });
+        
+        // Écouter les événements de fin de signature (simplifié)
+        document.addEventListener('signatureModeDisabled', forceScrollMode);
+        
+        // Désactivation automatique après placement d'élément
+        const elementObserver = new MutationObserver((mutations) => {
+            const hasNewElement = mutations.some(mutation => 
+                Array.from(mutation.addedNodes).some(node => 
+                    node.nodeType === 1 && (
+                        node.classList?.contains('signature-element') ||
+                        node.classList?.contains('paraphe-element') ||
+                        node.classList?.contains('cachet-element')
+                    )
+                )
+            );
+            
+            if (hasNewElement) {
+                console.log('🔍 Élément placé détecté - réactivation du défilement');
+                setTimeout(forceScrollMode, 100);
+            }
+        });
+        
+        elementObserver.observe(pdfContainer, { childList: true, subtree: true });
+        
+        // Gestion des événements tactiles
+        document.addEventListener('touchstart', () => {
             if (pdfContainer.classList.contains('signature-mode')) {
-                // En mode signature, permettre quand même le défilement et le zoom
-                // Ne pas empêcher les gestes naturels
+                console.log('👆 Touch détecté - réactivation du défilement');
+                setTimeout(forceScrollMode, 50);
+            }
+        }, { passive: true });
+        
+        // Redimensionnement
+        window.addEventListener('resize', forceScrollMode);
+        
+        console.log('📱 Solution définitive appliquée - défilement garanti');
+    }
+    
+    // ===== FONCTION BARRE DE DÉFILEMENT PERSONNALISÉE POUR TOUTE LA PAGE =====
+    function initCustomScrollbar() {
+        const customScrollbar = document.getElementById('custom-scrollbar');
+        const scrollbarThumb = document.getElementById('scrollbar-thumb');
+        const scrollUpBtn = document.getElementById('scroll-up');
+        const scrollDownBtn = document.getElementById('scroll-down');
+        
+        if (!customScrollbar || !scrollbarThumb) {
+            console.log('⚠️ Éléments de barre de défilement non trouvés');
+            return;
+        }
+        
+        console.log('🎯 Initialisation de la barre de défilement personnalisée pour toute la page');
+        
+        let isDragging = false;
+        
+        // Fonction pour mettre à jour la barre de défilement
+        function updateScrollbar() {
+            if (!scrollbarThumb) return;
+            
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            const scrollHeight = document.documentElement.scrollHeight;
+            const clientHeight = window.innerHeight;
+            
+            if (scrollHeight <= clientHeight) {
+                customScrollbar.style.display = 'none';
                 return;
             }
             
-            // Permettre le défilement naturel
-            // e.preventDefault(); // Commenté pour permettre le défilement
-        }, { passive: true });
+            customScrollbar.style.display = 'flex';
+            
+            // Calculer la taille et position du thumb
+            const trackHeight = 60 * window.innerHeight / 100; // 60vh en pixels
+            const thumbHeight = Math.max(20, (clientHeight / scrollHeight) * trackHeight);
+            const thumbTop = (scrollTop / (scrollHeight - clientHeight)) * (trackHeight - thumbHeight);
+            
+            scrollbarThumb.style.height = thumbHeight + 'px';
+            scrollbarThumb.style.top = thumbTop + 'px';
+            
+            // Mettre à jour les boutons
+            if (scrollUpBtn) scrollUpBtn.style.opacity = scrollTop > 0 ? '1' : '0.5';
+            if (scrollDownBtn) scrollDownBtn.style.opacity = scrollTop < scrollHeight - clientHeight ? '1' : '0.5';
+        }
+        
+        // Fonction pour faire défiler
+        function scrollTo(position) {
+            const scrollHeight = document.documentElement.scrollHeight;
+            const clientHeight = window.innerHeight;
+            const maxScroll = scrollHeight - clientHeight;
+            const targetScroll = Math.max(0, Math.min(maxScroll, position));
+            
+            window.scrollTo({
+                top: targetScroll,
+                behavior: 'smooth'
+            });
+        }
+        
+        // Événements pour les boutons
+        if (scrollUpBtn) {
+            scrollUpBtn.addEventListener('click', () => {
+                const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
+                scrollTo(currentScroll - 100);
+            });
+        }
+        
+        if (scrollDownBtn) {
+            scrollDownBtn.addEventListener('click', () => {
+                const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
+                scrollTo(currentScroll + 100);
+            });
+        }
+        
+        // Événements pour le thumb
+        scrollbarThumb.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            isDragging = true;
+            scrollbarThumb.style.cursor = 'grabbing';
+        });
+        
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            
+            const trackRect = document.querySelector('.scrollbar-track').getBoundingClientRect();
+            const trackTop = trackRect.top;
+            const trackHeight = trackRect.height;
+            const thumbHeight = scrollbarThumb.offsetHeight;
+            
+            const mouseY = e.clientY - trackTop;
+            const thumbTop = Math.max(0, Math.min(trackHeight - thumbHeight, mouseY - thumbHeight / 2));
+            
+            const scrollHeight = document.documentElement.scrollHeight;
+            const clientHeight = window.innerHeight;
+            const maxScroll = scrollHeight - clientHeight;
+            const scrollTop = (thumbTop / (trackHeight - thumbHeight)) * maxScroll;
+            
+            window.scrollTo(0, scrollTop);
+        });
+        
+        document.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                scrollbarThumb.style.cursor = 'pointer';
+            }
+        });
+        
+        // Événements tactiles pour mobile
+        scrollbarThumb.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            isDragging = true;
+        });
+        
+        document.addEventListener('touchmove', (e) => {
+            if (!isDragging) return;
+            e.preventDefault();
+            
+            const trackRect = document.querySelector('.scrollbar-track').getBoundingClientRect();
+            const trackTop = trackRect.top;
+            const trackHeight = trackRect.height;
+            const thumbHeight = scrollbarThumb.offsetHeight;
+            
+            const touchY = e.touches[0].clientY - trackTop;
+            const thumbTop = Math.max(0, Math.min(trackHeight - thumbHeight, touchY - thumbHeight / 2));
+            
+            const scrollHeight = document.documentElement.scrollHeight;
+            const clientHeight = window.innerHeight;
+            const maxScroll = scrollHeight - clientHeight;
+            const scrollTop = (thumbTop / (trackHeight - thumbHeight)) * maxScroll;
+            
+            window.scrollTo(0, scrollTop);
+        });
+        
+        document.addEventListener('touchend', () => {
+            if (isDragging) {
+                isDragging = false;
+            }
+        });
+        
+        // Événement de défilement de la page
+        window.addEventListener('scroll', updateScrollbar);
+        
+        // Mise à jour initiale
+        setTimeout(updateScrollbar, 100);
+        
+        // Mise à jour périodique
+        setInterval(updateScrollbar, 500);
+        
+        console.log('✅ Barre de défilement personnalisée initialisée');
     }
 });
 </script>
+
+<!-- Barre de défilement personnalisée pour toute la page -->
+<div id="custom-scrollbar" class="custom-scrollbar">
+    <div class="scrollbar-track">
+        <div class="scrollbar-thumb" id="scrollbar-thumb"></div>
+    </div>
+    <div class="scrollbar-arrows">
+        <button class="scrollbar-arrow scrollbar-arrow-up" id="scroll-up">
+            <i class="fas fa-chevron-up"></i>
+        </button>
+        <button class="scrollbar-arrow scrollbar-arrow-down" id="scroll-down">
+            <i class="fas fa-chevron-down"></i>
+        </button>
+    </div>
+</div>
 @endsection

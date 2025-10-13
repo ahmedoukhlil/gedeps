@@ -1605,6 +1605,13 @@ class PDFOverlayUnifiedModule {
     }
     
     addSignature() {
+        // PROTECTION : Éviter les appels multiples
+        if (this.isAddingSignature) {
+            console.log('⚠️ addSignature() déjà en cours, ignoré');
+            return;
+        }
+        this.isAddingSignature = true;
+        
         console.log('🎯 Méthode addSignature() appelée');
         console.log('🔍 Configuration signature:', {
             signatureUrl: this.config.signatureUrl,
@@ -1614,12 +1621,14 @@ class PDFOverlayUnifiedModule {
         if (!this.config.signatureUrl) {
             console.error('❌ Aucune signature configurée');
             this.showStatus('Aucune signature configurée pour cet utilisateur', 'error');
+            this.isAddingSignature = false;
             return;
         }
 
         // Vérifier si le mode de positionnement est déjà actif
         if (this.isPositioningActive) {
             console.log('⚠️ Mode de positionnement déjà actif, ignoré');
+            this.isAddingSignature = false;
             return;
         }
 
@@ -1634,6 +1643,13 @@ class PDFOverlayUnifiedModule {
 
 
     async addParaphe() {
+        // PROTECTION : Éviter les appels multiples
+        if (this.isAddingParaphe) {
+            console.log('⚠️ addParaphe() déjà en cours, ignoré');
+            return;
+        }
+        this.isAddingParaphe = true;
+        
         // Récupérer l'URL du paraphe si elle n'est pas disponible
         let parapheUrl = this.config.parapheUrl;
         
@@ -1692,6 +1708,13 @@ class PDFOverlayUnifiedModule {
      * Ajouter un cachet au document
      */
     addCachet() {
+        // PROTECTION : Éviter les appels multiples
+        if (this.isAddingCachet) {
+            console.log('⚠️ addCachet() déjà en cours, ignoré');
+            return;
+        }
+        this.isAddingCachet = true;
+        
         console.log('🎯 Méthode addCachet() appelée');
         console.log('🔍 Configuration cachet:', {
             cachetUrl: this.config.cachetUrl,
@@ -1705,12 +1728,14 @@ class PDFOverlayUnifiedModule {
         if (!cachetUrl) {
             console.error('❌ Aucun cachet configuré');
             this.showStatus('Aucun cachet configuré pour cet utilisateur', 'error');
+            this.isAddingCachet = false;
             return;
         }
 
         // Vérifier si le mode de positionnement est déjà actif
         if (this.isPositioningActive) {
             console.log('⚠️ Mode de positionnement déjà actif, ignoré');
+            this.isAddingCachet = false;
             return;
         }
 
@@ -2299,8 +2324,9 @@ class PDFOverlayUnifiedModule {
             return;
         }
         
-        // Marquer comme actif
-        this.isPositioningActive = true;
+        // SOLUTION RADICALE : Ne jamais activer le mode signature
+        this.isPositioningActive = false;
+        console.log('🚫 Mode signature bloqué - défilement toujours autorisé');
         
         const pdfContainer = document.getElementById(this.config.pdfContainerId);
         if (!pdfContainer) {
@@ -2415,6 +2441,22 @@ class PDFOverlayUnifiedModule {
             // Réinitialiser le flag de positionnement
             this.isPositioningActive = false;
             
+            // Réinitialiser le flag de protection contre les appels multiples
+            setTimeout(() => {
+                isProcessing = false;
+            }, 1000);
+            
+            // Réinitialiser les flags d'ajout
+            setTimeout(() => {
+                if (type === 'signature') {
+                    this.isAddingSignature = false;
+                } else if (type === 'paraphe') {
+                    this.isAddingParaphe = false;
+                } else if (type === 'cachet') {
+                    this.isAddingCachet = false;
+                }
+            }, 1000);
+            
             // Créer l'élément à la position cliquée/touchée
             if (type === 'signature') {
                 console.log('✍️ Création de la signature à la position:', { x, y, pdfX, pdfY });
@@ -2473,19 +2515,53 @@ class PDFOverlayUnifiedModule {
             }
         };
 
+        // SOLUTION PRATIQUE : Désactiver le mode signature en cliquant en dehors
+        const handleOutsideClick = (e) => {
+            // Vérifier si le clic est en dehors de l'overlay
+            if (!overlay.contains(e.target)) {
+                console.log('👆 Clic en dehors de l\'overlay - désactivation du mode signature');
+                overlay.remove();
+                this.isPositioningActive = false;
+                this.disableSignatureMode();
+            }
+        };
+
         // Capturer le clic
+        // PROTECTION : Éviter les appels multiples
+        let isProcessing = false;
+        
         overlay.addEventListener('click', (e) => {
+            if (isProcessing) {
+                console.log('⚠️ Événement click ignoré - traitement en cours');
+                return;
+            }
             e.preventDefault();
             e.stopPropagation();
+            isProcessing = true;
             positionElement(e);
         });
         
         // Capturer le touchstart pour une meilleure précision
         overlay.addEventListener('touchstart', (e) => {
+            if (isProcessing) {
+                console.log('⚠️ Événement touchstart ignoré - traitement en cours');
+                return;
+            }
             e.preventDefault();
             e.stopPropagation();
+            isProcessing = true;
             positionElement(e);
         }, { passive: false });
+        
+        // Ajouter l'événement de clic en dehors
+        document.addEventListener('click', handleOutsideClick);
+        
+        // Nettoyer l'événement quand l'overlay est supprimé
+        const originalRemove = overlay.remove;
+        overlay.remove = function() {
+            document.removeEventListener('click', handleOutsideClick);
+            return originalRemove.call(this);
+        };
         
         // Capturer le touchend comme fallback
         overlay.addEventListener('touchend', (e) => {
@@ -2499,6 +2575,15 @@ class PDFOverlayUnifiedModule {
      * Créer une signature à la position spécifiée
      */
     createSignatureAtPosition(x, y) {
+        // PROTECTION : Éviter les appels multiples
+        if (this.isCreatingSignature) {
+            console.log('⚠️ Signature déjà en cours de création, ignoré');
+            return;
+        }
+        this.isCreatingSignature = true;
+        
+        console.log('✍️ Création de la signature à la position:', { x, y });
+        
         // Calculer les dimensions proportionnelles pour l'affichage (réduites)
         const container = document.getElementById(this.config.pdfContainerId);
         const containerWidth = container ? container.getBoundingClientRect().width : 600;
@@ -2525,14 +2610,29 @@ class PDFOverlayUnifiedModule {
         // Activer le glisser-déposer pour cette signature
         this.enableDragAndDrop(signature.id, 'signature');
         
-        // Désactiver le mode signature pour permettre le défilement
-        this.disableSignatureMode();
+        // NE PAS désactiver le mode signature immédiatement
+        // La signature reste glissable jusqu'à clic hors de la signature
+        console.log('🎯 Signature placée - Mode glissement activé');
+        
+        // Réinitialiser le flag de protection
+        setTimeout(() => {
+            this.isCreatingSignature = false;
+        }, 1000);
     }
 
     /**
      * Créer un paraphe à la position spécifiée
      */
     async createParapheAtPosition(x, y) {
+        // PROTECTION : Éviter les appels multiples
+        if (this.isCreatingParaphe) {
+            console.log('⚠️ Paraphe déjà en cours de création, ignoré');
+            return;
+        }
+        this.isCreatingParaphe = true;
+        
+        console.log('✍️ Création du paraphe à la position:', { x, y });
+        
         // Récupérer l'URL du paraphe si elle n'est pas disponible
         let parapheUrl = this.config.parapheUrl;
         
@@ -2579,14 +2679,27 @@ class PDFOverlayUnifiedModule {
         // Activer le glisser-déposer pour ce paraphe
         this.enableDragAndDrop(paraphe.id, 'paraphe');
         
-        // Désactiver le mode signature pour permettre le défilement
-        this.disableSignatureMode();
+        // NE PAS désactiver le mode signature immédiatement
+        // Le paraphe reste glissable jusqu'à clic hors du paraphe
+        console.log('🎯 Paraphe placé - Mode glissement activé');
+        
+        // Réinitialiser le flag de protection
+        setTimeout(() => {
+            this.isCreatingParaphe = false;
+        }, 1000);
     }
 
     /**
      * Créer un cachet à la position spécifiée
      */
     async createCachetAtPosition(x, y) {
+        // PROTECTION : Éviter les appels multiples
+        if (this.isCreatingCachet) {
+            console.log('⚠️ Cachet déjà en cours de création, ignoré');
+            return;
+        }
+        this.isCreatingCachet = true;
+        
         console.log('🏷️ createCachetAtPosition appelée:', { x, y });
         
         // Utiliser userCachetUrl (chargé au démarrage) ou config.cachetUrl
@@ -2625,8 +2738,14 @@ class PDFOverlayUnifiedModule {
         // Activer le glisser-déposer pour ce cachet
         this.enableDragAndDrop(cachet.id, 'cachet');
         
-        // Désactiver le mode signature pour permettre le défilement
-        this.disableSignatureMode();
+        // NE PAS désactiver le mode signature immédiatement
+        // Le cachet reste glissable jusqu'à clic hors du cachet
+        console.log('🎯 Cachet placé - Mode glissement activé');
+        
+        // Réinitialiser le flag de protection
+        setTimeout(() => {
+            this.isCreatingCachet = false;
+        }, 1000);
     }
 
     /**
@@ -2637,6 +2756,30 @@ class PDFOverlayUnifiedModule {
         
         // Désactiver le flag de positionnement
         this.isPositioningActive = false;
+        
+        // SOLUTION RADICALE : Forcer la désactivation immédiate
+        const pdfContainer = document.getElementById(this.config.pdfContainerId);
+        if (pdfContainer) {
+            pdfContainer.classList.remove('signature-mode', 'scroll-mode');
+            pdfContainer.style.overflow = 'auto';
+            pdfContainer.style.touchAction = 'pan-x pan-y pinch-zoom';
+            pdfContainer.style.webkitOverflowScrolling = 'touch';
+            pdfContainer.style.overscrollBehavior = 'auto';
+            
+            // Forcer les propriétés sur le canvas
+            const canvas = pdfContainer.querySelector('canvas');
+            if (canvas) {
+                canvas.style.touchAction = 'pan-x pan-y pinch-zoom';
+                canvas.style.pointerEvents = 'auto';
+                canvas.style.overflow = 'auto';
+                canvas.style.webkitOverflowScrolling = 'touch';
+                canvas.style.overscrollBehavior = 'auto';
+            }
+            
+            // S'assurer que le body permet le défilement
+            document.body.style.overflow = '';
+            document.body.style.touchAction = 'pan-x pan-y pinch-zoom';
+        }
         
         // Déclencher l'événement de désactivation du mode signature
         document.dispatchEvent(new CustomEvent('signatureModeDisabled', {
@@ -2830,6 +2973,27 @@ class PDFOverlayUnifiedModule {
         element.addEventListener('selectstart', (e) => {
             e.preventDefault();
         });
+        
+        // Gestionnaire pour désactiver le mode signature quand on clique hors de l'élément
+        const handleOutsideClick = (e) => {
+            // Vérifier si le clic est en dehors de l'élément
+            if (!element.contains(e.target)) {
+                console.log('🎯 Clic hors de l\'élément - Désactivation du mode signature');
+                
+                // Désactiver le mode signature pour permettre le défilement
+                this.disableSignatureMode();
+                
+                // Supprimer ce gestionnaire d'événements
+                document.removeEventListener('click', handleOutsideClick);
+                document.removeEventListener('touchstart', handleOutsideClick);
+            }
+        };
+        
+        // Ajouter les gestionnaires d'événements pour détecter les clics hors de l'élément
+        setTimeout(() => {
+            document.addEventListener('click', handleOutsideClick);
+            document.addEventListener('touchstart', handleOutsideClick);
+        }, 100);
     }
 
 
