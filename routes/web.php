@@ -24,10 +24,34 @@ use Illuminate\Support\Facades\Storage;
 
 // Route pour servir les fichiers PDF
 Route::get('/storage/documents/{filename}', function ($filename) {
-    $filePath = storage_path('app/public/documents/' . $filename);
+    // Essayer plusieurs emplacements possibles
+    $possiblePaths = [
+        storage_path('app/public/documents/' . $filename),
+        storage_path('app/public/' . $filename),
+        storage_path('app/documents/' . $filename),
+        public_path('storage/documents/' . $filename),
+        public_path('storage/' . $filename)
+    ];
     
-    if (!file_exists($filePath)) {
-        abort(404);
+    $filePath = null;
+    foreach ($possiblePaths as $path) {
+        if (file_exists($path)) {
+            $filePath = $path;
+            break;
+        }
+    }
+    
+    if (!$filePath) {
+        \Log::error('PDF non trouvé', [
+            'filename' => $filename,
+            'searched_paths' => $possiblePaths
+        ]);
+        
+        // Retourner une page d'erreur plus informative
+        return response()->view('errors.missing-pdf', [
+            'filename' => $filename,
+            'searched_paths' => $possiblePaths
+        ], 404);
     }
     
     return response()->file($filePath);

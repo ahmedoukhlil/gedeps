@@ -2451,10 +2451,21 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         function enableScrollMode() {
+            console.log('🔄 Réactivation du mode défilement...');
             pdfContainer.classList.remove('signature-mode');
             pdfContainer.classList.add('scroll-mode');
             // Réactiver le défilement du body
             document.body.style.overflow = '';
+            // Forcer la réactivation des propriétés CSS
+            pdfContainer.style.touchAction = 'pan-x pan-y';
+            pdfContainer.style.overflow = 'visible';
+            // Réactiver le défilement sur le canvas
+            const canvas = pdfContainer.querySelector('canvas');
+            if (canvas) {
+                canvas.style.touchAction = 'manipulation';
+                canvas.style.pointerEvents = 'auto';
+            }
+            console.log('✅ Mode défilement réactivé');
         }
         
         // Événements pour activer le mode signature
@@ -2475,9 +2486,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Détecter la fin de la signature via les événements du module PDF
-        document.addEventListener('signatureCompleted', enableScrollMode);
-        document.addEventListener('parapheCompleted', enableScrollMode);
-        document.addEventListener('cachetCompleted', enableScrollMode);
+        document.addEventListener('signatureCompleted', function(e) {
+            console.log('🎉 Événement signatureCompleted reçu:', e.detail);
+            enableScrollMode();
+        });
+        document.addEventListener('parapheCompleted', function(e) {
+            console.log('🎉 Événement parapheCompleted reçu:', e.detail);
+            enableScrollMode();
+        });
+        document.addEventListener('cachetCompleted', function(e) {
+            console.log('🎉 Événement cachetCompleted reçu:', e.detail);
+            enableScrollMode();
+        });
         
         // Fallback : réactiver le mode défilement après un délai
         let signatureModeTimeout = null;
@@ -2488,11 +2508,83 @@ document.addEventListener('DOMContentLoaded', function() {
             if (signatureModeTimeout) {
                 clearTimeout(signatureModeTimeout);
             }
-            // Réactiver automatiquement le mode défilement après 10 secondes
+            // Réactiver automatiquement le mode défilement après 5 secondes (plus rapide)
             signatureModeTimeout = setTimeout(() => {
                 console.log('⏰ Timeout de sécurité : réactivation du mode défilement');
                 enableScrollMode();
-            }, 10000);
+            }, 5000);
+        };
+        
+        // Fallback supplémentaire : détecter la création d'éléments
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.type === 'childList') {
+                    // Vérifier si un élément de signature/paraphe/cachet a été ajouté
+                    const addedNodes = Array.from(mutation.addedNodes);
+                    const hasSignatureElement = addedNodes.some(node => 
+                        node.nodeType === 1 && (
+                            node.classList.contains('signature-element') ||
+                            node.classList.contains('paraphe-element') ||
+                            node.classList.contains('cachet-element') ||
+                            node.querySelector('.signature-element, .paraphe-element, .cachet-element')
+                        )
+                    );
+                    
+                    if (hasSignatureElement && pdfContainer.classList.contains('signature-mode')) {
+                        console.log('🔍 Élément de signature détecté, réactivation du mode défilement');
+                        setTimeout(() => enableScrollMode(), 1000);
+                    }
+                }
+            });
+        });
+        
+        // Observer les changements dans le conteneur PDF
+        if (pdfContainer) {
+            observer.observe(pdfContainer, { childList: true, subtree: true });
+        }
+        
+        // Bouton de secours pour forcer la réactivation (visible uniquement en mode signature)
+        const createEmergencyButton = () => {
+            const emergencyBtn = document.createElement('button');
+            emergencyBtn.id = 'emergency-scroll-btn';
+            emergencyBtn.innerHTML = '🔄 Réactiver le défilement';
+            emergencyBtn.style.cssText = `
+                position: fixed;
+                top: 10px;
+                right: 10px;
+                z-index: 9999;
+                background: #dc3545;
+                color: white;
+                border: none;
+                padding: 10px 15px;
+                border-radius: 5px;
+                font-size: 12px;
+                cursor: pointer;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+                display: none;
+            `;
+            emergencyBtn.addEventListener('click', () => {
+                console.log('🚨 Bouton d\'urgence activé');
+                enableScrollMode();
+                emergencyBtn.style.display = 'none';
+            });
+            document.body.appendChild(emergencyBtn);
+            return emergencyBtn;
+        };
+        
+        const emergencyBtn = createEmergencyButton();
+        
+        // Afficher le bouton d'urgence en mode signature
+        const originalEnableSignatureMode2 = enableSignatureMode;
+        enableSignatureMode = function() {
+            originalEnableSignatureMode2();
+            emergencyBtn.style.display = 'block';
+        };
+        
+        const originalEnableScrollMode = enableScrollMode;
+        enableScrollMode = function() {
+            originalEnableScrollMode();
+            emergencyBtn.style.display = 'none';
         };
         
         // Gestion du redimensionnement
