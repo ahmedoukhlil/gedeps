@@ -2425,6 +2425,15 @@ class PDFOverlayUnifiedModule {
                     this.signatures[this.signatures.length - 1].pdfX = pdfX;
                     this.signatures[this.signatures.length - 1].pdfY = pdfY;
                 }
+                
+                // Déclencher l'événement de fin de signature
+                setTimeout(() => {
+                    document.dispatchEvent(new CustomEvent('signatureCompleted', {
+                        detail: { type: 'signature', x: x, y: y, pdfX: pdfX, pdfY: pdfY }
+                    }));
+                    console.log('🎉 Événement signatureCompleted déclenché');
+                }, 100);
+                
             } else if (type === 'paraphe') {
                 console.log('✍️ Création du paraphe à la position:', { x, y, pdfX, pdfY });
                 // Créer le paraphe avec les coordonnées HTML pour l'affichage
@@ -2434,6 +2443,14 @@ class PDFOverlayUnifiedModule {
                         this.paraphes[this.paraphes.length - 1].pdfX = pdfX;
                         this.paraphes[this.paraphes.length - 1].pdfY = pdfY;
                     }
+                    
+                    // Déclencher l'événement de fin de paraphe
+                    setTimeout(() => {
+                        document.dispatchEvent(new CustomEvent('parapheCompleted', {
+                            detail: { type: 'paraphe', x: x, y: y, pdfX: pdfX, pdfY: pdfY }
+                        }));
+                        console.log('🎉 Événement parapheCompleted déclenché');
+                    }, 100);
                 });
             } else if (type === 'cachet') {
                 console.log('🏷️ Création du cachet à la position:', { x, y, pdfX, pdfY });
@@ -2444,6 +2461,14 @@ class PDFOverlayUnifiedModule {
                         this.cachets[this.cachets.length - 1].pdfX = pdfX;
                         this.cachets[this.cachets.length - 1].pdfY = pdfY;
                     }
+                    
+                    // Déclencher l'événement de fin de cachet
+                    setTimeout(() => {
+                        document.dispatchEvent(new CustomEvent('cachetCompleted', {
+                            detail: { type: 'cachet', x: x, y: y, pdfX: pdfX, pdfY: pdfY }
+                        }));
+                        console.log('🎉 Événement cachetCompleted déclenché');
+                    }, 100);
                 });
             }
         };

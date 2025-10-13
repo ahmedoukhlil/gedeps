@@ -2479,6 +2479,22 @@ document.addEventListener('DOMContentLoaded', function() {
         document.addEventListener('parapheCompleted', enableScrollMode);
         document.addEventListener('cachetCompleted', enableScrollMode);
         
+        // Fallback : réactiver le mode défilement après un délai
+        let signatureModeTimeout = null;
+        const originalEnableSignatureMode = enableSignatureMode;
+        enableSignatureMode = function() {
+            originalEnableSignatureMode();
+            // Annuler le timeout précédent s'il existe
+            if (signatureModeTimeout) {
+                clearTimeout(signatureModeTimeout);
+            }
+            // Réactiver automatiquement le mode défilement après 10 secondes
+            signatureModeTimeout = setTimeout(() => {
+                console.log('⏰ Timeout de sécurité : réactivation du mode défilement');
+                enableScrollMode();
+            }, 10000);
+        };
+        
         // Gestion du redimensionnement
         window.addEventListener('resize', function() {
             if (window.innerWidth >= 768) {
@@ -2502,7 +2518,19 @@ document.addEventListener('DOMContentLoaded', function() {
         
         pdfViewer.addEventListener('touchmove', function(e) {
             if (pdfContainer.classList.contains('signature-mode')) {
-                return; // En mode signature, laisser le module gérer
+                // En mode signature, vérifier si l'utilisateur essaie de faire défiler
+                // Si oui, réactiver le mode défilement
+                const touch = e.touches[0];
+                const startY = touchStartY;
+                const currentY = touch.clientY;
+                const deltaY = Math.abs(currentY - startY);
+                
+                // Si l'utilisateur fait un geste de défilement significatif
+                if (deltaY > 20) {
+                    console.log('📱 Geste de défilement détecté en mode signature, réactivation du mode défilement');
+                    enableScrollMode();
+                }
+                return;
             }
             
             // Permettre le défilement naturel
