@@ -4,6 +4,7 @@ use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\SignatureController;
 use App\Http\Controllers\ParapheController;
+use App\Http\Controllers\CachetController;
 use App\Http\Controllers\CombinedController;
 use App\Http\Controllers\DocumentProcessController;
 use App\Http\Controllers\SequentialSignatureController;
@@ -75,6 +76,16 @@ Route::get('/storage/paraphed_documents/{filename}', function ($filename) {
     return response()->file($filePath);
 })->name('storage.paraphed_documents');
 
+Route::get('/storage/cacheted_documents/{filename}', function ($filename) {
+    $filePath = storage_path('app/public/documents/cacheted/' . $filename);
+    
+    if (!file_exists($filePath)) {
+        abort(404);
+    }
+    
+    return response()->file($filePath);
+})->name('storage.cacheted_documents');
+
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
 // Route pour uploader le PDF signé généré côté client
@@ -88,6 +99,8 @@ Route::get('/debug/signature', function () {
         'signatureUrl' => $user->getSignatureUrl(),
         'hasParaphe' => $user->hasParaphe(),
         'parapheUrl' => $user->getParapheUrl(),
+        'hasCachet' => $user->hasCachet(),
+        'cachetUrl' => $user->getCachetUrl(),
     ]);
 })->middleware('auth');
 
@@ -147,6 +160,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/signatures/user-paraphe', [App\Http\Controllers\SignatureController::class, 'getUserParaphe'])
          ->name('signatures.user-paraphe');
     
+    // Route pour récupérer le cachet de l'utilisateur
+    Route::get('/signatures/user-cachet', [App\Http\Controllers\SignatureController::class, 'getUserCachet'])
+         ->name('signatures.user-cachet');
+    
 // API pour récupérer la signature de l'utilisateur connecté
 Route::get('/api/user-signature', [App\Http\Controllers\SignatureController::class, 'getUserSignature'])
     ->name('api.user-signature');
@@ -202,13 +219,13 @@ Route::post('/signatures/save-signed-pdf', [App\Http\Controllers\SignatureContro
     Route::get('/api/check-signed-files', [App\Http\Controllers\SignatureController::class, 'checkSignedFiles']);
     Route::get('/api/debug-document/{id}', [App\Http\Controllers\SignatureController::class, 'debugDocument']);
     
-    // Routes unifiées pour le traitement des documents (remplace les anciennes routes)
-    // Les anciennes routes /paraphes et /combined sont maintenant gérées par /documents/{id}/process/{action}
+    // Routes unifiées pour le traitement des documents
+    // Les routes /signatures, /paraphes, /cachets et /combined sont gérées par /documents/{id}/process/{action}
     
     // Routes unifiées pour le traitement des documents
     Route::get('/documents/{document}/process/{action?}', [DocumentProcessController::class, 'show'])
          ->name('documents.process.show')
-         ->where('action', 'sign|paraphe|combined|view|download');
+         ->where('action', 'sign|paraphe|cachet|combined|view|download');
     
     Route::post('/documents/{document}/process', [DocumentProcessController::class, 'store'])
         ->name('documents.process.store');
@@ -242,6 +259,12 @@ Route::middleware(['auth'])->group(function () {
     
     Route::delete('/admin/users/{user}/paraphe', [App\Http\Controllers\AdminController::class, 'deleteParaphe'])
          ->name('admin.users.paraphe.delete');
+    
+    Route::post('/admin/users/{user}/cachet', [App\Http\Controllers\AdminController::class, 'uploadCachet'])
+         ->name('admin.users.cachet.upload');
+    
+    Route::delete('/admin/users/{user}/cachet', [App\Http\Controllers\AdminController::class, 'deleteCachet'])
+         ->name('admin.users.cachet.delete');
 });
 
 // Routes d'authentification

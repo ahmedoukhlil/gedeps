@@ -24,6 +24,7 @@ class User extends Authenticatable
         'role_id',
         'signature_path',
         'paraphe_path',
+        'cachet_path',
     ];
 
     /**
@@ -87,6 +88,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Relation avec les cachets
+     */
+    public function cachets(): HasMany
+    {
+        return $this->hasMany(DocumentCachet::class, 'cacheted_by');
+    }
+
+    /**
      * Vérifier si l'utilisateur est admin
      */
     public function isAdmin(): bool
@@ -146,6 +155,26 @@ class User extends Authenticatable
         if ($this->hasParaphe()) {
             $baseUrl = config('app.url');
             return $baseUrl . '/storage/' . $this->paraphe_path;
+        }
+        return null;
+    }
+
+    /**
+     * Vérifier si l'utilisateur a un cachet
+     */
+    public function hasCachet(): bool
+    {
+        return !empty($this->cachet_path) && \Storage::disk('public')->exists($this->cachet_path);
+    }
+
+    /**
+     * Obtenir l'URL du cachet
+     */
+    public function getCachetUrl(): ?string
+    {
+        if ($this->hasCachet()) {
+            $baseUrl = config('app.url');
+            return $baseUrl . '/storage/' . $this->cachet_path;
         }
         return null;
     }

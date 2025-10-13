@@ -3,104 +3,112 @@
 @section('title', 'Traiter le Document')
 
 @section('content')
-<div class="container-fluid">
-    <!-- Navigation sophistiquée -->
-    <nav class="sophisticated-breadcrumb mb-6">
-        <ol class="flex items-center space-x-2 text-sm">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+    <!-- Fil d'Ariane Élégant -->
+    <nav class="mb-6 sm:mb-8" aria-label="Breadcrumb">
+        <ol class="flex items-center gap-2 text-xs sm:text-sm flex-wrap">
             <li>
-                <a href="{{ route('home') }}" class="sophisticated-breadcrumb-link">
-                    <i class="fas fa-home"></i>
-                    <span class="hidden sm:inline ml-1">Accueil</span>
+                <a href="{{ route('home') }}" class="flex items-center gap-1.5 text-gray-600 hover:text-primary-600 transition-colors duration-200">
+                    <i class="fas fa-home text-sm"></i>
+                    <span class="hidden sm:inline">Accueil</span>
                 </a>
             </li>
-            <li class="sophisticated-breadcrumb-separator">
-                <i class="fas fa-chevron-right"></i>
+            <li class="text-gray-400">
+                <i class="fas fa-chevron-right text-xs"></i>
             </li>
             @if(isset($document) && $document->sequential_signatures)
                 <li>
-                    <a href="{{ route('signatures.simple.index') }}" class="sophisticated-breadcrumb-link">
-                        <i class="fas fa-list-ol"></i>
-                        <span class="hidden sm:inline ml-1">Signatures Séquentielles</span>
-                </a>
-            </li>
-            <li class="sophisticated-breadcrumb-separator">
-                <i class="fas fa-chevron-right"></i>
-            </li>
-            <li class="sophisticated-breadcrumb-current">
-                <i class="fas fa-pen-fancy"></i>
-                    <span class="hidden sm:inline ml-1">Signer Document</span>
+                    <a href="{{ route('signatures.simple.index') }}" class="flex items-center gap-1.5 text-gray-600 hover:text-primary-600 transition-colors duration-200">
+                        <i class="fas fa-list-ol text-sm"></i>
+                        <span class="hidden sm:inline">Signatures Séquentielles</span>
+                    </a>
+                </li>
+                <li class="text-gray-400">
+                    <i class="fas fa-chevron-right text-xs"></i>
+                </li>
+                <li class="flex items-center gap-1.5 text-primary-600 font-semibold">
+                    <i class="fas fa-pen-fancy text-sm"></i>
+                    <span class="hidden sm:inline">Signer Document</span>
                 </li>
             @else
                 <li>
-                    <a href="{{ route('signatures.index') }}" class="sophisticated-breadcrumb-link">
-                        <i class="fas fa-pen-fancy"></i>
-                        <span class="hidden sm:inline ml-1">Documents à Signer</span>
+                    <a href="{{ route('signatures.index') }}" class="flex items-center gap-1.5 text-gray-600 hover:text-primary-600 transition-colors duration-200">
+                        <i class="fas fa-pen-fancy text-sm"></i>
+                        <span class="hidden sm:inline">Documents à Signer</span>
                     </a>
                 </li>
-                <li class="sophisticated-breadcrumb-separator">
-                    <i class="fas fa-chevron-right"></i>
+                <li class="text-gray-400">
+                    <i class="fas fa-chevron-right text-xs"></i>
                 </li>
-                <li class="sophisticated-breadcrumb-current">
-                    <i class="fas fa-edit"></i>
-                <span class="hidden sm:inline ml-1">Traiter Document</span>
-            </li>
+                <li class="flex items-center gap-1.5 text-primary-600 font-semibold">
+                    <i class="fas fa-edit text-sm"></i>
+                    <span class="hidden sm:inline">Traiter Document</span>
+                </li>
             @endif
         </ol>
     </nav>
     
-    <div class="row">
-        <div class="col-md-12">
-            <!-- Message de succès pour documents signés -->
-            @if($document->isSigned() || $document->isParaphed() || $document->isFullyProcessed())
-                <div class="alert alert-success success-message">
-                    <div class="alert-content">
-                        <i class="fas fa-check-circle"></i>
-                        <div class="alert-text">
-                            <h4>Document traité avec succès !</h4>
-                            <p>Le document a été {{ $document->status_label }} et est maintenant disponible.</p>
-                        </div>
-                    </div>
+    <!-- Message de succès pour documents signés -->
+    @if($document->isSigned() || $document->isParaphed() || $document->isFullyProcessed())
+        <div class="alert alert-success mb-6">
+            <i class="fas fa-check-circle"></i>
+            <div>
+                <h4 class="font-bold">Document traité avec succès !</h4>
+                <p>Le document a été {{ $document->status_label }} et est maintenant disponible.</p>
+            </div>
+        </div>
+    @endif
+    
+    <!-- En-tête du document élégant -->
+    <div class="card card-hover mb-6 overflow-hidden relative">
+        <!-- Fond décoratif -->
+        <div class="absolute top-0 right-0 w-64 h-64 bg-primary-100 rounded-full -mr-32 -mt-32 opacity-50"></div>
+        
+        <div class="relative p-6">
+            <div class="flex items-center gap-4 mb-6">
+                <!-- Icône document -->
+                <div class="w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-700 rounded-xl flex items-center justify-center shadow-lg">
+                    <i class="fas fa-file-signature text-white text-2xl"></i>
                 </div>
-            @endif
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900">{{ $document->document_name }}</h2>
+                    <p class="text-sm text-gray-600">Traitement du document</p>
+                </div>
+            </div>
             
-            <!-- En-tête du document -->
-            <div class="card-eps">
+            <!-- Informations du document en grille -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-gradient-to-br from-white to-primary-50 rounded-lg p-4 border border-primary-200 hover:shadow-md transition-shadow">
+                    <div class="flex items-center gap-2 mb-2">
+                        <i class="fas fa-tag text-primary-500"></i>
+                        <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Type</span>
+                    </div>
+                    <div class="text-sm font-bold text-gray-900">{{ $document->type_name }}</div>
+                </div>
                 
-                <div class="card-body">
-                    <!-- Informations du document simplifiées -->
-                    <div class="bg-blue-50 rounded-lg p-6 mb-6 border sophisticated-border shadow-sm">
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            <div class="bg-white rounded-lg p-4 border sophisticated-border">
-                                <div class="flex items-center gap-2 text-sm font-medium text-gray-600 mb-2">
-                                    <i class="fas fa-file-alt text-blue-600"></i>
-                                    <span>Type</span>
-                                </div>
-                                <div class="text-lg font-semibold text-gray-800">{{ $document->type_name }}</div>
-                            </div>
-                            
-                            <div class="bg-white rounded-lg p-4 border sophisticated-border">
-                                <div class="flex items-center gap-2 text-sm font-medium text-gray-600 mb-2">
-                                    <i class="fas fa-user text-blue-600"></i>
-                                    <span>Uploadé par</span>
-                                </div>
-                                <div class="text-lg font-semibold text-gray-800">{{ $document->uploader->name }}</div>
-                            </div>
-                            
-                            <div class="bg-white rounded-lg p-4 border sophisticated-border">
-                                <div class="flex items-center gap-2 text-sm font-medium text-gray-600 mb-2">
-                                    <i class="fas fa-user-check text-blue-600"></i>
-                                    <span>Assigné à</span>
-                                </div>
-                                <div class="text-lg font-semibold text-gray-800">{{ $document->signer->name }}</div>
-                            </div>
-                            
-                            <div class="bg-white rounded-lg p-4 border sophisticated-border">
-                                <div class="flex items-center gap-2 text-sm font-medium text-gray-600 mb-2">
-                                    <i class="fas fa-calendar text-blue-600"></i>
-                                    <span>Date</span>
-                                </div>
-                                <div class="text-lg font-semibold text-gray-800">{{ $document->created_at->format('d/m/Y') }}</div>
-                            </div>
+                <div class="bg-gradient-to-br from-white to-info-50 rounded-lg p-4 border border-info-200 hover:shadow-md transition-shadow">
+                    <div class="flex items-center gap-2 mb-2">
+                        <i class="fas fa-user text-info-500"></i>
+                        <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Uploadé par</span>
+                    </div>
+                    <div class="text-sm font-bold text-gray-900">{{ $document->uploader->name }}</div>
+                </div>
+                
+                <div class="bg-gradient-to-br from-white to-success-50 rounded-lg p-4 border border-success-200 hover:shadow-md transition-shadow">
+                    <div class="flex items-center gap-2 mb-2">
+                        <i class="fas fa-user-check text-success-500"></i>
+                        <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Assigné à</span>
+                    </div>
+                    <div class="text-sm font-bold text-gray-900">{{ $document->signer->name }}</div>
+                </div>
+                
+                <div class="bg-gradient-to-br from-white to-warning-50 rounded-lg p-4 border border-warning-200 hover:shadow-md transition-shadow">
+                    <div class="flex items-center gap-2 mb-2">
+                        <i class="fas fa-calendar text-warning-500"></i>
+                        <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Date</span>
+                    </div>
+                    <div class="text-sm font-bold text-gray-900">{{ $document->created_at->format('d/m/Y') }}</div>
+                </div>
                         </div>
                         
                         @if($document->description)
@@ -323,14 +331,19 @@
                 <input type="hidden" name="action_type" id="action_type" value="{{ $defaultAction }}">
                 <input type="hidden" name="signature_type" id="signature_type" value="png">
                 <input type="hidden" name="paraphe_type" id="paraphe_type" value="png">
+                <input type="hidden" name="cachet_type" id="cachet_type" value="png">
                 <input type="hidden" name="live_signature_data" id="live_signature_data">
                 <input type="hidden" name="live_paraphe_data" id="live_paraphe_data">
+                <input type="hidden" name="live_cachet_data" id="live_cachet_data">
                 <input type="hidden" name="signature_x" id="signature_x">
                 <input type="hidden" name="signature_y" id="signature_y">
                 <input type="hidden" name="paraphe_x" id="paraphe_x">
                 <input type="hidden" name="paraphe_y" id="paraphe_y">
+                <input type="hidden" name="cachet_x" id="cachet_x">
+                <input type="hidden" name="cachet_y" id="cachet_y">
                 <input type="hidden" name="signature_comment" id="signature_comment" value="">
                 <input type="hidden" name="paraphe_comment" id="paraphe_comment" value="">
+                <input type="hidden" name="cachet_comment" id="cachet_comment" value="">
             </form>
             @endif
 
@@ -366,100 +379,142 @@
                                 </div>
                             </div>
                         @else
-                            <!-- Actions principales -->
-                            <div class="flex flex-col sm:flex-row gap-4">
-                                <div class="flex flex-wrap gap-2">
-                                    @if($allowSignature)
-                                        <button type="button" id="addSignatureBtn" class="inline-flex items-center gap-2 px-4 py-2 sophisticated-btn-primary text-white rounded-lg sophisticated-btn-primary focus:ring-2 sophisticated-focus focus:ring-offset-2 transition-colors" 
-                                                aria-label="Ajouter une signature au document"
-                                                aria-describedby="signature-help">
-                                            <i class="fas fa-pen-fancy" aria-hidden="true"></i>
-                                            <span>Signer</span>
-                                        </button>
-                                        <div id="signature-help" class="sr-only">
-                                            Cliquez pour ajouter une signature au document. Vous pourrez ensuite cliquer sur le document pour la positionner.
+                            <!-- Barre d'actions élégante -->
+                            <div class="card mb-6 overflow-hidden">
+                                <div class="bg-gradient-to-r from-primary-500 to-primary-600 p-4">
+                                    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                                        <!-- Titre de la section -->
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-10 h-10 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-file-pdf text-white text-lg"></i>
+                                            </div>
+                                            <span class="font-bold text-lg text-white">Actions sur le document</span>
                                         </div>
-                                    @endif
-                                    
-                                    @if($allowParaphe)
-                                        <button type="button" id="addParapheBtn" class="inline-flex items-center gap-2 px-4 py-2 sophisticated-btn-primary text-white rounded-lg sophisticated-btn-primary focus:ring-2 sophisticated-focus focus:ring-offset-2 transition-colors"
-                                                aria-label="Ajouter un paraphe au document"
-                                                aria-describedby="paraphe-help">
-                                            <i class="fas fa-pen-nib" aria-hidden="true"></i>
-                                            <span>Parapher</span>
-                                        </button>
-                                        <div id="paraphe-help" class="sr-only">
-                                            Cliquez pour ajouter un paraphe au document. Vous pourrez ensuite cliquer sur le document pour le positionner.
+                                        
+                                        <!-- Boutons d'action -->
+                                        <div class="flex flex-col sm:flex-row gap-3">
+                                            <div class="flex flex-wrap gap-2">
+                                                @if($allowSignature)
+                                                    <button type="button" id="addSignatureBtn" 
+                                                            class="group inline-flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-gray-50 text-primary-600 hover:text-primary-700 font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5" 
+                                                            aria-label="Ajouter une signature au document"
+                                                            aria-describedby="signature-help">
+                                                        <i class="fas fa-pen-fancy group-hover:scale-110 transition-transform"></i>
+                                                        <span>Signer</span>
+                                                    </button>
+                                                    <div id="signature-help" class="sr-only">
+                                                        Cliquez pour ajouter une signature au document. Vous pourrez ensuite cliquer sur le document pour la positionner.
+                                                    </div>
+                                                @endif
+                                                
+                                                @if($allowParaphe)
+                                                    <button type="button" id="addParapheBtn" 
+                                                            class="group inline-flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-gray-50 text-primary-600 hover:text-primary-700 font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5"
+                                                            aria-label="Ajouter un paraphe au document"
+                                                            aria-describedby="paraphe-help">
+                                                        <i class="fas fa-pen-nib group-hover:scale-110 transition-transform"></i>
+                                                        <span>Parapher</span>
+                                                    </button>
+                                                    <div id="paraphe-help" class="sr-only">
+                                                        Cliquez pour ajouter un paraphe au document. Vous pourrez ensuite cliquer sur le document pour le positionner.
+                                                    </div>
+                                                @endif
+                                                
+                                                @if($allowCachet)
+                                                    <button type="button" id="addCachetBtn" 
+                                                            class="group inline-flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-gray-50 text-secondary-600 hover:text-secondary-700 font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5"
+                                                            aria-label="Ajouter un cachet au document"
+                                                            aria-describedby="cachet-help">
+                                                        <i class="fas fa-stamp group-hover:scale-110 transition-transform"></i>
+                                                        <span>Cacheter</span>
+                                                    </button>
+                                                    <div id="cachet-help" class="sr-only">
+                                                        Cliquez pour ajouter un cachet au document. Vous pourrez ensuite cliquer sur le document pour le positionner.
+                                                    </div>
+                                                @endif
+                                                
+                                                <button type="button" id="clearAllBtn" 
+                                                        class="group inline-flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-danger-50 text-danger-600 hover:text-danger-700 font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
+                                                        aria-label="Effacer toutes les signatures, paraphes et cachets"
+                                                        aria-describedby="clear-help">
+                                                    <i class="fas fa-trash-alt group-hover:scale-110 transition-transform"></i>
+                                                    <span>Effacer</span>
+                                                </button>
+                                                <div id="clear-help" class="sr-only">
+                                                    Cliquez pour supprimer toutes les signatures, paraphes et cachets du document.
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="flex gap-2">
+                                                <button type="submit" form="processForm" id="submitBtn" 
+                                                        class="group inline-flex items-center gap-2 px-6 py-2.5 bg-success-500 hover:bg-success-600 text-white font-bold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+                                                        aria-label="Enregistrer le document avec les signatures et paraphes"
+                                                        aria-describedby="submit-help">
+                                                    <i class="fas fa-check group-hover:scale-110 transition-transform"></i>
+                                                    <span>Enregistrer</span>
+                                                </button>
+                                                <div id="submit-help" class="sr-only">
+                                                    Cliquez pour enregistrer le document avec toutes les signatures et paraphes ajoutés.
+                                                </div>
+                                            </div>
                                         </div>
-                                    @endif
-                                    
-                                    @if($allowSignature && $allowParaphe)
-                                        <button type="button" id="addSignAndParapheBtn" class="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-colors"
-                                                aria-label="Signer et parapher le document"
-                                                aria-describedby="sign-paraphe-help">
-                                            <i class="fas fa-pen-fancy" aria-hidden="true"></i>
-                                            <i class="fas fa-pen-nib" aria-hidden="true"></i>
-                                            <span>Signer & Parapher</span>
-                                        </button>
-                                        <div id="sign-paraphe-help" class="sr-only">
-                                            Cliquez pour signer ET parapher le document en une seule action.
-                                        </div>
-                                    @endif
-                                    
-                                    <button type="button" id="clearAllBtn" class="inline-flex items-center gap-2 px-4 py-2 sophisticated-btn-primary text-white rounded-lg sophisticated-btn-primary focus:ring-2 sophisticated-focus focus:ring-offset-2 transition-colors"
-                                            aria-label="Effacer toutes les signatures et paraphes"
-                                            aria-describedby="clear-help">
-                                        <i class="fas fa-trash-alt" aria-hidden="true"></i>
-                                        <span>Effacer</span>
-                                    </button>
-                                    <div id="clear-help" class="sr-only">
-                                        Cliquez pour supprimer toutes les signatures et paraphes du document.
-                                    </div>
-                                </div>
-                                
-                                <div class="flex gap-2">
-                                    <button type="submit" form="processForm" id="submitBtn" class="inline-flex items-center gap-2 px-4 py-2 sophisticated-btn-primary text-white rounded-lg sophisticated-btn-primary focus:ring-2 sophisticated-focus focus:ring-offset-2 transition-colors"
-                                            aria-label="Enregistrer le document avec les signatures et paraphes"
-                                            aria-describedby="submit-help">
-                                        <i class="fas fa-check" aria-hidden="true"></i>
-                                        <span>Enregistrer</span>
-                                    </button>
-                                    <div id="submit-help" class="sr-only">
-                                        Cliquez pour enregistrer le document avec toutes les signatures et paraphes ajoutés.
                                     </div>
                                 </div>
                             </div>
                             
                         @endif
                         
-                        <!-- Contrôles PDF simplifiés -->
-                        <div class="flex items-center justify-center gap-4 p-4 bg-blue-600 rounded-lg">
-                            <!-- Navigation -->
-                            <button type="button" id="prevPageBtn" class="p-2 text-white hover:bg-blue-500 rounded-md transition-colors" title="Page précédente">
-                                <i class="fas fa-chevron-left"></i>
-                            </button>
-                            
-                            <div class="text-white font-medium">
-                                <span id="currentPage">1</span> / <span id="totalPages">1</span>
-                            </div>
-                                
-                            <button type="button" id="nextPageBtn" class="p-2 text-white hover:bg-blue-500 rounded-md transition-colors" title="Page suivante">
-                                <i class="fas fa-chevron-right"></i>
-                            </button>
-                            
-                            <!-- Zoom -->
-                            <button type="button" id="zoomOutBtn" class="p-2 text-white hover:bg-blue-500 rounded-md transition-colors" title="Zoom arrière">
-                                <i class="fas fa-search-minus"></i>
-                            </button>
-                            
-                            <button type="button" id="zoomInBtn" class="p-2 text-white hover:bg-blue-500 rounded-md transition-colors" title="Zoom avant">
-                                <i class="fas fa-search-plus"></i>
-                            </button>
-                            
-                            <button type="button" id="resetZoomBtn" class="p-2 text-white hover:bg-blue-500 rounded-md transition-colors" title="Reset zoom">
-                                <i class="fas fa-search"></i>
-                            </button>
+                        <!-- Contrôles PDF élégants -->
+                        <div class="card mb-6">
+                            <div class="bg-gradient-to-r from-gray-700 to-gray-800 p-4 rounded-lg">
+                                <div class="flex flex-wrap items-center justify-center gap-6">
+                                    <!-- Navigation de pages -->
+                                    <div class="flex items-center gap-3">
+                                        <button type="button" id="prevPageBtn" 
+                                                class="w-10 h-10 flex items-center justify-center bg-white bg-opacity-10 hover:bg-opacity-20 text-white rounded-lg transition-all duration-300 hover:scale-110 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100" 
+                                                title="Page précédente">
+                                            <i class="fas fa-chevron-left"></i>
+                                        </button>
+                                        
+                                        <div class="flex items-center gap-2 px-4 py-2 bg-white bg-opacity-10 rounded-lg">
+                                            <span class="text-white font-bold text-lg"><span id="currentPage">1</span></span>
+                                            <span class="text-gray-300">/</span>
+                                            <span class="text-gray-300 font-medium"><span id="totalPages">1</span></span>
+                                        </div>
+                                        
+                                        <button type="button" id="nextPageBtn" 
+                                                class="w-10 h-10 flex items-center justify-center bg-white bg-opacity-10 hover:bg-opacity-20 text-white rounded-lg transition-all duration-300 hover:scale-110 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100" 
+                                                title="Page suivante">
+                                            <i class="fas fa-chevron-right"></i>
+                                        </button>
+                                    </div>
+                                    
+                                    <!-- Séparateur -->
+                                    <div class="hidden sm:block w-px h-8 bg-white bg-opacity-20"></div>
+                                    
+                                    <!-- Contrôles de zoom -->
+                                    <div class="flex items-center gap-2">
+                                        <button type="button" id="zoomOutBtn" 
+                                                class="w-10 h-10 flex items-center justify-center bg-white bg-opacity-10 hover:bg-opacity-20 text-white rounded-lg transition-all duration-300 hover:scale-110" 
+                                                title="Zoom arrière">
+                                            <i class="fas fa-search-minus"></i>
+                                        </button>
+                                        
+                                        <button type="button" id="resetZoomBtn" 
+                                                class="w-10 h-10 flex items-center justify-center bg-white bg-opacity-10 hover:bg-opacity-20 text-white rounded-lg transition-all duration-300 hover:scale-110" 
+                                                title="Réinitialiser le zoom">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                        
+                                        <button type="button" id="zoomInBtn" 
+                                                class="w-10 h-10 flex items-center justify-center bg-white bg-opacity-10 hover:bg-opacity-20 text-white rounded-lg transition-all duration-300 hover:scale-110" 
+                                                title="Zoom avant">
+                                            <i class="fas fa-search-plus"></i>
+                                        </button>
+                                    </div>
                                 </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 </div>
@@ -1976,6 +2031,7 @@ document.addEventListener('DOMContentLoaded', function() {
         pdfUrl: '{{ $displayPdfUrl ?? $pdfUrl }}',
         signatureUrl: '{{ $signatureUrl }}',
         parapheUrl: '{{ $parapheUrl }}',
+        cachetUrl: '{{ $cachetUrl ?? "/signatures/user-cachet" }}',
         uploadUrl: '{{ $uploadUrl ?? "/documents/upload-signed-pdf" }}',
         redirectUrl: '{{ $redirectUrl ?? "/documents/" . $document->id . "/process/view" }}',
         documentId: {{ $document->id }},
@@ -1984,14 +2040,19 @@ document.addEventListener('DOMContentLoaded', function() {
         actionTypeInputId: 'action_type',
         signatureTypeInputId: 'signature_type',
         parapheTypeInputId: 'paraphe_type',
+        cachetTypeInputId: 'cachet_type',
         liveSignatureDataInputId: 'live_signature_data',
         liveParapheDataInputId: 'live_paraphe_data',
+        liveCachetDataInputId: 'live_cachet_data',
         signatureXInputId: 'signature_x',
         signatureYInputId: 'signature_y',
         parapheXInputId: 'paraphe_x',
         parapheYInputId: 'paraphe_y',
+        cachetXInputId: 'cachet_x',
+        cachetYInputId: 'cachet_y',
         addSignatureBtnId: 'addSignatureBtn',
         addParapheBtnId: 'addParapheBtn',
+        addCachetBtnId: 'addCachetBtn',
         addSignAndParapheBtnId: 'addSignAndParapheBtn',
         clearAllBtnId: 'clearAllBtn',
         submitBtnId: 'submitBtn',
@@ -2008,7 +2069,9 @@ document.addEventListener('DOMContentLoaded', function() {
         qualitySelectId: 'qualitySelect',
         allowSignature: {{ $allowSignature ? 'true' : 'false' }},
         allowParaphe: {{ $allowParaphe ? 'true' : 'false' }},
+        allowCachet: {{ $allowCachet ? 'true' : 'false' }},
         allowBoth: {{ $allowBoth ? 'true' : 'false' }},
+        allowAll: {{ $allowAll ? 'true' : 'false' }},
         isReadOnly: {{ isset($isReadOnly) && $isReadOnly ? 'true' : 'false' }}
     };
     

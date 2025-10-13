@@ -504,13 +504,75 @@ class SignatureController extends Controller
 
             return response()->json([
                 'success' => true,
-                'parapheUrl' => $parapheUrl,
-                'hasParaphe' => true
+                'paraphe_url' => $parapheUrl,
+                'parapheUrl' => $parapheUrl, // Compatibilité
+                'hasParaphe' => true,
+                'has_paraphe' => true // Compatibilité
             ]);
             
-        } catch (\Exception $e) {return response()->json([
+        } catch (\Exception $e) {
+            return response()->json([
                 'success' => false,
                 'message' => 'Erreur lors de la récupération du paraphe : ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Récupérer le cachet de l'utilisateur connecté
+     */
+    public function getUserCachet()
+    {
+        try {
+            $user = auth()->user();
+            
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Utilisateur non authentifié'
+                ], 401);
+            }
+
+            // Vérifier si l'utilisateur a un cachet_path dans la base de données
+            if ($user->cachet_path && !empty($user->cachet_path)) {
+                // Vérifier que le fichier existe
+                if (\Storage::disk('public')->exists($user->cachet_path)) {
+                    // Construire l'URL du cachet
+                    $baseUrl = config('app.url');
+                    $cachetUrl = $baseUrl . '/storage/' . $user->cachet_path;
+                    
+                    return response()->json([
+                        'success' => true,
+                        'cachet_url' => $cachetUrl,
+                        'cachetUrl' => $cachetUrl, // Compatibilité
+                        'cachet_path' => $user->cachet_path,
+                        'has_cachet' => true,
+                        'hasCachet' => true, // Compatibilité
+                        'user_id' => $user->id,
+                        'user_name' => $user->name
+                    ]);
+                } else {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Le fichier de cachet n\'existe pas sur le serveur',
+                        'cachet_path' => $user->cachet_path,
+                        'user_id' => $user->id
+                    ], 404);
+                }
+            }
+            
+            // Si aucun cachet_path n'est défini
+            return response()->json([
+                'success' => false,
+                'message' => 'Aucun cachet défini pour cet utilisateur',
+                'user_id' => $user->id,
+                'user_name' => $user->name
+            ], 404);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la récupération du cachet : ' . $e->getMessage()
             ], 500);
         }
     }

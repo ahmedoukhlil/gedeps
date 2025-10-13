@@ -220,13 +220,16 @@ class SimpleSequentialController extends Controller
                     'pdfUrl' => $pdfUrl,
                     'signatureUrl' => '/signatures/user-signature',
                     'parapheUrl' => '/signatures/user-paraphe',
+                    'cachetUrl' => '/signatures/user-cachet',
                     'formAction' => route('signatures.simple.save-signed-pdf', $document),
                     'uploadUrl' => route('signatures.simple.upload-signed-pdf', $document),
                     'redirectUrl' => route('signatures.simple.show.action', ['document' => $document, 'action' => 'view']),
                     'defaultAction' => 'signature',
                     'allowSignature' => false,
                     'allowParaphe' => false,
+                    'allowCachet' => false,
                     'allowBoth' => false,
+                    'allowAll' => false,
                     'isReadOnly' => true,
                     'statusIcon' => 'check-circle',
                     'statusText' => 'Document signé',
@@ -278,13 +281,16 @@ class SimpleSequentialController extends Controller
         $pdfUrl = $this->getDocumentPdfUrl($document);
         $signatureUrl = '/signatures/user-signature';
         $parapheUrl = '/signatures/user-paraphe';
+        $cachetUrl = '/signatures/user-cachet';
         $formAction = route('signatures.simple.save-signed-pdf', $document);
         $uploadUrl = route('signatures.simple.upload-signed-pdf', $document);
         $redirectUrl = route('signatures.simple.show.action', ['document' => $document, 'action' => 'view']);
         $defaultAction = 'signature';
         $allowSignature = true;
         $allowParaphe = true;
+        $allowCachet = true; // Toujours autoriser le cachet (comme signature et paraphe)
         $allowBoth = true;
+        $allowAll = $allowSignature && $allowParaphe && $allowCachet;
         $isReadOnly = false;
         
         // Statut du document
@@ -333,13 +339,16 @@ class SimpleSequentialController extends Controller
             'displayPdfUrl',
             'signatureUrl', 
             'parapheUrl',
+            'cachetUrl',
             'formAction',
             'uploadUrl',
             'redirectUrl',
             'defaultAction',
             'allowSignature',
             'allowParaphe',
+            'allowCachet',
             'allowBoth',
+            'allowAll',
             'isReadOnly',
             'statusIcon',
             'statusText',

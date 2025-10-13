@@ -44,7 +44,7 @@ class DocumentController extends Controller
                 'type' => 'required|string|max:100',
                 'description' => 'nullable|string|max:1000',
                 'signature_type' => 'required|in:simple,sequential',
-                'file' => 'required|file|max:10240|mimes:pdf,doc,docx,jpg,jpeg,png',
+                'file' => 'required|file|max:51200|mimes:pdf,doc,docx,jpg,jpeg,png', // 50MB max
             ];
 
             // Ajouter les règles selon le type de signature

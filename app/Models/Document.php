@@ -105,6 +105,14 @@ class Document extends Model
     }
 
     /**
+     * Relation avec les cachets du document
+     */
+    public function cachets(): HasMany
+    {
+        return $this->hasMany(DocumentCachet::class);
+    }
+
+    /**
      * Obtenir la dernière signature du document
      */
     public function latestSignature(): HasMany

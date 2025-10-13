@@ -3,56 +3,85 @@
 @section('title', 'Soumettre un Document')
 
 @section('content')
-<div class="min-h-screen bg-gray-50">
-    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    
-    <!-- Navigation breadcrumb -->
-    <nav class="sophisticated-breadcrumb mb-6">
-        <ol class="flex items-center space-x-2 text-sm">
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+    <!-- Fil d'Ariane Élégant -->
+    <nav class="mb-6 sm:mb-8" aria-label="Breadcrumb">
+        <ol class="flex items-center gap-2 text-xs sm:text-sm">
             <li>
-                <a href="{{ route('home') }}" class="sophisticated-breadcrumb-link">
-                    <i class="fas fa-home"></i>
-                    <span class="hidden sm:inline ml-1">Accueil</span>
+                <a href="{{ route('home') }}" class="flex items-center gap-1.5 text-gray-600 hover:text-primary-600 transition-colors duration-200">
+                    <i class="fas fa-home text-sm"></i>
+                    <span class="hidden sm:inline">Accueil</span>
                 </a>
             </li>
-            <li class="sophisticated-breadcrumb-separator">
-                <i class="fas fa-chevron-right"></i>
+            <li class="text-gray-400">
+                <i class="fas fa-chevron-right text-xs"></i>
             </li>
-            <li class="sophisticated-breadcrumb-current">
-                <i class="fas fa-upload"></i>
-                <span class="hidden sm:inline ml-1">Nouveau Document</span>
+            <li class="flex items-center gap-1.5 text-primary-600 font-semibold">
+                <i class="fas fa-upload text-sm"></i>
+                <span class="hidden sm:inline">Nouveau Document</span>
             </li>
         </ol>
     </nav>
     
-    <!-- En-tête -->
-    <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900 mb-2">
-            📄 Soumettre un Document
-                    </h1>
-        <p class="text-gray-600">
-            Envoyez vos documents pour signature électronique
-        </p>
+    <!-- Carte d'En-tête Élégante -->
+    <div class="card card-hover mb-6 sm:mb-8 overflow-hidden relative">
+        <!-- Fond décoratif avec dégradé -->
+        <div class="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-success-500 via-success-600 to-success-700 opacity-10"></div>
+        <div class="absolute top-0 right-0 w-64 h-64 bg-success-400 rounded-full blur-3xl opacity-20 -mr-32 -mt-32"></div>
+        <div class="absolute bottom-0 left-0 w-48 h-48 bg-success-300 rounded-full blur-3xl opacity-20 -ml-24 -mb-24"></div>
+        
+        <div class="relative p-6 sm:p-8 lg:p-10">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                <!-- Informations de la page -->
+                <div class="flex items-center gap-4 sm:gap-6 flex-1">
+                    <!-- Icône Élégante -->
+                    <div class="relative flex-shrink-0">
+                        <div class="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 rounded-2xl bg-gradient-to-br from-success-400 to-success-600 flex items-center justify-center shadow-glow">
+                            <i class="fas fa-cloud-upload-alt text-white text-2xl sm:text-3xl lg:text-4xl"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- Titre et Description -->
+                    <div class="flex-1 min-w-0">
+                        <h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2 flex items-center gap-2 sm:gap-3 flex-wrap">
+                            <i class="fas fa-sparkles text-success-500 text-xl sm:text-2xl lg:text-3xl"></i>
+                            <span>Soumettre un <span class="text-gradient">Document</span></span>
+                        </h1>
+                        <p class="text-sm sm:text-base text-gray-600">Envoyez vos documents pour signature électronique</p>
+                    </div>
+                </div>
+                
+                <!-- Actions -->
+                <div class="flex gap-2 sm:gap-3 flex-shrink-0">
+                    <a href="{{ route('documents.pending') }}" class="group inline-flex items-center gap-2 px-4 sm:px-6 py-3 sm:py-4 bg-white border-2 border-gray-300 text-gray-700 rounded-xl shadow-elegant hover:shadow-lg hover:-translate-y-1 hover:border-gray-400 transition-all duration-300">
+                        <i class="fas fa-clock text-sm sm:text-base"></i>
+                        <span class="text-xs sm:text-sm font-semibold">En Attente</span>
+                    </a>
+                </div>
+            </div>
         </div>
+    </div>
                 
     <!-- Messages -->
-            @if(session('success'))
-        <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-            <div class="flex items-center">
-                <i class="fas fa-check-circle text-green-600 mr-3 font-bold"></i>
-                <span class="text-green-800">{{ session('success') }}</span>
-                    </div>
-                </div>
-            @endif
+    @if(session('success'))
+        <div class="alert alert-success mb-6">
+            <i class="fas fa-check-circle"></i>
+            <div>
+                <h4 class="font-bold">Succès !</h4>
+                <p>{{ session('success') }}</p>
+            </div>
+        </div>
+    @endif
 
-            @if(session('error'))
-        <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-            <div class="flex items-center">
-                <i class="fas fa-exclamation-circle text-red-600 mr-3 font-bold"></i>
-                <span class="text-red-800">{{ session('error') }}</span>
-                    </div>
-                </div>
-            @endif
+    @if(session('error'))
+        <div class="alert alert-error mb-6">
+            <i class="fas fa-exclamation-circle"></i>
+            <div>
+                <h4 class="font-bold">Erreur</h4>
+                <p>{{ session('error') }}</p>
+            </div>
+        </div>
+    @endif
 
     <!-- Formulaire -->
             <form action="{{ route('documents.store') }}" method="POST" enctype="multipart/form-data" id="uploadForm">
@@ -95,13 +124,18 @@
                         <i class="fas fa-tag mr-1"></i>
                                 Type de document *
                         </label>
-                    <select name="type" id="type" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('type') border-red-500 @enderror" required>
+                            <div class="relative">
+                    <select name="type" id="type" class="w-full px-4 py-2.5 sm:py-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 @error('type') border-red-500 @enderror appearance-none bg-white text-sm sm:text-base" required>
                                     <option value="">Sélectionner un type</option>
                                     <option value="contrat" {{ old('type') == 'contrat' ? 'selected' : '' }}>Contrat</option>
                                     <option value="facture" {{ old('type') == 'facture' ? 'selected' : '' }}>Facture</option>
                                     <option value="rapport" {{ old('type') == 'rapport' ? 'selected' : '' }}>Rapport</option>
                                     <option value="autre" {{ old('type') == 'autre' ? 'selected' : '' }}>Autre</option>
                                 </select>
+                                <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                    <i class="fas fa-chevron-down text-gray-400 text-sm"></i>
+                                </div>
+                            </div>
                                 @error('type')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                                 @enderror
@@ -139,35 +173,35 @@
                             
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <!-- Signature simple -->
-                                <div class="signature-type-option" data-type="simple">
-                                    <label class="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-blue-300 transition-colors">
-                                        <input type="radio" name="signature_type" value="simple" class="sr-only" 
-                                               {{ old('signature_type', 'simple') == 'simple' ? 'checked' : '' }}>
-                                        <div class="flex-1">
+                                <div class="signature-option" data-type="simple">
+                                    <input type="radio" name="signature_type" value="simple" id="simple_signature" 
+                                           {{ old('signature_type', 'simple') == 'simple' ? 'checked' : '' }}>
+                                    <label for="simple_signature" class="block cursor-pointer">
+                                        <div class="option-card p-4 border-2 border-gray-200 rounded-lg hover:border-blue-300 transition-colors">
                                             <div class="flex items-center gap-3 mb-2">
-                                <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center shadow-md">
-                                    <i class="fas fa-pen-fancy text-white text-sm font-bold"></i>
+                                                <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center shadow-md">
+                                                    <i class="fas fa-pen-fancy text-white text-sm font-bold"></i>
                                                 </div>
-                                <h3 class="font-semibold text-gray-900">Signature Simple</h3>
+                                                <h3 class="font-semibold text-gray-900">Signature Simple</h3>
                                             </div>
-                            <p class="text-sm text-gray-600">Un seul signataire requis</p>
+                                            <p class="text-sm text-gray-600">Un seul signataire requis</p>
                                         </div>
                                     </label>
                                 </div>
 
                                 <!-- Signature séquentielle -->
-                                <div class="signature-type-option" data-type="sequential">
-                                    <label class="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-blue-300 transition-colors">
-                                        <input type="radio" name="signature_type" value="sequential" class="sr-only"
-                                               {{ old('signature_type') == 'sequential' ? 'checked' : '' }}>
-                                        <div class="flex-1">
+                                <div class="signature-option" data-type="sequential">
+                                    <input type="radio" name="signature_type" value="sequential" id="sequential_signature"
+                                           {{ old('signature_type') == 'sequential' ? 'checked' : '' }}>
+                                    <label for="sequential_signature" class="block cursor-pointer">
+                                        <div class="option-card p-4 border-2 border-gray-200 rounded-lg hover:border-green-300 transition-colors">
                                             <div class="flex items-center gap-3 mb-2">
-                                <div class="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center shadow-md">
-                                    <i class="fas fa-list-ol text-white text-sm font-bold"></i>
+                                                <div class="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center shadow-md">
+                                                    <i class="fas fa-list-ol text-white text-sm font-bold"></i>
                                                 </div>
-                                <h3 class="font-semibold text-gray-900">Signature Séquentielle</h3>
+                                                <h3 class="font-semibold text-gray-900">Signature Séquentielle</h3>
                                             </div>
-                            <p class="text-sm text-gray-600">Plusieurs signataires dans un ordre défini</p>
+                                            <p class="text-sm text-gray-600">Plusieurs signataires dans un ordre défini</p>
                                         </div>
                                     </label>
                                 </div>
@@ -201,7 +235,7 @@
                                 Signataire *
                         </label>
                 <div class="relative">
-                    <select name="signer_id" id="signer_id" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('signer_id') border-red-500 @enderror">
+                    <select name="signer_id" id="signer_id" class="w-full px-4 py-2.5 sm:py-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 @error('signer_id') border-red-500 @enderror appearance-none bg-white text-sm sm:text-base">
                                     <option value="">Sélectionner un signataire</option>
                         @foreach(\App\Models\User::whereHas('role', function($query) { $query->where('name', 'signataire'); })->get() as $user)
                             <option value="{{ $user->id }}" {{ old('signer_id') == $user->id ? 'selected' : '' }}>
@@ -210,7 +244,7 @@
                                     @endforeach
                                 </select>
                     <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                        <i class="fas fa-chevron-down text-gray-400"></i>
+                        <i class="fas fa-chevron-down text-gray-400 text-sm"></i>
                     </div>
                 </div>
                                 @error('signer_id')
@@ -278,7 +312,7 @@
                             </div>
                     <div class="text-xs text-gray-400">
                         <i class="fas fa-info-circle mr-1"></i>
-                        Formats acceptés: PDF, DOC, DOCX, JPG, JPEG, PNG (max 10MB)
+                        Formats acceptés: PDF, DOC, DOCX, JPG, JPEG, PNG (max 50MB)
                                 </div>
                     </div>
                         </div>
@@ -304,43 +338,223 @@
             @enderror
         </div>
 
-        <!-- Boutons d'action -->
-        <div class="flex justify-end gap-4">
-            <a href="{{ route('home') }}" class="inline-flex items-center px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors shadow-md">
-                <i class="fas fa-times mr-2 font-bold"></i>
-                Annuler
+        <!-- Boutons d'action élégants -->
+        <div class="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4">
+            <a href="{{ route('home') }}" class="group inline-flex items-center justify-center gap-2 px-6 py-3 bg-white border-2 border-gray-300 text-gray-700 rounded-xl shadow-md hover:shadow-lg hover:-translate-y-1 hover:border-gray-400 transition-all duration-300">
+                <i class="fas fa-times group-hover:scale-110 transition-transform"></i>
+                <span class="font-semibold">Annuler</span>
             </a>
-            <button type="submit" class="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md">
-                <i class="fas fa-upload mr-2 font-bold"></i>
-                Soumettre le document
-                    </button>
-                </div>
-                    </form>
-    </div>
+            <button type="submit" class="group inline-flex items-center justify-center gap-2 px-8 py-3 bg-gradient-to-r from-success-500 to-success-600 hover:from-success-600 hover:to-success-700 text-white rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                <i class="fas fa-cloud-upload-alt group-hover:scale-110 transition-transform"></i>
+                <span class="font-bold">Soumettre le document</span>
+                <i class="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+            </button>
+        </div>
+    </form>
 </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const signatureTypeRadios = document.querySelectorAll('input[name="signature_type"]');
-    const simpleSigner = document.getElementById('simple-signer');
-    const sequentialSigners = document.getElementById('sequential-signers');
-    const addSequentialSignerBtn = document.getElementById('add-sequential-signer');
-    const sequentialSignersList = document.getElementById('sequential-signers-list');
-    
-    let signerCount = 0;
+@push('styles')
+<style>
+.signature-option {
+    cursor: pointer;
+    user-select: none;
+}
 
-    // Gestion du changement de type de signature
-    signatureTypeRadios.forEach(radio => {
-        radio.addEventListener('change', function() {
-            if (this.value === 'simple') {
+.signature-option:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.signature-option label {
+    cursor: pointer;
+    width: 100%;
+    display: block;
+}
+
+.signature-option input[type="radio"] {
+    margin-right: 8px;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+.signature-option input[type="radio"]:checked + label .option-card {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.signature-option[data-type="sequential"] input[type="radio"]:checked + label .option-card {
+    border-color: #10b981;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+</style>
+@endpush
+
+<script>
+// Script direct pour gérer les signatures séquentielles
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Script de signatures séquentielles chargé');
+    
+    // Fonction pour basculer entre les sections
+    function toggleSignatureSections(type) {
+        console.log('🔄 Basculement vers:', type);
+        
+        const simpleSigner = document.getElementById('simple-signer');
+        const sequentialSigners = document.getElementById('sequential-signers');
+        
+        console.log('🔍 Éléments trouvés:', {
+            simpleSigner: !!simpleSigner,
+            sequentialSigners: !!sequentialSigners
+        });
+        
+        if (type === 'simple') {
+            if (simpleSigner) {
                 simpleSigner.classList.remove('hidden');
+                console.log('✅ Section simple affichée');
+            }
+            if (sequentialSigners) {
                 sequentialSigners.classList.add('hidden');
-            } else {
+                console.log('✅ Section séquentielle masquée');
+            }
+        } else if (type === 'sequential') {
+            if (simpleSigner) {
                 simpleSigner.classList.add('hidden');
+                console.log('✅ Section simple masquée');
+            }
+            if (sequentialSigners) {
                 sequentialSigners.classList.remove('hidden');
+                console.log('✅ Section séquentielle affichée');
+            }
+        }
+    }
+    
+    // Gestion des clics sur les options
+    document.querySelectorAll('.signature-option').forEach(option => {
+        option.addEventListener('click', function(e) {
+            console.log('🖱️ Clic sur option:', this.dataset.type);
+            const radio = this.querySelector('input[type="radio"]');
+            if (radio) {
+                radio.checked = true;
+                toggleSignatureSections(radio.value);
             }
         });
     });
+    
+    // Gestion des changements de radio
+    document.querySelectorAll('input[name="signature_type"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            console.log('🔄 Radio changé:', this.value);
+            toggleSignatureSections(this.value);
+        });
+    });
+    
+    // Initialisation
+    const selectedRadio = document.querySelector('input[name="signature_type"]:checked');
+    if (selectedRadio) {
+        console.log('🎯 Initialisation avec:', selectedRadio.value);
+        toggleSignatureSections(selectedRadio.value);
+    }
+    
+    // Gestion des signataires séquentiels
+    const addSequentialSignerBtn = document.getElementById('add-sequential-signer');
+    const sequentialSignersList = document.getElementById('sequential-signers-list');
+    let signerCount = 0;
+    
+    console.log('🔍 Éléments signataires:', {
+        addSequentialSignerBtn: !!addSequentialSignerBtn,
+        sequentialSignersList: !!sequentialSignersList
+    });
+    
+    if (addSequentialSignerBtn && sequentialSignersList) {
+        // Fonction pour remplir les options des signataires
+        function populateSignerOptions(selectElement) {
+            const existingSelect = document.getElementById('signer_id');
+            if (existingSelect) {
+                const options = existingSelect.querySelectorAll('option');
+                options.forEach(option => {
+                    if (option.value !== '') {
+                        const newOption = option.cloneNode(true);
+                        selectElement.appendChild(newOption);
+                    }
+                });
+            }
+        }
+        
+        // Ajouter un signataire séquentiel
+        addSequentialSignerBtn.addEventListener('click', function() {
+            console.log('➕ Ajout d\'un signataire séquentiel');
+            signerCount++;
+            const signerDiv = document.createElement('div');
+            signerDiv.className = 'bg-white border border-gray-200 rounded-lg p-4 shadow-sm mb-3';
+            signerDiv.innerHTML = `
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center text-white font-bold text-sm mr-3">
+                            ${signerCount}
+                        </div>
+                        <span class="font-medium text-gray-900">Signataire ${signerCount}</span>
+                    </div>
+                    <button type="button" class="remove-signer text-red-500 hover:text-red-700 transition-colors">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+                <div class="relative">
+                    <select name="sequential_signers[]" class="w-full px-4 py-2.5 sm:py-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-success-500 focus:border-success-500 appearance-none bg-white text-sm sm:text-base" required>
+                        <option value="">Sélectionner un signataire</option>
+                    </select>
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <i class="fas fa-chevron-down text-gray-400 text-sm"></i>
+                    </div>
+                </div>
+                <input type="hidden" name="sequential_signers_order[]" value="${signerCount}">
+            `;
+            sequentialSignersList.appendChild(signerDiv);
+            
+            // Remplir les options du select
+            const selectElement = signerDiv.querySelector('select');
+            populateSignerOptions(selectElement);
+            
+            console.log('✅ Signataire ajouté');
+        });
+        
+        // Supprimer un signataire séquentiel
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.remove-signer')) {
+                console.log('🗑️ Suppression d\'un signataire');
+                const signerDiv = e.target.closest('.bg-white.border');
+                if (signerDiv) {
+                    signerDiv.remove();
+                }
+            }
+        });
+    }
+});
+</script>
+
+@push('scripts')
+<script>
+// Script simplifié pour les signataires séquentiels
+document.addEventListener('DOMContentLoaded', function() {
+    const addSequentialSignerBtn = document.getElementById('add-sequential-signer');
+    const sequentialSignersList = document.getElementById('sequential-signers-list');
+    let signerCount = 0;
+
+    // Gestion des signataires séquentiels uniquement
+    
+    // Fonction pour remplir les options des signataires
+    function populateSignerOptions(selectElement) {
+        // Récupérer les options du select existant (signature simple)
+        const existingSelect = document.getElementById('signer_id');
+        if (existingSelect) {
+            const options = existingSelect.querySelectorAll('option');
+            options.forEach(option => {
+                if (option.value !== '') {
+                    const newOption = option.cloneNode(true);
+                    selectElement.appendChild(newOption);
+                }
+            });
+        }
+    }
 
     // Ajouter un signataire séquentiel
     addSequentialSignerBtn.addEventListener('click', function() {
@@ -360,20 +574,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 </button>
             </div>
             <div class="relative">
-                <select name="sequential_signers[]" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" required>
+                <select name="sequential_signers[]" class="w-full px-4 py-2.5 sm:py-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-success-500 focus:border-success-500 appearance-none bg-white text-sm sm:text-base" required>
                     <option value="">Sélectionner un signataire</option>
-                    @foreach(\App\Models\User::whereHas('role', function($query) { $query->where('name', 'signataire'); })->get() as $user)
-                        <option value="{{ $user->id }}">{{ $user->name }} ({{ $user->email }})</option>
-                    @endforeach
                 </select>
                 <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                    <i class="fas fa-chevron-down text-gray-400"></i>
+                    <i class="fas fa-chevron-down text-gray-400 text-sm"></i>
                 </div>
             </div>
             <!-- Champ caché pour l'ordre -->
             <input type="hidden" name="sequential_signers_order[]" value="${signerCount}">
         `;
         sequentialSignersList.appendChild(signerDiv);
+        
+        // Remplir les options du select
+        const selectElement = signerDiv.querySelector('select');
+        populateSignerOptions(selectElement);
         
         // Animation d'apparition
         signerDiv.style.opacity = '0';
@@ -425,9 +640,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialiser l'état selon la valeur sélectionnée
     const selectedType = document.querySelector('input[name="signature_type"]:checked');
-    if (selectedType && selectedType.value === 'sequential') {
-        simpleSigner.classList.add('hidden');
-        sequentialSigners.classList.remove('hidden');
+    if (selectedType) {
+        // Mettre en évidence l'option sélectionnée
+        if (selectedType.value === 'simple') {
+            selectedType.closest('.signature-option').classList.add('ring-2', 'ring-blue-500');
+            selectedType.closest('.signature-option').querySelector('.option-card').classList.add('border-blue-500');
+        } else if (selectedType.value === 'sequential') {
+            selectedType.closest('.signature-option').classList.add('ring-2', 'ring-green-500');
+            selectedType.closest('.signature-option').querySelector('.option-card').classList.add('border-green-500');
+            simpleSigner.classList.add('hidden');
+            sequentialSigners.classList.remove('hidden');
+        }
     }
 
     // Gestion du fichier avec drag & drop
@@ -479,10 +702,10 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     function handleFileSelection(file) {
-        // Vérifier la taille du fichier (10MB max)
-        const maxSize = 10 * 1024 * 1024; // 10MB
+        // Vérifier la taille du fichier (50MB max)
+        const maxSize = 50 * 1024 * 1024; // 50MB
         if (file.size > maxSize) {
-            alert('Le fichier est trop volumineux. Taille maximale: 10MB');
+            alert('Le fichier est trop volumineux. Taille maximale: 50MB');
             return;
         }
 
@@ -514,4 +737,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+@endpush
+
 @endsection

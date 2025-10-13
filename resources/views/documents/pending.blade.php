@@ -3,241 +3,409 @@
 @section('title', 'Documents en Attente')
 
 @section('content')
-<div class="container mx-auto px-4 py-8">
-    <!-- Navigation sophistiquée -->
-    <nav class="sophisticated-breadcrumb mb-6">
-        <ol class="flex items-center space-x-2 text-sm">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+    <!-- Fil d'Ariane Élégant -->
+    <nav class="mb-6 sm:mb-8" aria-label="Breadcrumb">
+        <ol class="flex items-center gap-2 text-xs sm:text-sm">
             <li>
-                <a href="{{ route('home') }}" class="sophisticated-breadcrumb-link">
-                    <i class="fas fa-home"></i>
-                    <span class="hidden sm:inline ml-1">Accueil</span>
+                <a href="{{ route('home') }}" class="flex items-center gap-1.5 text-gray-600 hover:text-primary-600 transition-colors duration-200">
+                    <i class="fas fa-home text-sm"></i>
+                    <span class="hidden sm:inline">Accueil</span>
                 </a>
             </li>
-            <li class="sophisticated-breadcrumb-separator">
-                <i class="fas fa-chevron-right"></i>
+            <li class="text-gray-400">
+                <i class="fas fa-chevron-right text-xs"></i>
             </li>
-            <li class="sophisticated-breadcrumb-current">
-                <i class="fas fa-clock"></i>
-                <span class="hidden sm:inline ml-1">Documents en Attente</span>
+            <li class="flex items-center gap-1.5 text-primary-600 font-semibold">
+                <i class="fas fa-clock text-sm"></i>
+                <span>En Attente</span>
             </li>
         </ol>
     </nav>
-    <!-- En-tête moderne avec navigation -->
-    <div class="mb-8">
-        <div class="flex items-center justify-between mb-6">
-            <div>
-                @if(auth()->user()->isSignataire())
-                    <h1 class="text-3xl font-bold sophisticated-heading flex items-center gap-3">
-                        <i class="fas fa-pen-fancy text-primary"></i>
-                        Documents à Signer
-                    </h1>
-                    <p class="sophisticated-body mt-2">Voici les documents qui vous ont été assignés pour signature</p>
-                @elseif(auth()->user()->isAdmin())
-                    <h1 class="text-3xl font-bold sophisticated-heading flex items-center gap-3">
-                        <i class="fas fa-clock text-primary"></i>
-                        Documents en Attente de Signature
-                    </h1>
-                    <p class="sophisticated-body mt-2">Vue d'ensemble de tous les documents en attente de signature</p>
-                @else
-                    <h1 class="text-3xl font-bold sophisticated-heading flex items-center gap-3">
-                        <i class="fas fa-upload text-primary"></i>
-                        Mes Documents Soumis
-                    </h1>
-                    <p class="sophisticated-body mt-2">Documents que vous avez soumis et qui sont en attente de signature</p>
-                @endif
-            </div>
-            <div class="flex gap-3">
-                <a href="{{ route('documents.history') }}" class="btn btn-secondary">
-                    <i class="fas fa-history"></i>
-                    Historique
-                </a>
-                @if(auth()->user()->isAgent())
-                    <a href="{{ route('documents.upload') }}" class="btn btn-primary">
-                        <i class="fas fa-plus"></i>
-                        Nouveau Document
-                    </a>
-                @endif
-            </div>
-        </div>
+    
+    <!-- Carte d'En-tête Élégante -->
+    <div class="card card-hover mb-6 sm:mb-8 overflow-hidden relative">
+        <!-- Fond décoratif avec dégradé -->
+        <div class="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700 opacity-10"></div>
+        <div class="absolute top-0 right-0 w-64 h-64 bg-primary-400 rounded-full blur-3xl opacity-20 -mr-32 -mt-32"></div>
         
-        <!-- Statistiques rapides -->
-        @if($documents->count() > 0)
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-            <div class="stat-card stat-total">
-                <div class="stat-icon">
-                    <i class="fas fa-file-alt"></i>
+        <div class="relative p-6 sm:p-8 lg:p-10">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                <!-- Informations de la page -->
+                <div class="flex items-center gap-4 sm:gap-6 flex-1">
+                    <!-- Icône Élégante -->
+                    <div class="relative flex-shrink-0">
+                        @if(auth()->user()->isSignataire())
+                            <div class="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 rounded-2xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center shadow-glow">
+                                <i class="fas fa-pen-fancy text-white text-2xl sm:text-3xl lg:text-4xl"></i>
+                            </div>
+                        @elseif(auth()->user()->isAdmin())
+                            <div class="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 rounded-2xl bg-gradient-to-br from-warning-400 to-warning-600 flex items-center justify-center shadow-glow">
+                                <i class="fas fa-clock text-white text-2xl sm:text-3xl lg:text-4xl"></i>
+                            </div>
+                        @else
+                            <div class="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 rounded-2xl bg-gradient-to-br from-info-400 to-info-600 flex items-center justify-center shadow-glow">
+                                <i class="fas fa-upload text-white text-2xl sm:text-3xl lg:text-4xl"></i>
+                            </div>
+                        @endif
+                    </div>
+                    
+                    <!-- Titre et Description -->
+                    <div class="flex-1 min-w-0">
+                        @if(auth()->user()->isSignataire())
+                            <h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2 flex items-center gap-2 sm:gap-3">
+                                <i class="fas fa-sparkles text-primary-500 text-xl sm:text-2xl lg:text-3xl"></i>
+                                <span class="truncate">Documents à <span class="text-gradient">Signer</span></span>
+                            </h1>
+                            <p class="text-sm sm:text-base text-gray-600">Voici les documents qui vous ont été assignés pour signature</p>
+                        @elseif(auth()->user()->isAdmin())
+                            <h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2 flex items-center gap-2 sm:gap-3">
+                                <i class="fas fa-sparkles text-warning-500 text-xl sm:text-2xl lg:text-3xl"></i>
+                                <span class="truncate">Documents en <span class="text-gradient">Attente</span></span>
+                            </h1>
+                            <p class="text-sm sm:text-base text-gray-600 hidden sm:block">Vue d'ensemble de tous les documents en attente de signature</p>
+                        @else
+                            <h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2 flex items-center gap-2 sm:gap-3">
+                                <i class="fas fa-sparkles text-info-500 text-xl sm:text-2xl lg:text-3xl"></i>
+                                <span class="truncate">Mes Documents <span class="text-gradient">Soumis</span></span>
+                            </h1>
+                            <p class="text-sm sm:text-base text-gray-600 hidden sm:block">Documents que vous avez soumis et qui sont en attente de signature</p>
+                        @endif
+                    </div>
                 </div>
-                <div class="stat-content">
-                    <h3 class="stat-number">{{ $documents->count() }}</h3>
-                    <p class="stat-label">Documents en attente</p>
-                </div>
-            </div>
-            
-            <div class="stat-card stat-pending">
-                <div class="stat-icon">
-                    <i class="fas fa-clock"></i>
-                </div>
-                <div class="stat-content">
-                    <h3 class="stat-number">{{ $documents->where('status', 'pending')->count() }}</h3>
-                    <p class="stat-label">En attente de signature</p>
-                </div>
-            </div>
-            
-            <div class="stat-card stat-urgent">
-                <div class="stat-icon">
-                    <i class="fas fa-exclamation-triangle"></i>
-                </div>
-                <div class="stat-content">
-                    <h3 class="stat-number">{{ $documents->where('created_at', '<', now()->subDays(7))->count() }}</h3>
-                    <p class="stat-label">Documents urgents</p>
+                
+                <!-- Actions -->
+                <div class="flex gap-2 sm:gap-3 flex-shrink-0">
+                    <a href="{{ route('documents.history') }}" class="group inline-flex items-center gap-2 px-4 sm:px-6 py-3 sm:py-4 bg-white border-2 border-gray-300 text-gray-700 rounded-xl shadow-elegant hover:shadow-lg hover:-translate-y-1 hover:border-gray-400 transition-all duration-300">
+                        <i class="fas fa-history text-sm sm:text-base"></i>
+                        <span class="text-xs sm:text-sm font-semibold">Historique</span>
+                    </a>
+                    @if(auth()->user()->isAgent())
+                        <a href="{{ route('documents.upload') }}" class="group inline-flex items-center gap-2 px-4 sm:px-6 py-3 sm:py-4 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-xl shadow-elegant hover:shadow-glow hover:-translate-y-1 transition-all duration-300">
+                            <i class="fas fa-plus text-sm sm:text-base"></i>
+                            <span class="text-xs sm:text-sm font-semibold"><span class="hidden sm:inline">Nouveau </span>Document</span>
+                        </a>
+                    @endif
                 </div>
             </div>
         </div>
-        @endif
     </div>
         
+    <!-- Statistiques rapides - Cartes Élégantes -->
     @if($documents->count() > 0)
-        <!-- Tableau des documents avec vue moderne -->
-        <div class="card">
-            <div class="card-header">
-                <div class="flex items-center justify-between">
-                    <h2 class="sophisticated-card-header-title flex items-center gap-2">
-                        <i class="fas fa-list text-primary"></i>
-                        @if(auth()->user()->isSignataire())
-                            Documents à signer ({{ $documents->count() }})
-                        @elseif(auth()->user()->isAdmin())
-                            Tous les documents en attente ({{ $documents->count() }})
-                        @else
-                            Mes documents soumis ({{ $documents->count() }})
-                        @endif
-                    </h2>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5 lg:gap-6 mb-6 sm:mb-8">
+        <!-- Total Documents -->
+        <div class="group relative card card-hover p-6 overflow-hidden">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary-400 to-primary-600 rounded-full blur-3xl opacity-20 -mr-16 -mt-16 group-hover:opacity-30 transition-opacity duration-300"></div>
+            <div class="relative flex items-center gap-4">
+                <div class="flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center shadow-elegant group-hover:shadow-glow group-hover:scale-110 transition-all duration-300">
+                    <i class="fas fa-file-alt text-white text-xl"></i>
+                </div>
+                <div class="flex-1">
+                    <h3 class="text-3xl font-bold text-gray-900 mb-1">{{ $documents->count() }}</h3>
+                    <p class="text-sm text-gray-600 font-medium">Documents en attente</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- En attente de Signature -->
+        <div class="group relative card card-hover p-6 overflow-hidden">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-warning-400 to-warning-600 rounded-full blur-3xl opacity-20 -mr-16 -mt-16 group-hover:opacity-30 transition-opacity duration-300"></div>
+            <div class="relative flex items-center gap-4">
+                <div class="flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-warning-400 to-warning-600 flex items-center justify-center shadow-elegant group-hover:shadow-glow group-hover:scale-110 transition-all duration-300">
+                    <i class="fas fa-clock text-white text-xl"></i>
+                </div>
+                <div class="flex-1">
+                    <h3 class="text-3xl font-bold text-gray-900 mb-1">{{ $documents->where('status', 'pending')->count() }}</h3>
+                    <p class="text-sm text-gray-600 font-medium">En attente de signature</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Documents Urgents -->
+        <div class="group relative card card-hover p-6 overflow-hidden">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-danger-400 to-danger-600 rounded-full blur-3xl opacity-20 -mr-16 -mt-16 group-hover:opacity-30 transition-opacity duration-300"></div>
+            <div class="relative flex items-center gap-4">
+                <div class="flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-danger-400 to-danger-600 flex items-center justify-center shadow-elegant group-hover:shadow-glow group-hover:scale-110 transition-all duration-300">
+                    <i class="fas fa-exclamation-triangle text-white text-xl"></i>
+                </div>
+                <div class="flex-1">
+                    <h3 class="text-3xl font-bold text-gray-900 mb-1">{{ $documents->where('created_at', '<', now()->subDays(7))->count() }}</h3>
+                    <p class="text-sm text-gray-600 font-medium">Documents urgents</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+        
+    @if($documents->count() > 0)
+        <!-- Tableau des documents - Carte Élégante -->
+        <div class="card card-hover overflow-hidden">
+            <!-- En-tête du tableau avec design moderne -->
+            <div class="relative p-4 sm:p-6 lg:p-8 bg-gradient-to-r from-gray-50 to-white border-b border-gray-200">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <!-- Titre avec badge -->
                     <div class="flex items-center gap-3">
-                        <div class="flex items-center gap-2">
-                            <span class="text-sm sophisticated-body">Trier par:</span>
-                            <select id="sort_by" class="form-control form-control-sm">
-                                <option value="created_at_desc">Date (récent)</option>
-                                <option value="created_at_asc">Date (ancien)</option>
-                                <option value="filename_asc">Nom (A-Z)</option>
-                                <option value="filename_desc">Nom (Z-A)</option>
-                                <option value="file_size_desc">Taille (grand)</option>
-                                <option value="file_size_asc">Taille (petit)</option>
-                            </select>
+                        <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center shadow-elegant">
+                            <i class="fas fa-list text-white text-lg sm:text-xl"></i>
                         </div>
+                        <div>
+                            <h2 class="text-lg sm:text-xl font-bold text-gray-900 flex items-center gap-2">
+                                @if(auth()->user()->isSignataire())
+                                    <span class="hidden sm:inline">Documents à signer</span>
+                                    <span class="sm:hidden">Documents</span>
+                                @elseif(auth()->user()->isAdmin())
+                                    <span class="hidden lg:inline">Tous les documents en attente</span>
+                                    <span class="lg:hidden">Documents</span>
+                                @else
+                                    <span class="hidden sm:inline">Mes documents soumis</span>
+                                    <span class="sm:hidden">Mes documents</span>
+                                @endif
+                                <span class="inline-flex items-center px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-sm font-semibold">
+                                    {{ $documents->count() }}
+                                </span>
+                            </h2>
+                            <p class="text-xs sm:text-sm text-gray-600 mt-0.5">Liste complète des documents en attente de traitement</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Contrôles de tri -->
+                    <div class="flex items-center gap-2 bg-white px-4 py-2 rounded-xl border border-gray-200 shadow-sm">
+                        <i class="fas fa-sort text-gray-400 text-sm"></i>
+                        <select id="sort_by" class="border-0 bg-transparent text-sm text-gray-700 font-medium focus:outline-none focus:ring-0 pr-8">
+                            <option value="created_at_desc">📅 Date (récent)</option>
+                            <option value="created_at_asc">📅 Date (ancien)</option>
+                            <option value="filename_asc">🔤 Nom (A-Z)</option>
+                            <option value="filename_desc">🔤 Nom (Z-A)</option>
+                            <option value="file_size_desc">📊 Taille (grand)</option>
+                            <option value="file_size_asc">📊 Taille (petit)</option>
+                        </select>
                     </div>
                 </div>
             </div>
             
-            <!-- Version desktop -->
+            <!-- Version desktop (lg+) -->
             <div class="hidden lg:block overflow-x-auto">
-                <table class="table">
-                    <thead>
+                <table class="w-full">
+                    <thead class="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
                         <tr>
-                            <th>Document</th>
-                            <th>Type</th>
-                            <th>
-                                @if(auth()->user()->isSignataire())
-                                    Soumis par
-                                @elseif(auth()->user()->isAdmin())
-                                    Soumis par / Assigné à
-                                @else
-                                    Assigné à
-                                @endif
+                            <th class="px-6 py-4 text-left">
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-file-alt text-primary-500 text-sm"></i>
+                                    <span class="text-xs font-bold text-gray-700 uppercase tracking-wider">Document</span>
+                                </div>
                             </th>
-                            <th>Date de soumission</th>
-                            <th>Priorité</th>
-                            <th>Actions</th>
+                            <th class="px-6 py-4 text-left">
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-tag text-primary-500 text-sm"></i>
+                                    <span class="text-xs font-bold text-gray-700 uppercase tracking-wider">Type</span>
+                                </div>
+                            </th>
+                            <th class="px-6 py-4 text-left">
+                                <div class="flex items-center gap-2">
+                                    @if(auth()->user()->isSignataire())
+                                        <i class="fas fa-user-circle text-primary-500 text-sm"></i>
+                                        <span class="text-xs font-bold text-gray-700 uppercase tracking-wider">Soumis par</span>
+                                    @elseif(auth()->user()->isAdmin())
+                                        <i class="fas fa-users text-primary-500 text-sm"></i>
+                                        <span class="text-xs font-bold text-gray-700 uppercase tracking-wider">Soumis par / Assigné à</span>
+                                    @else
+                                        <i class="fas fa-user-check text-primary-500 text-sm"></i>
+                                        <span class="text-xs font-bold text-gray-700 uppercase tracking-wider">Assigné à</span>
+                                    @endif
+                                </div>
+                            </th>
+                            <th class="px-6 py-4 text-left">
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-calendar-alt text-primary-500 text-sm"></i>
+                                    <span class="text-xs font-bold text-gray-700 uppercase tracking-wider">Date de soumission</span>
+                                </div>
+                            </th>
+                            <th class="px-6 py-4 text-left">
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-tasks text-primary-500 text-sm"></i>
+                                    <span class="text-xs font-bold text-gray-700 uppercase tracking-wider">Statut</span>
+                                </div>
+                            </th>
+                            <th class="px-6 py-4 text-center">
+                                <div class="flex items-center justify-center gap-2">
+                                    <i class="fas fa-bolt text-primary-500 text-sm"></i>
+                                    <span class="text-xs font-bold text-gray-700 uppercase tracking-wider">Actions</span>
+                                </div>
+                            </th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="divide-y divide-gray-100">
                         @foreach($documents as $document)
                             @php
                                 $isUrgent = $document->created_at < now()->subDays(7);
                                 $daysSinceCreated = $document->created_at->diffInDays(now());
                             @endphp
-                            <tr class="document-row {{ $isUrgent ? 'urgent-row' : '' }}">
-                                <td>
+                            <tr class="group hover:bg-gradient-to-r hover:from-blue-50 hover:to-transparent transition-all duration-200 {{ $isUrgent ? 'bg-red-50/30' : '' }}">
+                                <!-- Document -->
+                                <td class="px-6 py-4">
                                     <div class="flex items-center gap-3">
-                                        <div class="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
-                                            <i class="fas fa-file-pdf text-white text-lg"></i>
+                                        <div class="relative flex-shrink-0">
+                                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center shadow-md group-hover:shadow-lg group-hover:scale-105 transition-all duration-200">
+                                                <i class="fas fa-file-pdf text-white text-lg"></i>
+                                            </div>
+                                            @if($isUrgent)
+                                                <div class="absolute -top-1 -right-1 w-5 h-5 bg-danger-500 rounded-full flex items-center justify-center animate-pulse">
+                                                    <i class="fas fa-exclamation text-white text-xs"></i>
+                                                </div>
+                                            @endif
                                         </div>
-                                        <div>
-                                            <div class="font-medium sophisticated-heading">{{ $document->document_name ?? $document->filename_original }}</div>
-                                            <div class="text-sm sophisticated-caption">{{ number_format($document->file_size / 1024, 1) }} KB</div>
+                                        <div class="flex-1 min-w-0">
+                                            <div class="font-semibold text-gray-900 truncate group-hover:text-primary-600 transition-colors">
+                                                {{ $document->document_name ?? $document->filename_original }}
+                                            </div>
+                                            <div class="flex items-center gap-2 mt-1">
+                                                <span class="inline-flex items-center px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs font-medium">
+                                                    <i class="fas fa-weight-hanging text-gray-400 text-xs mr-1"></i>
+                                                    {{ number_format($document->file_size / 1024, 1) }} KB
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
                                 </td>
-                                <td>
-                                    <span class="status status-pending">
+                                
+                                <!-- Type -->
+                                <td class="px-6 py-4">
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-100 text-primary-700 rounded-lg text-sm font-semibold">
+                                        <i class="fas fa-tag text-xs"></i>
                                         {{ ucfirst($document->type) }}
                                     </span>
                                 </td>
-                                <td>
+                                
+                                <!-- Utilisateurs -->
+                                <td class="px-6 py-4">
                                     @if(auth()->user()->isSignataire())
                                         <div class="flex items-center gap-2">
-                                            <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                                                <i class="fas fa-user sophisticated-body text-sm"></i>
+                                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center shadow-sm">
+                                                <i class="fas fa-user text-gray-600 text-sm"></i>
                                             </div>
-                                            <span class="sophisticated-body">{{ $document->uploader->name }}</span>
+                                            <span class="text-sm font-medium text-gray-700">{{ $document->uploader->name }}</span>
                                         </div>
                                     @elseif(auth()->user()->isAdmin())
-                                        <div class="space-y-1">
+                                        <div class="space-y-2">
                                             <div class="flex items-center gap-2">
-                                                <div class="w-6 h-6 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-sm">
+                                                <div class="w-7 h-7 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center shadow-sm">
                                                     <i class="fas fa-upload text-white text-xs"></i>
                                                 </div>
-                                                <span class="text-sm sophisticated-body">{{ $document->uploader->name }}</span>
+                                                <span class="text-sm font-medium text-gray-700">{{ $document->uploader->name }}</span>
                                             </div>
-                                            <div class="flex items-center gap-2">
-                                                <div class="w-6 h-6 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center shadow-sm">
-                                                    <i class="fas fa-user-check text-white text-xs"></i>
+                                            <div class="flex items-center gap-2 pl-1">
+                                                <i class="fas fa-arrow-right text-gray-400 text-xs"></i>
+                                                <div class="w-6 h-6 bg-gradient-to-br from-success-400 to-success-600 rounded-full flex items-center justify-center shadow-sm">
+                                                    <i class="fas fa-user-check text-white text-[10px]"></i>
                                                 </div>
-                                                <span class="text-xs sophisticated-caption">→ {{ $document->signer->name }}</span>
+                                                <span class="text-xs font-medium text-gray-600">{{ $document->signer?->name ?? 'Non assigné' }}</span>
                                             </div>
                                         </div>
                                     @else
                                         <div class="flex items-center gap-2">
-                                            <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                                                <i class="fas fa-user sophisticated-body text-sm"></i>
+                                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-success-400 to-success-600 flex items-center justify-center shadow-sm">
+                                                <i class="fas fa-user-check text-white text-sm"></i>
                                             </div>
-                                            <span class="sophisticated-body">{{ $document->signer->name }}</span>
+                                            <span class="text-sm font-medium text-gray-700">{{ $document->signer?->name ?? 'Non assigné' }}</span>
                                         </div>
                                     @endif
                                 </td>
-                                <td class="sophisticated-caption">
-                                    <div class="text-sm">{{ $document->created_at->format('d/m/Y') }}</div>
-                                    <div class="text-xs text-gray-400">{{ $document->created_at->format('H:i') }}</div>
+                                
+                                <!-- Date -->
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-2">
+                                        <div class="flex flex-col">
+                                            <span class="text-sm font-semibold text-gray-900">{{ $document->created_at->format('d/m/Y') }}</span>
+                                            <span class="text-xs text-gray-500 flex items-center gap-1">
+                                                <i class="fas fa-clock text-[10px]"></i>
+                                                {{ $document->created_at->format('H:i') }}
+                                            </span>
+                                        </div>
+                                    </div>
                                 </td>
-                                <td>
-                                    @if($isUrgent)
-                                        <span class="status status-urgent">
-                                            <i class="fas fa-exclamation-triangle"></i>
-                                            Urgent ({{ $daysSinceCreated }}j)
+                                <!-- Statut -->
+                                <td class="px-6 py-4">
+                                    @php
+                                        $statusConfig = [
+                                            'pending' => [
+                                                'label' => 'En attente',
+                                                'icon' => 'fa-clock',
+                                                'bg' => 'bg-warning-100',
+                                                'text' => 'text-warning-700',
+                                                'border' => 'border-warning-200'
+                                            ],
+                                            'signed' => [
+                                                'label' => 'Signé',
+                                                'icon' => 'fa-check-circle',
+                                                'bg' => 'bg-success-100',
+                                                'text' => 'text-success-700',
+                                                'border' => 'border-success-200'
+                                            ],
+                                            'paraphed' => [
+                                                'label' => 'Paraphé',
+                                                'icon' => 'fa-pen',
+                                                'bg' => 'bg-info-100',
+                                                'text' => 'text-info-700',
+                                                'border' => 'border-info-200'
+                                            ],
+                                            'signed_and_paraphed' => [
+                                                'label' => 'Signé & Paraphé',
+                                                'icon' => 'fa-check-double',
+                                                'bg' => 'bg-success-100',
+                                                'text' => 'text-success-700',
+                                                'border' => 'border-success-200'
+                                            ],
+                                            'cacheted' => [
+                                                'label' => 'Cacheté',
+                                                'icon' => 'fa-stamp',
+                                                'bg' => 'bg-purple-100',
+                                                'text' => 'text-purple-700',
+                                                'border' => 'border-purple-200'
+                                            ],
+                                            'refused' => [
+                                                'label' => 'Refusé',
+                                                'icon' => 'fa-times-circle',
+                                                'bg' => 'bg-danger-100',
+                                                'text' => 'text-danger-700',
+                                                'border' => 'border-danger-200'
+                                            ],
+                                        ];
+                                        
+                                        $currentStatus = $statusConfig[$document->status] ?? $statusConfig['pending'];
+                                        $pulseClass = $isUrgent && $document->status === 'pending' ? 'animate-pulse' : '';
+                                    @endphp
+                                    
+                                    <div class="flex flex-col gap-1.5">
+                                        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 {{ $currentStatus['bg'] }} {{ $currentStatus['text'] }} rounded-lg text-sm font-semibold border {{ $currentStatus['border'] }} {{ $pulseClass }}">
+                                            <i class="fas {{ $currentStatus['icon'] }} text-xs"></i>
+                                            {{ $currentStatus['label'] }}
                                         </span>
-                                    @elseif($daysSinceCreated > 3)
-                                        <span class="status status-warning">
-                                            <i class="fas fa-clock"></i>
-                                            En attente ({{ $daysSinceCreated }}j)
-                                        </span>
-                                    @else
-                                        <span class="status status-info">
-                                            <i class="fas fa-clock"></i>
-                                            Récent
-                                        </span>
-                                    @endif
+                                        @if($isUrgent && $document->status === 'pending')
+                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-danger-50 text-danger-600 rounded text-xs font-medium">
+                                                <i class="fas fa-exclamation-triangle text-[10px]"></i>
+                                                Urgent ({{ $daysSinceCreated }}j)
+                                            </span>
+                                        @endif
+                                    </div>
                                 </td>
-                                <td>
-                                    <div class="flex gap-2">
+                                
+                                <!-- Actions -->
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center justify-center gap-2">
                                         <a href="{{ route('documents.process.show', ['document' => $document, 'action' => 'view']) }}" 
-                                           class="btn btn-secondary btn-sm">
-                                            <i class="fas fa-eye"></i>
-                                            <span>Voir</span>
+                                           class="group inline-flex items-center gap-1.5 px-3 py-2 bg-white border-2 border-gray-300 text-gray-700 rounded-lg text-sm font-semibold hover:bg-gray-50 hover:border-gray-400 hover:-translate-y-0.5 hover:shadow-md transition-all duration-200"
+                                           title="Voir le document">
+                                            <i class="fas fa-eye text-xs group-hover:scale-110 transition-transform"></i>
+                                            <span class="hidden xl:inline">Voir</span>
                                         </a>
                                         
                                         @if(auth()->user()->isSignataire())
                                             <a href="{{ route('documents.process.show', ['document' => $document, 'action' => 'sign']) }}" 
-                                               class="btn btn-primary btn-sm">
-                                                <i class="fas fa-pen-fancy"></i>
-                                                <span>Signer</span>
+                                               class="group inline-flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-lg text-sm font-semibold hover:from-primary-600 hover:to-primary-700 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200"
+                                               title="Signer le document">
+                                                <i class="fas fa-pen-fancy text-xs group-hover:scale-110 transition-transform"></i>
+                                                <span class="hidden xl:inline">Signer</span>
                                             </a>
                                         @endif
                                     </div>
@@ -308,7 +476,7 @@
                                         <div class="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
                                             <i class="fas fa-user-check text-white text-xs"></i>
                                         </div>
-                                        <span class="text-sm sophisticated-body">{{ $document->signer->name }}</span>
+                                        <span class="text-sm sophisticated-body">{{ $document->signer?->name ?? 'Non assigné' }}</span>
                                     </div>
                                 </div>
                             @endif

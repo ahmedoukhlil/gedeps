@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Document;
 use App\Models\DocumentSignature;
 use App\Models\DocumentParaphe;
+use App\Models\DocumentCachet;
 use App\Models\User;
 use App\Services\PdfSigningService;
 use App\Services\NotificationService;
@@ -42,11 +43,14 @@ class DocumentProcessController extends Controller
                 'pdfUrl' => $pdfUrl,
                 'signatureUrl' => null, // Pas de signature en mode lecture seule
                 'parapheUrl' => null,   // Pas de paraphe en mode lecture seule
+                'cachetUrl' => null,    // Pas de cachet en mode lecture seule
                 'formAction' => '#',    // Pas de soumission possible
                 'backUrl' => route('documents.pending'),
                 'allowSignature' => false,  // Désactiver la signature
                 'allowParaphe' => false,    // Désactiver le paraphe
+                'allowCachet' => false,     // Désactiver le cachet
                 'allowBoth' => false,       // Désactiver les deux
+                'allowAll' => false,        // Désactiver tout
                 'defaultAction' => 'view_only',
                 'actionTitle' => 'Document Signé',
                 'actionIcon' => 'file-signature',
@@ -63,18 +67,21 @@ class DocumentProcessController extends Controller
         // Déterminer les actions disponibles
         $allowSignature = $this->canSign($document);
         $allowParaphe = $this->canParaphe($document);
+        $allowCachet = $this->canCachet($document);
         $allowBoth = $allowSignature && $allowParaphe;
+        $allowAll = $allowSignature && $allowParaphe && $allowCachet;
 
         // Configuration selon l'action
-        $config = $this->getActionConfig($action, $allowSignature, $allowParaphe, $allowBoth);
+        $config = $this->getActionConfig($action, $allowSignature, $allowParaphe, $allowCachet, $allowBoth, $allowAll);
         
         // Générer l'URL du PDF avec encodage correct
         $pdfUrl = route('storage.documents', ['filename' => basename($document->path_original)]);
         
-        // Obtenir les URLs des signatures et paraphes de l'utilisateur
+        // Obtenir les URLs des signatures, paraphes et cachets de l'utilisateur
         $user = auth()->user();
         $signatureUrl = $user->getSignatureUrl();
         $parapheUrl = $user->getParapheUrl();
+        $cachetUrl = $user->getCachetUrl();
         
         // Données pour la vue
         $viewData = [
@@ -82,11 +89,14 @@ class DocumentProcessController extends Controller
             'pdfUrl' => $pdfUrl,
             'signatureUrl' => $signatureUrl,
             'parapheUrl' => $parapheUrl,
+            'cachetUrl' => $cachetUrl,
             'formAction' => route('documents.process.store', $document),
             'backUrl' => route('documents.pending'),
             'allowSignature' => $allowSignature,
             'allowParaphe' => $allowParaphe,
+            'allowCachet' => $allowCachet,
             'allowBoth' => $allowBoth,
+            'allowAll' => $allowAll,
             'defaultAction' => $config['defaultAction'],
             'actionTitle' => $config['actionTitle'],
             'actionIcon' => $config['actionIcon'],
@@ -112,22 +122,30 @@ class DocumentProcessController extends Controller
         // Validation
         try {
             $validated = $request->validate([
-                'action_type' => 'required|in:sign_only,paraphe_only,both',
+                'action_type' => 'required|in:sign_only,paraphe_only,cachet_only,both,sign_paraphe,sign_cachet,paraphe_cachet,all',
                 'signature_comment' => 'nullable|string|max:500',
                 'paraphe_comment' => 'nullable|string|max:500',
-                'signature_type' => 'required|in:png,live',
-                'paraphe_type' => 'required|in:png,live',
+                'cachet_comment' => 'nullable|string|max:500',
+                'signature_type' => 'nullable|in:png,live',
+                'paraphe_type' => 'nullable|in:png,live',
+                'cachet_type' => 'nullable|in:png,live',
                 'live_signature_data' => 'nullable|string',
                 'live_paraphe_data' => 'nullable|string',
+                'live_cachet_data' => 'nullable|string',
                 'signature_x' => 'nullable|numeric',
                 'signature_y' => 'nullable|numeric',
                 'paraphe_x' => 'nullable|numeric',
                 'paraphe_y' => 'nullable|numeric',
+                'cachet_x' => 'nullable|numeric',
+                'cachet_y' => 'nullable|numeric',
             ]);
             
             // Assurer que les commentaires ont des valeurs par défaut
             $validated['signature_comment'] = $validated['signature_comment'] ?? '';
-            $validated['paraphe_comment'] = $validated['paraphe_comment'] ?? '';} catch (\Illuminate\Validation\ValidationException $e) {return redirect()->back()
+            $validated['paraphe_comment'] = $validated['paraphe_comment'] ?? '';
+            $validated['cachet_comment'] = $validated['cachet_comment'] ?? '';
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return redirect()->back()
                 ->withErrors($e->errors())
                 ->withInput();
         }
@@ -195,8 +213,21 @@ class DocumentProcessController extends Controller
             case 'paraphe_only':
                 $document->update(['status' => Document::STATUS_PARAPHED]);
                 break;
+            case 'cachet_only':
+                $document->update(['status' => 'cacheted']); // Nouveau statut pour cachet
+                break;
             case 'both':
+            case 'sign_paraphe':
                 $document->update(['status' => Document::STATUS_SIGNED_AND_PARAPHED]);
+                break;
+            case 'sign_cachet':
+                $document->update(['status' => 'signed_and_cacheted']);
+                break;
+            case 'paraphe_cachet':
+                $document->update(['status' => 'paraphed_and_cacheted']);
+                break;
+            case 'all':
+                $document->update(['status' => 'fully_processed']);
                 break;
         }
     }
@@ -209,7 +240,12 @@ class DocumentProcessController extends Controller
         return match ($actionType) {
             'sign_only' => 'Document signé avec succès !',
             'paraphe_only' => 'Document paraphé avec succès !',
+            'cachet_only' => 'Document cacheté avec succès !',
             'both' => 'Document signé et paraphé avec succès !',
+            'sign_paraphe' => 'Document signé et paraphé avec succès !',
+            'sign_cachet' => 'Document signé et cacheté avec succès !',
+            'paraphe_cachet' => 'Document paraphé et cacheté avec succès !',
+            'all' => 'Document entièrement traité avec succès !',
             default => 'Document traité avec succès !',
         };
     }
@@ -241,7 +277,19 @@ class DocumentProcessController extends Controller
                         $notificationService->notifyDocumentParaphed($document, $signer, $agent);
                         break;
                     
+                    case 'cachet_only':
+                        // Pour l'instant, utiliser la même notification que le paraphe
+                        $notificationService->notifyDocumentParaphed($document, $signer, $agent);
+                        break;
+                    
                     case 'both':
+                    case 'sign_paraphe':
+                        $notificationService->notifyDocumentFullyProcessed($document, $signer, $agent);
+                        break;
+                    
+                    case 'sign_cachet':
+                    case 'paraphe_cachet':
+                    case 'all':
                         $notificationService->notifyDocumentFullyProcessed($document, $signer, $agent);
                         break;
                 }});
@@ -266,7 +314,7 @@ class DocumentProcessController extends Controller
     /**
      * Obtenir la configuration selon l'action
      */
-    private function getActionConfig(string $action, bool $allowSignature, bool $allowParaphe, bool $allowBoth): array
+    private function getActionConfig(string $action, bool $allowSignature, bool $allowParaphe, bool $allowCachet, bool $allowBoth, bool $allowAll): array
     {
         $configs = [
             'sign' => [
@@ -287,9 +335,18 @@ class DocumentProcessController extends Controller
                 'statusText' => 'En Attente de Paraphe',
                 'submitText' => 'Parapher le Document'
             ],
+            'cachet' => [
+                'defaultAction' => 'cachet_only',
+                'actionTitle' => 'Cacheter le Document',
+                'actionIcon' => 'stamp',
+                'statusClass' => 'warning',
+                'statusIcon' => 'clock',
+                'statusText' => 'En Attente de Cachet',
+                'submitText' => 'Cacheter le Document'
+            ],
             'combined' => [
-                'defaultAction' => 'both',
-                'actionTitle' => 'Signature & Paraphe',
+                'defaultAction' => $allowAll ? 'all' : ($allowBoth ? 'both' : 'sign_only'),
+                'actionTitle' => 'Traitement Complet',
                 'actionIcon' => 'pen-fancy',
                 'statusClass' => 'warning',
                 'statusIcon' => 'clock',
@@ -299,6 +356,31 @@ class DocumentProcessController extends Controller
         ];
 
         return $configs[$action] ?? $configs['combined'];
+    }
+    
+    /**
+     * Vérifier si l'utilisateur peut cacheter le document
+     */
+    private function canCachet(Document $document): bool
+    {
+        $user = auth()->user();
+        
+        // Un agent peut cacheter ses propres documents
+        if ($user->isAgent() && $document->uploaded_by === $user->id) {
+            return true;
+        }
+        
+        // Un signataire peut cacheter les documents qui lui sont assignés
+        if ($user->isSignataire() && $document->signer_id === $user->id) {
+            return true;
+        }
+        
+        // Un admin peut cacheter tous les documents
+        if ($user->isAdmin()) {
+            return true;
+        }
+        
+        return false;
     }
 
     /**

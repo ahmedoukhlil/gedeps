@@ -2,6 +2,7 @@
 
 @section('title', 'Historique des Documents')
 
+
 @section('content')
 <div class="min-h-screen bg-gray-50">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -61,30 +62,46 @@
         </div>
     @endif
 
-    <!-- Barre de recherche globale -->
+    <!-- Barre de recherche globale - Filtrage en Temps Réel -->
     <div class="bg-white rounded-xl shadow-md p-6 mb-8">
-        <form method="GET" action="{{ route('documents.history') }}" class="space-y-4">
+        <div class="space-y-4">
             <!-- Recherche globale -->
             <div class="relative">
-                <label for="search" class="block text-sm font-medium text-gray-700 mb-2">
-                    <i class="fas fa-search mr-1"></i>
-                    Recherche globale
+                <label for="search" class="block text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                    <div class="w-6 h-6 rounded-lg bg-primary-100 flex items-center justify-center">
+                        <i class="fas fa-search text-primary-600 text-xs"></i>
+                    </div>
+                    <span>Recherche instantanée de documents</span>
                 </label>
                 <div class="relative">
                     <input type="text" 
-                           id="search" 
-                           name="search" 
-                           value="{{ request('search') }}"
-                           placeholder="Rechercher par nom du document, soumissionnaire, type, statut..."
-                           class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <i class="fas fa-search text-gray-400"></i>
+                           id="searchInput" 
+                           placeholder="Tapez pour filtrer les documents en temps réel..."
+                           autocomplete="off"
+                           class="w-full px-4 py-3 pl-12 pr-12 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-base transition-all duration-200 hover:border-primary-300">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <i class="fas fa-search text-primary-500 text-lg" id="searchIcon"></i>
+                    </div>
+                    <button type="button" 
+                            id="clearSearch"
+                            class="hidden absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-danger-600 transition-colors">
+                        <i class="fas fa-times-circle text-lg"></i>
+                    </button>
+                </div>
+                
+                <!-- Compteur de résultats -->
+                <div class="mt-3 flex items-center justify-between">
+                    <div class="flex items-start gap-2 p-3 bg-gradient-to-r from-primary-50 to-blue-50 border border-primary-200 rounded-lg flex-1">
+                        <i class="fas fa-lightbulb text-primary-600 text-sm mt-0.5"></i>
+                        <p class="text-xs text-primary-700 flex-1">
+                            <strong class="font-semibold">Astuce :</strong> Le filtrage se fait instantanément pendant que vous tapez. Aucun rechargement de page !
+                        </p>
+                    </div>
+                    <div class="ml-3 px-4 py-2 bg-success-100 border border-success-200 rounded-lg">
+                        <span id="resultCount" class="text-sm font-bold text-success-700">{{ $documents->count() }}</span>
+                        <span class="text-xs text-success-600 ml-1">document(s)</span>
                     </div>
                 </div>
-                <p class="text-sm text-gray-500 mt-2">
-                    <i class="fas fa-info-circle mr-1"></i>
-                    Recherche automatique : tapez pour rechercher par nom du document, soumissionnaire, type, statut ou description
-                </p>
             </div>
 
             <!-- Filtres avancés (optionnels) -->
@@ -103,13 +120,18 @@
                                 <i class="fas fa-tag mr-1"></i>
                                 Type
                             </label>
-                            <select id="type" name="type" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <div class="relative">
+                            <select id="type" name="type" class="w-full px-4 py-2.5 sm:py-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 appearance-none bg-white text-sm sm:text-base">
                                 <option value="">Tous les types</option>
                                 <option value="contrat" {{ request('type') == 'contrat' ? 'selected' : '' }}>Contrat</option>
                                 <option value="facture" {{ request('type') == 'facture' ? 'selected' : '' }}>Facture</option>
                                 <option value="rapport" {{ request('type') == 'rapport' ? 'selected' : '' }}>Rapport</option>
                                 <option value="autre" {{ request('type') == 'autre' ? 'selected' : '' }}>Autre</option>
                             </select>
+                                <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                    <i class="fas fa-chevron-down text-gray-400 text-sm"></i>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Statut -->
@@ -118,13 +140,18 @@
                                 <i class="fas fa-info-circle mr-1"></i>
                                 Statut
                             </label>
-                            <select id="status" name="status" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <div class="relative">
+                            <select id="status" name="status" class="w-full px-4 py-2.5 sm:py-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 appearance-none bg-white text-sm sm:text-base">
                                 <option value="">Tous les statuts</option>
                                 <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>En attente</option>
                                 <option value="signed" {{ request('status') == 'signed' ? 'selected' : '' }}>Signé</option>
                                 <option value="paraphed" {{ request('status') == 'paraphed' ? 'selected' : '' }}>Paraphé</option>
                                 <option value="signed_and_paraphed" {{ request('status') == 'signed_and_paraphed' ? 'selected' : '' }}>Signé et paraphé</option>
                             </select>
+                                <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                    <i class="fas fa-chevron-down text-gray-400 text-sm"></i>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Date -->
@@ -211,9 +238,16 @@
 
     <!-- Liste des documents -->
     @if($documents->count() > 0)
-        <div class="space-y-4">
+        <div class="space-y-4" id="documentsList">
             @foreach($documents as $document)
-                @include('documents.document-card-history', ['document' => $document])
+                <div class="document-item" 
+                     data-name="{{ strtolower($document->document_name ?? $document->filename_original) }}"
+                     data-type="{{ strtolower($document->type) }}"
+                     data-status="{{ strtolower($document->status) }}"
+                     data-uploader="{{ strtolower($document->uploader->name ?? '') }}"
+                     data-date="{{ $document->created_at->format('d/m/Y') }}">
+                    @include('documents.document-card-history', ['document' => $document])
+                </div>
             @endforeach
         </div>
 
@@ -259,6 +293,112 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    const clearButton = document.getElementById('clearSearch');
+    const resultCount = document.getElementById('resultCount');
+    const documentItems = document.querySelectorAll('.document-item');
+    const totalDocuments = documentItems.length;
+    
+    // Auto-focus sur le champ de recherche
+    if (searchInput) {
+        searchInput.focus();
+        
+        // Filtrage en temps réel - INSTANTANÉ
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase().trim();
+            let visibleCount = 0;
+            
+            // Afficher/Masquer le bouton effacer
+            if (searchTerm.length > 0) {
+                clearButton.classList.remove('hidden');
+                clearButton.classList.add('flex');
+            } else {
+                clearButton.classList.add('hidden');
+                clearButton.classList.remove('flex');
+            }
+            
+            // Filtrer chaque document
+            documentItems.forEach(function(item) {
+                if (searchTerm.length === 0) {
+                    // Aucun filtre : afficher tout
+                    item.style.display = '';
+                    item.classList.remove('opacity-0');
+                    item.classList.add('opacity-100');
+                    visibleCount++;
+                } else {
+                    // Récupérer les données du document
+                    const name = item.getAttribute('data-name') || '';
+                    const type = item.getAttribute('data-type') || '';
+                    const status = item.getAttribute('data-status') || '';
+                    const uploader = item.getAttribute('data-uploader') || '';
+                    const date = item.getAttribute('data-date') || '';
+                    
+                    // Recherche dans tous les champs
+                    const searchableText = name + ' ' + type + ' ' + status + ' ' + uploader + ' ' + date;
+                    
+                    if (searchableText.includes(searchTerm)) {
+                        // Correspondance trouvée : afficher avec animation
+                        item.style.display = '';
+                        item.classList.remove('opacity-0');
+                        item.classList.add('opacity-100');
+                        visibleCount++;
+                    } else {
+                        // Pas de correspondance : masquer avec animation
+                        item.classList.remove('opacity-100');
+                        item.classList.add('opacity-0');
+                        setTimeout(function() {
+                            if (item.classList.contains('opacity-0')) {
+                                item.style.display = 'none';
+                            }
+                        }, 300);
+                    }
+                }
+            });
+            
+            // Mettre à jour le compteur
+            resultCount.textContent = visibleCount;
+            
+            // Changer la couleur du compteur
+            const countContainer = resultCount.parentElement;
+            if (visibleCount === 0) {
+                countContainer.classList.remove('bg-success-100', 'border-success-200');
+                countContainer.classList.add('bg-danger-100', 'border-danger-200');
+                resultCount.classList.remove('text-success-700');
+                resultCount.classList.add('text-danger-700');
+                resultCount.nextElementSibling.classList.remove('text-success-600');
+                resultCount.nextElementSibling.classList.add('text-danger-600');
+            } else {
+                countContainer.classList.remove('bg-danger-100', 'border-danger-200');
+                countContainer.classList.add('bg-success-100', 'border-success-200');
+                resultCount.classList.remove('text-danger-700');
+                resultCount.classList.add('text-success-700');
+                resultCount.nextElementSibling.classList.remove('text-danger-600');
+                resultCount.nextElementSibling.classList.add('text-success-600');
+            }
+        });
+        
+        // Bouton effacer
+        clearButton.addEventListener('click', function() {
+            searchInput.value = '';
+            searchInput.dispatchEvent(new Event('input'));
+            searchInput.focus();
+        });
+        
+        // Raccourci clavier : Échap pour effacer
+        searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                searchInput.value = '';
+                searchInput.dispatchEvent(new Event('input'));
+            }
+        });
+    }
+    
+    // Ajouter les classes de transition aux documents
+    documentItems.forEach(function(item) {
+        item.classList.add('transition-all', 'duration-300', 'opacity-100');
+    });
+    
     // Gestion des filtres avancés
     const toggleButton = document.getElementById('toggleAdvancedFilters');
     const advancedFilters = document.getElementById('advancedFilters');
@@ -275,24 +415,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 filterToggleIcon.classList.remove('fa-chevron-up');
                 filterToggleIcon.classList.add('fa-chevron-down');
             }
-        });
-    }
-    
-    // Auto-focus sur le champ de recherche
-    const searchInput = document.getElementById('search');
-    if (searchInput) {
-        searchInput.focus();
-    }
-    
-    // Recherche en temps réel (optionnel)
-    let searchTimeout;
-    if (searchInput) {
-        searchInput.addEventListener('input', function() {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(function() {
-                // Optionnel : recherche automatique après 500ms de pause
-                // this.form.submit();
-            }, 500);
         });
     }
 });

@@ -11,15 +11,20 @@ class PDFOverlayUnifiedModule {
         this.scale = 0.8;
         this.signatures = [];
         this.paraphes = [];
+        this.cachets = [];
         this.actionType = this.config.actionType || 'sign_only';
         this.signatureCanvas = null;
         this.parapheCanvas = null;
+        this.cachetCanvas = null;
         this.signatureCtx = null;
         this.parapheCtx = null;
+        this.cachetCtx = null;
         this.isDrawingSignature = false;
         this.isDrawingParaphe = false;
+        this.isDrawingCachet = false;
         this.liveSignatureData = null;
         this.liveParapheData = null;
+        this.liveCachetData = null;
         this.isPositioningActive = false;
         this.devicePixelRatio = window.devicePixelRatio || 1; // Support haute résolution
         this.qualityMode = 'ultra'; // Mode qualité: 'low', 'medium', 'high', 'ultra'
@@ -52,7 +57,21 @@ class PDFOverlayUnifiedModule {
     async init() {
         try {
             await this.loadPDF();
-            await this.loadUserSignature();
+            
+            // Charger signature, paraphe et cachet en parallèle (sans bloquer si une échoue)
+            await Promise.allSettled([
+                this.loadUserSignature(),
+                this.loadUserParaphe(),
+                this.loadUserCachet()
+            ]).then(results => {
+                results.forEach((result, index) => {
+                    const types = ['signature', 'paraphe', 'cachet'];
+                    if (result.status === 'rejected') {
+                        console.error(`❌ Erreur chargement ${types[index]}:`, result.reason);
+                    }
+                });
+            });
+            
             this.initializeEvents();
             this.initializeCanvases();
             this.updateInterface();
@@ -97,7 +116,6 @@ class PDFOverlayUnifiedModule {
             if (data.success && data.signature_url) {
                 this.userSignatureUrl = data.signature_url;
                 console.log('✅ Signature utilisateur chargée:', this.userSignatureUrl);
-                this.showStatus('Signature utilisateur chargée', 'success');
             } else {
                 console.warn('⚠️ Aucune signature utilisateur trouvée');
                 this.userSignatureUrl = null;
@@ -110,6 +128,93 @@ class PDFOverlayUnifiedModule {
                 this.showStatus(`Erreur signature: ${error.message}`, 'error');
             }
             this.userSignatureUrl = null;
+        }
+    }
+
+    async loadUserParaphe() {
+        try {
+            console.log('🔄 Chargement du paraphe utilisateur...');
+            
+            const response = await fetch('/signatures/user-paraphe', {
+                method: 'GET',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    'Accept': 'application/json'
+                },
+                credentials: 'same-origin'
+            });
+            
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    console.log('⚠️ Utilisateur non authentifié, paraphe non disponible');
+                    return null;
+                }
+                throw new Error(`Erreur API: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            console.log('📡 Réponse API paraphe:', data);
+            
+            if (data.success && data.paraphe_url) {
+                this.userParapheUrl = data.paraphe_url;
+                console.log('✅ Paraphe utilisateur chargé:', this.userParapheUrl);
+            } else {
+                console.warn('⚠️ Aucun paraphe utilisateur trouvé');
+                this.userParapheUrl = null;
+            }
+            
+        } catch (error) {
+            console.error('❌ Erreur chargement paraphe:', error);
+            this.userParapheUrl = null;
+        }
+    }
+
+    async loadUserCachet() {
+        try {
+            console.log('🔄 Chargement du cachet utilisateur...');
+            
+            const cachetUrl = this.config.cachetUrl || '/signatures/user-cachet';
+            console.log('📍 URL de l\'API cachet:', cachetUrl);
+            
+            const response = await fetch(cachetUrl, {
+                method: 'GET',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    'Accept': 'application/json'
+                },
+                credentials: 'same-origin'
+            });
+            
+            console.log('📡 Statut de la réponse:', response.status);
+            
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    console.log('⚠️ Utilisateur non authentifié, cachet non disponible');
+                    return null;
+                }
+                if (response.status === 404) {
+                    console.log('⚠️ Cachet non trouvé (404) - L\'utilisateur n\'a pas encore uploadé de cachet');
+                    this.userCachetUrl = null;
+                    return null;
+                }
+                throw new Error(`Erreur API: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            console.log('📡 Réponse API cachet complète:', data);
+            
+            if (data.success && (data.cachet_url || data.cachetUrl)) {
+                this.userCachetUrl = data.cachet_url || data.cachetUrl;
+                console.log('✅ Cachet utilisateur chargé:', this.userCachetUrl);
+            } else {
+                console.warn('⚠️ Aucun cachet utilisateur trouvé dans la réponse');
+                console.warn('⚠️ Données reçues:', data);
+                this.userCachetUrl = null;
+            }
+            
+        } catch (error) {
+            console.error('❌ Erreur chargement cachet:', error);
+            this.userCachetUrl = null;
         }
     }
 
@@ -232,6 +337,7 @@ class PDFOverlayUnifiedModule {
             // Ajouter les signatures et paraphes existants
             this.renderSignatures(container);
             this.renderParaphes(container);
+            this.renderCachets(container);
         } catch (error) {
             console.error('Erreur lors du rendu de la page:', error);
             this.showStatus('Erreur lors du rendu de la page', 'error');
@@ -626,6 +732,48 @@ class PDFOverlayUnifiedModule {
             }
         }
 
+        // Bouton Cacheter
+        if (this.config.addCachetBtnId) {
+            const addCachetBtn = document.getElementById(this.config.addCachetBtnId);
+            if (addCachetBtn) {
+                // Variable pour éviter les appels multiples
+                let isProcessingCachet = false;
+                
+                const handleCachetClick = async (e) => {
+                    if (isProcessingCachet) {
+                        console.log('⚠️ Cachet déjà en cours de traitement, ignoré');
+                        return;
+                    }
+                    
+                    isProcessingCachet = true;
+                    console.log('🖱️ Clic sur le bouton Cacheter détecté');
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    await this.addCachet();
+                    
+                    // Réinitialiser après un délai
+                    setTimeout(() => {
+                        isProcessingCachet = false;
+                    }, 1000);
+                };
+                
+                // Événement clic pour desktop
+                addCachetBtn.addEventListener('click', handleCachetClick);
+                
+                // Événements tactiles pour mobile/tablette
+                if (isTouchDevice) {
+                    addCachetBtn.addEventListener('touchstart', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleCachetClick(e);
+                    }, { passive: false });
+                }
+            } else {
+                console.log('⚠️ Bouton cachet non trouvé avec l\'ID:', this.config.addCachetBtnId);
+            }
+        }
+
         if (this.config.clearAllBtnId) {
             const clearAllBtn = document.getElementById(this.config.clearAllBtnId);
             if (clearAllBtn) {
@@ -985,14 +1133,18 @@ class PDFOverlayUnifiedModule {
     updateInterface() {
         const signatureConfig = document.getElementById('signatureConfig');
         const parapheConfig = document.getElementById('parapheConfig');
+        const cachetConfig = document.getElementById('cachetConfig');
         const liveSignatureArea = document.getElementById('liveSignatureArea');
         const liveParapheArea = document.getElementById('liveParapheArea');
+        const liveCachetArea = document.getElementById('liveCachetArea');
 
         // Masquer toutes les sections
         if (signatureConfig) signatureConfig.style.display = 'none';
         if (parapheConfig) parapheConfig.style.display = 'none';
+        if (cachetConfig) cachetConfig.style.display = 'none';
         if (liveSignatureArea) liveSignatureArea.style.display = 'none';
         if (liveParapheArea) liveParapheArea.style.display = 'none';
+        if (liveCachetArea) liveCachetArea.style.display = 'none';
 
         // Afficher selon le type d'action
         switch (this.actionType) {
@@ -1002,9 +1154,26 @@ class PDFOverlayUnifiedModule {
             case 'paraphe_only':
                 if (parapheConfig) parapheConfig.style.display = 'block';
                 break;
+            case 'cachet_only':
+                if (cachetConfig) cachetConfig.style.display = 'block';
+                break;
             case 'both':
+            case 'sign_paraphe':
                 if (signatureConfig) signatureConfig.style.display = 'block';
                 if (parapheConfig) parapheConfig.style.display = 'block';
+                break;
+            case 'sign_cachet':
+                if (signatureConfig) signatureConfig.style.display = 'block';
+                if (cachetConfig) cachetConfig.style.display = 'block';
+                break;
+            case 'paraphe_cachet':
+                if (parapheConfig) parapheConfig.style.display = 'block';
+                if (cachetConfig) cachetConfig.style.display = 'block';
+                break;
+            case 'all':
+                if (signatureConfig) signatureConfig.style.display = 'block';
+                if (parapheConfig) parapheConfig.style.display = 'block';
+                if (cachetConfig) cachetConfig.style.display = 'block';
                 break;
         }
 
@@ -1021,8 +1190,21 @@ class PDFOverlayUnifiedModule {
                     case 'paraphe_only':
                         submitText.textContent = 'Parapher le Document';
                         break;
+                    case 'cachet_only':
+                        submitText.textContent = 'Cacheter le Document';
+                        break;
                     case 'both':
+                    case 'sign_paraphe':
                         submitText.textContent = 'Signer & Parapher le Document';
+                        break;
+                    case 'sign_cachet':
+                        submitText.textContent = 'Signer & Cacheter le Document';
+                        break;
+                    case 'paraphe_cachet':
+                        submitText.textContent = 'Parapher & Cacheter le Document';
+                        break;
+                    case 'all':
+                        submitText.textContent = 'Traiter Complètement le Document';
                         break;
                 }
             }
@@ -1036,6 +1218,11 @@ class PDFOverlayUnifiedModule {
 
     toggleLiveParapheArea(show) {
         const area = document.getElementById('liveParapheArea');
+        if (area) area.style.display = show ? 'block' : 'none';
+    }
+
+    toggleLiveCachetArea(show) {
+        const area = document.getElementById('liveCachetArea');
         if (area) area.style.display = show ? 'block' : 'none';
     }
 
@@ -1502,6 +1689,41 @@ class PDFOverlayUnifiedModule {
     }
 
     /**
+     * Ajouter un cachet au document
+     */
+    addCachet() {
+        console.log('🎯 Méthode addCachet() appelée');
+        console.log('🔍 Configuration cachet:', {
+            cachetUrl: this.config.cachetUrl,
+            hasCachetUrl: !!this.config.cachetUrl,
+            userCachetUrl: this.userCachetUrl
+        });
+        
+        // Utiliser userCachetUrl (chargé au démarrage) ou config.cachetUrl
+        const cachetUrl = this.userCachetUrl || this.config.cachetUrl;
+        
+        if (!cachetUrl) {
+            console.error('❌ Aucun cachet configuré');
+            this.showStatus('Aucun cachet configuré pour cet utilisateur', 'error');
+            return;
+        }
+
+        // Vérifier si le mode de positionnement est déjà actif
+        if (this.isPositioningActive) {
+            console.log('⚠️ Mode de positionnement déjà actif, ignoré');
+            return;
+        }
+
+        // Position par défaut au centre
+        let x = 100, y = 100;
+        
+        // Activer le mode de positionnement par clic
+        this.enableClickPositioning('cachet');
+
+        // L'élément sera créé par enableClickPositioning après le clic
+    }
+
+    /**
      * Ajouter signature ET paraphe combinés
      */
     async addSignAndParaphe() {
@@ -1577,12 +1799,101 @@ class PDFOverlayUnifiedModule {
             });
     }
 
+    /**
+     * Créer un élément DOM pour un cachet
+     */
+    createCachetElement(cachet) {
+        const cachetDiv = document.createElement('div');
+        cachetDiv.className = 'cachet-overlay';
+        cachetDiv.style.position = 'absolute';
+        cachetDiv.style.left = cachet.x + 'px';
+        cachetDiv.style.top = cachet.y + 'px';
+        cachetDiv.style.width = cachet.width + 'px';
+        cachetDiv.style.height = cachet.height + 'px';
+        cachetDiv.style.border = '2px solid #8B5CF6';
+        cachetDiv.style.borderRadius = '4px';
+        cachetDiv.style.backgroundColor = 'rgba(139, 92, 246, 0.1)';
+        cachetDiv.style.cursor = 'move';
+        cachetDiv.style.zIndex = '1000';
+        cachetDiv.draggable = true;
+        cachetDiv.dataset.cachetId = cachet.id;
+
+        if (cachet.url) {
+            const img = document.createElement('img');
+            img.src = cachet.url;
+            img.style.width = '100%';
+            img.style.height = '100%';
+            img.style.objectFit = 'contain';
+            img.style.borderRadius = '2px';
+            
+            // Gestion des erreurs d'image
+            img.onerror = function() {
+                console.error('Erreur de chargement de l\'image cachet:', cachet.url);
+                // Remplacer par une icône de fallback
+                const fallbackIcon = document.createElement('i');
+                fallbackIcon.className = 'fas fa-exclamation-triangle';
+                fallbackIcon.style.color = '#dc3545';
+                fallbackIcon.style.fontSize = '16px';
+                fallbackIcon.style.position = 'absolute';
+                fallbackIcon.style.top = '50%';
+                fallbackIcon.style.left = '50%';
+                fallbackIcon.style.transform = 'translate(-50%, -50%)';
+                cachetDiv.appendChild(fallbackIcon);
+            };
+            
+            img.onload = function() {
+                console.log('Image cachet chargée avec succès:', cachet.url);
+            };
+            
+            cachetDiv.appendChild(img);
+        } else {
+            const icon = document.createElement('i');
+            icon.className = 'fas fa-stamp';
+            icon.style.color = '#8B5CF6';
+            icon.style.fontSize = '16px';
+            icon.style.position = 'absolute';
+            icon.style.top = '50%';
+            icon.style.left = '50%';
+            icon.style.transform = 'translate(-50%, -50%)';
+            cachetDiv.appendChild(icon);
+        }
+
+        return cachetDiv;
+    }
+
+    /**
+     * Rendre les cachets sur le conteneur
+     */
+    renderCachets(container) {
+        console.log('🎨 renderCachets appelée:', {
+            containerExists: !!container,
+            cachetsCount: this.cachets.length,
+            currentPage: this.currentPage
+        });
+        
+        // Supprimer les anciens cachets
+        const existingCachets = container.querySelectorAll('.cachet-overlay');
+        console.log('🗑️ Suppression de', existingCachets.length, 'cachets existants');
+        existingCachets.forEach(el => el.remove());
+
+        // Afficher les cachets de la page courante
+        const currentPageCachets = this.cachets.filter(cachet => cachet.page === this.currentPage);
+        console.log('📄 Cachets pour la page', this.currentPage, ':', currentPageCachets.length);
+        
+        currentPageCachets.forEach(cachet => {
+            const cachetElement = this.createCachetElement(cachet);
+            container.appendChild(cachetElement);
+            console.log('✅ Cachet ajouté au DOM:', cachet);
+        });
+    }
 
     clearAll() {
         this.signatures = [];
         this.paraphes = [];
+        this.cachets = [];
         this.renderSignatures(document.getElementById(this.config.containerId));
         this.renderParaphes(document.getElementById(this.config.containerId));
+        this.renderCachets(document.getElementById(this.config.containerId));
         this.updateFormData();
         
         // Réinitialiser le type d'action
@@ -1597,6 +1908,7 @@ class PDFOverlayUnifiedModule {
         const actionButtons = [
             this.config.addSignatureBtnId,
             this.config.addParapheBtnId,
+            this.config.addCachetBtnId,
             this.config.clearAllBtnId,
             this.config.submitBtnId
         ];
@@ -1631,6 +1943,7 @@ class PDFOverlayUnifiedModule {
         console.log('📝 Mise à jour des données du formulaire...');
         console.log('📊 Signatures:', this.signatures);
         console.log('📊 Paraphes:', this.paraphes);
+        console.log('📊 Cachets:', this.cachets);
         
         // Mettre à jour les champs cachés du formulaire avec conversion des coordonnées
         if (this.config.signatureXInputId) {
@@ -1686,16 +1999,52 @@ class PDFOverlayUnifiedModule {
             }
         }
         
+        // Mettre à jour les coordonnées des cachets
+        if (this.config.cachetXInputId) {
+            const cachetXInput = document.getElementById(this.config.cachetXInputId);
+            if (cachetXInput) {
+                if (this.cachets.length > 0) {
+                    // Conversion des coordonnées HTML vers PDF (même logique que le mode normal)
+                    const pdfX = this.convertHtmlToPdfX(this.cachets[0].x);
+                    cachetXInput.value = pdfX;
+                    console.log('📍 Cachet X (HTML):', this.cachets[0].x, '→ (PDF):', pdfX);
+                } else {
+                    cachetXInput.value = '';
+                }
+            }
+        }
+        if (this.config.cachetYInputId) {
+            const cachetYInput = document.getElementById(this.config.cachetYInputId);
+            if (cachetYInput) {
+                if (this.cachets.length > 0) {
+                    // Conversion des coordonnées HTML vers PDF (même logique que le mode normal)
+                    const pdfY = this.convertHtmlToPdfY(this.cachets[0].y, 'cachet');
+                    cachetYInput.value = pdfY;
+                    console.log('📍 Cachet Y (HTML):', this.cachets[0].y, '→ (PDF):', pdfY);
+                } else {
+                    cachetYInput.value = '';
+                }
+            }
+        }
+        
         // Mettre à jour le type d'action
         if (this.config.actionTypeInputId) {
             const actionTypeInput = document.getElementById(this.config.actionTypeInputId);
             if (actionTypeInput) {
-                if (this.signatures.length > 0 && this.paraphes.length > 0) {
+                if (this.signatures.length > 0 && this.paraphes.length > 0 && this.cachets.length > 0) {
+                    actionTypeInput.value = 'all';
+                } else if (this.signatures.length > 0 && this.paraphes.length > 0) {
                     actionTypeInput.value = 'both';
+                } else if (this.signatures.length > 0 && this.cachets.length > 0) {
+                    actionTypeInput.value = 'sign_cachet';
+                } else if (this.paraphes.length > 0 && this.cachets.length > 0) {
+                    actionTypeInput.value = 'paraphe_cachet';
                 } else if (this.signatures.length > 0) {
                     actionTypeInput.value = 'sign_only';
                 } else if (this.paraphes.length > 0) {
                     actionTypeInput.value = 'paraphe_only';
+                } else if (this.cachets.length > 0) {
+                    actionTypeInput.value = 'cachet_only';
                 }
                 console.log('🎯 Type d\'action:', actionTypeInput.value);
             }
@@ -1715,6 +2064,14 @@ class PDFOverlayUnifiedModule {
             if (liveParapheInput) {
                 liveParapheInput.value = this.liveParapheData;
                 console.log('✍️ Données paraphe live mises à jour');
+            }
+        }
+        
+        if (this.config.liveCachetDataInputId && this.liveCachetData) {
+            const liveCachetInput = document.getElementById(this.config.liveCachetDataInputId);
+            if (liveCachetInput) {
+                liveCachetInput.value = this.liveCachetData;
+                console.log('✍️ Données cachet live mises à jour');
             }
         }
         
@@ -1910,6 +2267,8 @@ class PDFOverlayUnifiedModule {
         // Calculer la hauteur de l'élément en points PDF pour un ajustement plus précis
         const elementHeight = elementType === 'signature' ? 
             Math.min(80, pdfPageHeight * 0.12) * 0.4 : // Hauteur signature
+            elementType === 'cachet' ?
+            Math.min(80, pdfPageHeight * 0.12) * 0.8 : // Hauteur cachet (plus carré)
             Math.min(50, pdfPageHeight * 0.08) * 0.4;  // Hauteur paraphe
         
         // Utiliser exactement la même logique que le mode normal (sans ajustements)
@@ -1971,7 +2330,12 @@ class PDFOverlayUnifiedModule {
             font-weight: bold;
             color: #007bff;
         `;
-        overlay.textContent = `Cliquez pour positionner le ${type === 'signature' ? 'signature' : 'paraphe'}`;
+        const typeLabels = {
+            'signature': 'signature',
+            'paraphe': 'paraphe',
+            'cachet': 'cachet'
+        };
+        overlay.textContent = `Cliquez pour positionner le ${typeLabels[type] || type}`;
         
         pdfContainer.style.position = 'relative';
         pdfContainer.appendChild(overlay);
@@ -2034,13 +2398,8 @@ class PDFOverlayUnifiedModule {
             // Convertir les coordonnées exactement comme dans le mode normal
             let pdfX, pdfY;
             
-            if (type === 'signature') {
-                pdfX = this.convertHtmlToPdfX(x);
-                pdfY = this.convertHtmlToPdfY(y, 'signature');
-            } else {
-                pdfX = this.convertHtmlToPdfX(x);
-                pdfY = this.convertHtmlToPdfY(y, 'paraphe');
-            }
+            pdfX = this.convertHtmlToPdfX(x);
+            pdfY = this.convertHtmlToPdfY(y, type);
             
             console.log('📍 Coordonnées converties (PDF):', { pdfX, pdfY });
             console.log('📍 Mode responsive - conversion identique au mode normal:', {
@@ -2066,7 +2425,7 @@ class PDFOverlayUnifiedModule {
                     this.signatures[this.signatures.length - 1].pdfX = pdfX;
                     this.signatures[this.signatures.length - 1].pdfY = pdfY;
                 }
-            } else {
+            } else if (type === 'paraphe') {
                 console.log('✍️ Création du paraphe à la position:', { x, y, pdfX, pdfY });
                 // Créer le paraphe avec les coordonnées HTML pour l'affichage
                 this.createParapheAtPosition(x, y).then(() => {
@@ -2074,6 +2433,16 @@ class PDFOverlayUnifiedModule {
                     if (this.paraphes.length > 0) {
                         this.paraphes[this.paraphes.length - 1].pdfX = pdfX;
                         this.paraphes[this.paraphes.length - 1].pdfY = pdfY;
+                    }
+                });
+            } else if (type === 'cachet') {
+                console.log('🏷️ Création du cachet à la position:', { x, y, pdfX, pdfY });
+                // Créer le cachet avec les coordonnées HTML pour l'affichage
+                this.createCachetAtPosition(x, y).then(() => {
+                    // Mettre à jour les coordonnées PDF pour la génération finale
+                    if (this.cachets.length > 0) {
+                        this.cachets[this.cachets.length - 1].pdfX = pdfX;
+                        this.cachets[this.cachets.length - 1].pdfY = pdfY;
                     }
                 });
             }
@@ -2181,6 +2550,49 @@ class PDFOverlayUnifiedModule {
         
         // Activer le glisser-déposer pour ce paraphe
         this.enableDragAndDrop(paraphe.id, 'paraphe');
+    }
+
+    /**
+     * Créer un cachet à la position spécifiée
+     */
+    async createCachetAtPosition(x, y) {
+        console.log('🏷️ createCachetAtPosition appelée:', { x, y });
+        
+        // Utiliser userCachetUrl (chargé au démarrage) ou config.cachetUrl
+        const cachetUrl = this.userCachetUrl || this.config.cachetUrl;
+        
+        if (!cachetUrl) {
+            console.error('❌ Aucun cachet configuré');
+            this.showStatus('Vous devez d\'abord ajouter un cachet dans votre profil', 'error');
+            return;
+        }
+
+        // Calculer les dimensions proportionnelles pour l'affichage
+        const container = document.getElementById(this.config.pdfContainerId);
+        const containerWidth = container ? container.getBoundingClientRect().width : 600;
+        const displayWidth = Math.min(80, containerWidth * 0.15);
+        const displayHeight = displayWidth * 0.8; // Les cachets sont généralement carrés ou un peu plus hauts
+        
+        const cachet = {
+            id: Date.now(),
+            page: this.currentPage,
+            x: x,
+            y: y,
+            width: displayWidth,
+            height: displayHeight,
+            url: cachetUrl
+        };
+
+        this.cachets.push(cachet);
+        console.log('✅ Cachet ajouté:', cachet);
+        console.log('📊 Total cachets:', this.cachets.length);
+        
+        this.renderCachets(document.getElementById(this.config.containerId));
+        this.updateFormData();
+        this.showStatus('Cachet ajouté - Glissez pour ajuster la position', 'success');
+        
+        // Activer le glisser-déposer pour ce cachet
+        this.enableDragAndDrop(cachet.id, 'cachet');
     }
 
     /**
@@ -2576,6 +2988,117 @@ class PDFOverlayUnifiedModule {
                         }
                     }
                 }
+            }
+            
+            // Ajouter les cachets sur leurs pages respectives
+            console.log('🔍 Cachets à traiter:', this.cachets);
+            console.log('🔍 Nombre de cachets:', this.cachets.length);
+            
+            if (this.cachets.length > 0) {
+                for (const cachet of this.cachets) {
+                    console.log('🔍 Traitement cachet:', {
+                        id: cachet.id,
+                        url: cachet.url,
+                        page: cachet.page,
+                        x: cachet.x,
+                        y: cachet.y,
+                        totalPages: pages.length
+                    });
+                    
+                    if (cachet.url && cachet.page <= pages.length) {
+                        try {
+                            console.log('📥 Chargement de l\'image de cachet...');
+                            console.log('🔗 URL de cachet:', cachet.url);
+                            
+                            // Vérifier que l'URL est accessible
+                            const response = await fetch(cachet.url);
+                            if (!response.ok) {
+                                throw new Error(`Erreur HTTP: ${response.status} - ${response.statusText}`);
+                            }
+                            
+                            // Charger l'image de cachet
+                            const cachetImageBytes = await response.arrayBuffer();
+                            console.log('📊 Taille de l\'image cachet:', cachetImageBytes.byteLength, 'bytes');
+                            
+                            const cachetImage = await pdfDoc.embedPng(cachetImageBytes);
+                            console.log('✅ Image de cachet chargée avec succès');
+                            
+                            // Obtenir la page correspondante (index 0-based)
+                            const targetPage = pages[cachet.page - 1];
+                            
+                            // Obtenir les dimensions de la page PDF
+                            const pageSize = targetPage.getSize();
+                            const pdfPageWidth = pageSize.width;
+                            const pdfPageHeight = pageSize.height;
+                            
+                            // Utiliser les coordonnées PDF stockées si disponibles (mode responsive précis)
+                            // Sinon, convertir les coordonnées HTML (mode normal)
+                            let pdfX, pdfY;
+                            
+                            if (cachet.pdfX !== undefined && cachet.pdfY !== undefined) {
+                                // Mode responsive : utiliser les coordonnées PDF pré-calculées avec ajustements
+                                pdfX = cachet.pdfX - 20; // Ajustement de 20 points vers la gauche
+                                pdfY = cachet.pdfY - 30; // Ajustement de 30 points vers le bas (correction du décalage vers le haut)
+                                console.log('📍 Mode responsive - cachet coordonnées PDF pré-calculées avec ajustements:', { 
+                                    originalPdfX: cachet.pdfX, 
+                                    originalPdfY: cachet.pdfY,
+                                    adjustedPdfX: pdfX,
+                                    adjustedPdfY: pdfY
+                                });
+                            } else {
+                                // Mode normal : conversion pure sans ajustements
+                                pdfX = this.convertHtmlToPdfX(cachet.x);
+                                pdfY = this.convertHtmlToPdfY(cachet.y, 'cachet');
+                                console.log('📍 Mode normal - cachet conversion pure sans ajustements:', { 
+                                    htmlX: cachet.x, htmlY: cachet.y, 
+                                    pdfX, pdfY 
+                                });
+                            }
+                            
+                            // Calculer les dimensions proportionnelles basées sur la page réelle (réduites)
+                            const cachetWidth = Math.min(80, pdfPageWidth * 0.12); // Max 12% de la largeur de page
+                            const cachetHeight = cachetWidth * 0.8; // Ratio 1.25:1 pour un cachet plus carré
+                            
+                            console.log('📝 Ajout du cachet au PDF (approche module signature):', {
+                                originalX: cachet.x,
+                                originalY: cachet.y,
+                                pdfX: pdfX,
+                                pdfY: pdfY,
+                                width: cachetWidth,
+                                height: cachetHeight,
+                                pageSize: { width: pdfPageWidth, height: pdfPageHeight }
+                            });
+                            
+                            console.log('🎨 Ajout du cachet à la page:', {
+                                pageIndex: cachet.page - 1,
+                                pdfX: pdfX,
+                                pdfY: pdfY,
+                                width: cachetWidth,
+                                height: cachetHeight
+                            });
+                            
+                            targetPage.drawImage(cachetImage, {
+                                x: pdfX,
+                                y: pdfY,
+                                width: cachetWidth,
+                                height: cachetHeight,
+                                opacity: 0.8
+                            });
+                            
+                            console.log('✅ Cachet ajouté avec succès à la page', cachet.page);
+                        } catch (error) {
+                            console.error('❌ Erreur cachet:', error);
+                        }
+                    } else {
+                        console.warn('⚠️ Cachet ignoré:', {
+                            hasUrl: !!cachet.url,
+                            pageValid: cachet.page <= pages.length,
+                            cachet: cachet
+                        });
+                    }
+                }
+            } else {
+                console.warn('⚠️ Aucun cachet à traiter');
             }
             
             // Générer le PDF final

@@ -274,4 +274,69 @@ class AdminController extends Controller
                 ->with('error', 'Erreur lors de la suppression du paraphe : ' . $e->getMessage());
         }
     }
+
+    /**
+     * Uploader un cachet pour un utilisateur
+     */
+    public function uploadCachet(Request $request, User $user)
+    {
+        // Vérifier que l'utilisateur est admin
+        if (!auth()->user()->isAdmin()) {
+            return redirect()->route('home')->with('error', 'Accès non autorisé.');
+        }
+
+        $validated = $request->validate([
+            'cachet' => 'required|file|mimes:png|max:2048', // PNG uniquement, max 2MB
+        ]);
+
+        try {
+            // Supprimer l'ancien cachet si il existe
+            if ($user->cachet_path && Storage::disk('public')->exists($user->cachet_path)) {
+                Storage::disk('public')->delete($user->cachet_path);
+            }
+
+            // Stocker le nouveau cachet
+            $file = $request->file('cachet');
+            $filename = 'cachet_' . $user->id . '_' . time() . '.png';
+            $path = $file->storeAs('cachets', $filename, 'public');
+
+            // Mettre à jour l'utilisateur
+            $user->update(['cachet_path' => $path]);
+
+            return redirect()->route('admin.users')
+                ->with('success', 'Cachet uploadé avec succès pour ' . $user->name . ' !');
+
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Erreur lors de l\'upload du cachet : ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Supprimer le cachet d'un utilisateur
+     */
+    public function deleteCachet(User $user)
+    {
+        // Vérifier que l'utilisateur est admin
+        if (!auth()->user()->isAdmin()) {
+            return redirect()->route('home')->with('error', 'Accès non autorisé.');
+        }
+
+        try {
+            // Supprimer le fichier de cachet
+            if ($user->cachet_path && Storage::disk('public')->exists($user->cachet_path)) {
+                Storage::disk('public')->delete($user->cachet_path);
+            }
+
+            // Mettre à jour l'utilisateur
+            $user->update(['cachet_path' => null]);
+
+            return redirect()->route('admin.users')
+                ->with('success', 'Cachet supprimé avec succès pour ' . $user->name . ' !');
+
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Erreur lors de la suppression du cachet : ' . $e->getMessage());
+        }
+    }
 }
