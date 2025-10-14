@@ -306,21 +306,21 @@ class PDFOverlayUnifiedModule {
         canvas.addEventListener('touchstart', (e) => {
             // Ne pas bloquer le scrolling - seulement si on dessine
             if (this.isDrawingSignature || this.isDrawingParaphe || this.isDrawingCachet) {
-                e.preventDefault();
+            e.preventDefault();
             }
         }, { passive: true });
         
         canvas.addEventListener('touchmove', (e) => {
             // Ne pas bloquer le scrolling - seulement si on dessine
             if (this.isDrawingSignature || this.isDrawingParaphe || this.isDrawingCachet) {
-                e.preventDefault();
+            e.preventDefault();
             }
         }, { passive: true });
         
         canvas.addEventListener('touchend', (e) => {
             // Ne pas bloquer le scrolling - seulement si on dessine
             if (this.isDrawingSignature || this.isDrawingParaphe || this.isDrawingCachet) {
-                e.preventDefault();
+            e.preventDefault();
             }
         }, { passive: true });
         
@@ -1088,15 +1088,15 @@ class PDFOverlayUnifiedModule {
         canvas.addEventListener('touchstart', (e) => {
             // Seulement si on est en mode dessin (signature live)
             if (type === 'signature' && this.isDrawingSignature) {
-                e.preventDefault();
-                e.stopPropagation();
-                isDrawing = true;
-                const touch = e.touches[0];
-                const rect = canvas.getBoundingClientRect();
-                const scaleX = canvas.width / rect.width;
-                const scaleY = canvas.height / rect.height;
-                lastX = (touch.clientX - rect.left) * scaleX;
-                lastY = (touch.clientY - rect.top) * scaleY;
+            e.preventDefault();
+            e.stopPropagation();
+            isDrawing = true;
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            lastX = (touch.clientX - rect.left) * scaleX;
+            lastY = (touch.clientY - rect.top) * scaleY;
             }
         }, { passive: true });
 
@@ -1104,35 +1104,35 @@ class PDFOverlayUnifiedModule {
             if (!isDrawing) return;
             // Seulement si on est en mode dessin (signature live)
             if (type === 'signature' && this.isDrawingSignature) {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                const touch = e.touches[0];
-                const rect = canvas.getBoundingClientRect();
-                const scaleX = canvas.width / rect.width;
-                const scaleY = canvas.height / rect.height;
-                const currentX = (touch.clientX - rect.left) * scaleX;
-                const currentY = (touch.clientY - rect.top) * scaleY;
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const currentX = (touch.clientX - rect.left) * scaleX;
+            const currentY = (touch.clientY - rect.top) * scaleY;
 
-                ctx.beginPath();
-                ctx.moveTo(lastX, lastY);
-                ctx.lineTo(currentX, currentY);
-                ctx.strokeStyle = type === 'signature' ? '#28a745' : '#667eea';
-                ctx.lineWidth = type === 'signature' ? 3 : 2;
-                ctx.lineCap = 'round';
-                ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(currentX, currentY);
+            ctx.strokeStyle = type === 'signature' ? '#28a745' : '#667eea';
+            ctx.lineWidth = type === 'signature' ? 3 : 2;
+            ctx.lineCap = 'round';
+            ctx.stroke();
 
-                lastX = currentX;
-                lastY = currentY;
+            lastX = currentX;
+            lastY = currentY;
             }
         }, { passive: true });
 
         canvas.addEventListener('touchend', (e) => {
             // Seulement si on est en mode dessin (signature live)
             if (type === 'signature' && this.isDrawingSignature) {
-                e.preventDefault();
-                e.stopPropagation();
-                isDrawing = false;
+            e.preventDefault();
+            e.stopPropagation();
+            isDrawing = false;
             }
         }, { passive: true });
 
@@ -2340,7 +2340,7 @@ class PDFOverlayUnifiedModule {
         if (elementType === 'cachet') {
             pdfY = pdfY - 10; // Ajustement réduit pour le cachet (correction décalage vers le haut)
         } else if (elementType === 'signature') {
-            pdfY = pdfY - 5; // Ajustement réduit pour la signature (correction décalage vers le haut)
+            pdfY = pdfY - 10; // Ajustement augmenté pour la signature (correction décalage mobile)
         } else {
             pdfY = pdfY - 20; // Ajustement normal pour paraphe
         }
@@ -2601,7 +2601,7 @@ class PDFOverlayUnifiedModule {
                 type: type
             });
             console.log('📍 DEBUG Mode desktop - conversion identique au mode normal:', {
-                htmlX: x, htmlY: y, 
+                htmlX: x, htmlY: y,
                 pdfX: pdfX, pdfY: pdfY,
                 type: type
             });
@@ -3205,15 +3205,15 @@ class PDFOverlayUnifiedModule {
                 clearTimeout(this.updateFormDataTimeout);
             }
             this.updateFormDataTimeout = setTimeout(() => {
-                this.updateFormData();
+            this.updateFormData();
             }, 100); // Délai de 100ms
         };
 
         document.addEventListener('touchmove', (e) => {
             // Seulement bloquer le scrolling si on est en train de faire du drag
             if (isDragging) {
-                e.preventDefault();
-                moveDrag(e);
+            e.preventDefault();
+            moveDrag(e);
             }
         }, { passive: false });
 
@@ -3248,7 +3248,7 @@ class PDFOverlayUnifiedModule {
         document.addEventListener('touchend', (e) => {
             // Seulement bloquer le scrolling si on est en train de faire du drag
             if (isDragging) {
-                e.preventDefault();
+            e.preventDefault();
             }
             stopDrag(e);
         }, { passive: false });
@@ -3342,21 +3342,21 @@ class PDFOverlayUnifiedModule {
                             // Sinon, convertir les coordonnées HTML (mode normal)
                             let pdfX, pdfY;
                             
-                            if (signature.pdfX !== undefined && signature.pdfY !== undefined) {
-                                // Mode responsive : utiliser les coordonnées PDF pré-calculées avec ajustements
-                                pdfX = signature.pdfX - 15; // Ajustement de 15 points vers la gauche (réduit)
-                                pdfY = signature.pdfY - 15; // Ajustement de 15 points vers le bas (réduit)
-                                console.log('📍 DEBUG Mode responsive - coordonnées PDF pré-calculées avec ajustements:', { 
-                                    originalPdfX: signature.pdfX, 
-                                    originalPdfY: signature.pdfY,
-                                    adjustedPdfX: pdfX,
-                                    adjustedPdfY: pdfY,
-                                    adjustmentX: signature.pdfX - pdfX,
-                                    adjustmentY: signature.pdfY - pdfY,
-                                    finalPdfX: Math.round(pdfX),
-                                    finalPdfY: Math.round(pdfY)
-                                });
-                            } else {
+        if (signature.pdfX !== undefined && signature.pdfY !== undefined) {
+            // Mode responsive : utiliser les coordonnées PDF pré-calculées avec ajustements
+            pdfX = signature.pdfX - 25; // Ajustement de 25 points vers la gauche (augmenté pour mobile)
+            pdfY = signature.pdfY - 15; // Ajustement de 15 points vers le bas (inchangé)
+            console.log('📍 DEBUG Mode responsive - coordonnées PDF pré-calculées avec ajustements:', {
+                originalPdfX: signature.pdfX,
+                originalPdfY: signature.pdfY,
+                adjustedPdfX: pdfX,
+                adjustedPdfY: pdfY,
+                adjustmentX: signature.pdfX - pdfX,
+                adjustmentY: signature.pdfY - pdfY,
+                finalPdfX: Math.round(pdfX),
+                finalPdfY: Math.round(pdfY)
+            });
+        } else {
                                 // Mode normal : conversion pure sans ajustements
                                 pdfX = this.convertHtmlToPdfX(signature.x);
                                 pdfY = this.convertHtmlToPdfY(signature.y, 'signature');
