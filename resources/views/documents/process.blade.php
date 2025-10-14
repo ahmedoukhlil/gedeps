@@ -2140,7 +2140,7 @@ document.addEventListener('DOMContentLoaded', function() {
         parapheUrl: '{{ $parapheUrl }}',
         cachetUrl: '{{ $cachetUrl ?? "/signatures/user-cachet" }}',
         uploadUrl: '{{ $uploadUrl ?? "/documents/upload-signed-pdf" }}',
-        redirectUrl: '{{ $redirectUrl ?? "/documents/" . $document->id . "/process/view" }}',
+        redirectUrl: '{{ $redirectUrl ?? "/documents/{$document->id}/process/view" }}',
         documentId: {{ $document->id }},
         containerId: 'pdfViewer',
         processFormId: 'processForm',
