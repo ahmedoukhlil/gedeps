@@ -302,21 +302,30 @@ class PDFOverlayUnifiedModule {
         // Ajouter les classes responsive
         canvas.classList.add('pdf-canvas-responsive');
         
-        // Gestion des événements tactiles pour mobile
+        // Gestion des événements tactiles pour mobile - PERMETTRE LE SCROLLING
         canvas.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-        }, { passive: false });
+            // Ne pas bloquer le scrolling - seulement si on dessine
+            if (this.isDrawingSignature || this.isDrawingParaphe || this.isDrawingCachet) {
+                e.preventDefault();
+            }
+        }, { passive: true });
         
         canvas.addEventListener('touchmove', (e) => {
-            e.preventDefault();
-        }, { passive: false });
+            // Ne pas bloquer le scrolling - seulement si on dessine
+            if (this.isDrawingSignature || this.isDrawingParaphe || this.isDrawingCachet) {
+                e.preventDefault();
+            }
+        }, { passive: true });
         
         canvas.addEventListener('touchend', (e) => {
-            e.preventDefault();
-        }, { passive: false });
+            // Ne pas bloquer le scrolling - seulement si on dessine
+            if (this.isDrawingSignature || this.isDrawingParaphe || this.isDrawingCachet) {
+                e.preventDefault();
+            }
+        }, { passive: true });
         
-        // Optimisations pour mobile/tablette
-        canvas.style.touchAction = 'none'; // Empêche le zoom/scroll sur le canvas
+        // Optimisations pour mobile/tablette - PERMETTRE LE SCROLLING
+        canvas.style.touchAction = 'pan-x pan-y pinch-zoom'; // Permettre le scrolling et le zoom
         canvas.style.userSelect = 'none'; // Empêche la sélection de texte
         canvas.style.webkitUserSelect = 'none';
         canvas.style.mozUserSelect = 'none';
@@ -569,11 +578,11 @@ class PDFOverlayUnifiedModule {
         // Gestion des boutons de signature et paraphe
         if (this.config.addSignatureBtnId) {
             const addSignatureBtn = document.getElementById(this.config.addSignatureBtnId);
-        console.log('🔍 Recherche du bouton signature:', {
-            id: this.config.addSignatureBtnId,
-            element: addSignatureBtn,
-            found: !!addSignatureBtn
-        });
+            console.log('🔍 Recherche du bouton signature:', {
+                id: this.config.addSignatureBtnId,
+                element: addSignatureBtn,
+                found: !!addSignatureBtn
+            });
         
         // DIAGNOSTIC : Vérifier tous les boutons disponibles
         const allButtons = document.querySelectorAll('button');
@@ -1010,8 +1019,8 @@ class PDFOverlayUnifiedModule {
             const processForm = document.getElementById(this.config.processFormId);
             if (processForm) {
                 processForm.addEventListener('submit', (e) => {
-                    this.handleFormSubmit(e);
-                });
+            this.handleFormSubmit(e);
+        });
             } else {
                 console.warn('⚠️ Formulaire de traitement non trouvé:', this.config.processFormId);
             }
@@ -1075,48 +1084,57 @@ class PDFOverlayUnifiedModule {
             isDrawing = false;
         });
 
-        // Support des événements tactiles pour mobile/tablette
+        // Support des événements tactiles pour mobile/tablette - PERMETTRE LE SCROLLING
         canvas.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            isDrawing = true;
-            const touch = e.touches[0];
-            const rect = canvas.getBoundingClientRect();
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
-            lastX = (touch.clientX - rect.left) * scaleX;
-            lastY = (touch.clientY - rect.top) * scaleY;
-        }, { passive: false });
+            // Seulement si on est en mode dessin (signature live)
+            if (type === 'signature' && this.isDrawingSignature) {
+                e.preventDefault();
+                e.stopPropagation();
+                isDrawing = true;
+                const touch = e.touches[0];
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                lastX = (touch.clientX - rect.left) * scaleX;
+                lastY = (touch.clientY - rect.top) * scaleY;
+            }
+        }, { passive: true });
 
         canvas.addEventListener('touchmove', (e) => {
             if (!isDrawing) return;
-            e.preventDefault();
-            e.stopPropagation();
-            
-            const touch = e.touches[0];
-            const rect = canvas.getBoundingClientRect();
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
-            const currentX = (touch.clientX - rect.left) * scaleX;
-            const currentY = (touch.clientY - rect.top) * scaleY;
+            // Seulement si on est en mode dessin (signature live)
+            if (type === 'signature' && this.isDrawingSignature) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const touch = e.touches[0];
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                const currentX = (touch.clientX - rect.left) * scaleX;
+                const currentY = (touch.clientY - rect.top) * scaleY;
 
-            ctx.beginPath();
-            ctx.moveTo(lastX, lastY);
-            ctx.lineTo(currentX, currentY);
-            ctx.strokeStyle = type === 'signature' ? '#28a745' : '#667eea';
-            ctx.lineWidth = type === 'signature' ? 3 : 2;
-            ctx.lineCap = 'round';
-            ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
+                ctx.lineTo(currentX, currentY);
+                ctx.strokeStyle = type === 'signature' ? '#28a745' : '#667eea';
+                ctx.lineWidth = type === 'signature' ? 3 : 2;
+                ctx.lineCap = 'round';
+                ctx.stroke();
 
-            lastX = currentX;
-            lastY = currentY;
-        }, { passive: false });
+                lastX = currentX;
+                lastY = currentY;
+            }
+        }, { passive: true });
 
         canvas.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            isDrawing = false;
-        }, { passive: false });
+            // Seulement si on est en mode dessin (signature live)
+            if (type === 'signature' && this.isDrawingSignature) {
+                e.preventDefault();
+                e.stopPropagation();
+                isDrawing = false;
+            }
+        }, { passive: true });
 
         // Boutons de contrôle
         const clearBtn = document.getElementById(`clear${type.charAt(0).toUpperCase() + type.slice(1)}CanvasBtn`);
@@ -2225,8 +2243,11 @@ class PDFOverlayUnifiedModule {
             }
         }
         
+        // Obtenir les dimensions affichées du canvas
+        const canvasDisplayWidth = pdfCanvas.offsetWidth;
+        
         // Calculer le facteur d'échelle réel entre le canvas et le conteneur
-        const scaleFactor = canvasWidth / containerWidth;
+        const scaleFactor = canvasWidth / canvasDisplayWidth;
         
         // Convertir la position HTML en position canvas
         const canvasX = htmlX * scaleFactor;
@@ -2239,6 +2260,7 @@ class PDFOverlayUnifiedModule {
         console.log(`🔍 Conversion X (mode normal):`, {
             htmlX: htmlX,
             containerWidth: containerWidth,
+            canvasDisplayWidth: canvasDisplayWidth,
             canvasWidth: canvasWidth,
             scaleFactor: scaleFactor,
             canvasX: canvasX,
@@ -2282,8 +2304,11 @@ class PDFOverlayUnifiedModule {
             }
         }
         
+        // Obtenir les dimensions affichées du canvas
+        const canvasDisplayHeight = pdfCanvas.offsetHeight;
+        
         // Calculer le facteur d'échelle réel entre le canvas et le conteneur
-        const scaleFactor = canvasHeight / containerHeight;
+        const scaleFactor = canvasHeight / canvasDisplayHeight;
         
         // Convertir la position HTML en position canvas
         const canvasY = htmlY * scaleFactor;
@@ -2293,7 +2318,12 @@ class PDFOverlayUnifiedModule {
         const invertedCanvasY = canvasHeight - canvasY;
         
         // Convertir la position canvas en position PDF
-        const pdfY = (invertedCanvasY / canvasHeight) * pdfPageHeight;
+        let pdfY = (invertedCanvasY / canvasHeight) * pdfPageHeight;
+        
+        // CORRECTION : Ajuster pour le décalage vers le haut
+        // Le système de coordonnées PDF a (0,0) en bas à gauche
+        // Nous devons ajuster pour que la signature apparaisse au bon endroit
+        pdfY = pdfY - 20; // Ajustement de 20 points vers le bas pour corriger le décalage
         
         // Ajuster pour tenir compte de la hauteur de l'élément
         // L'élément HTML est positionné par son coin supérieur gauche
@@ -2305,13 +2335,14 @@ class PDFOverlayUnifiedModule {
             Math.min(80, pdfPageHeight * 0.12) * 0.4 : // Hauteur signature
             elementType === 'cachet' ?
             Math.min(80, pdfPageHeight * 0.12) * 0.8 : // Hauteur cachet (plus carré)
-            Math.min(50, pdfPageHeight * 0.08) * 0.4;  // Hauteur paraphe
+            Math.min(80, pdfPageHeight * 0.12) * 0.4;  // Hauteur paraphe (même que signature)
         
         // Utiliser exactement la même logique que le mode normal (sans ajustements)
         // Log de débogage pour vérifier les calculs
         console.log(`🔍 Conversion Y (mode normal) - ${elementType}:`, {
             htmlY: htmlY,
             containerHeight: containerHeight,
+            canvasDisplayHeight: canvasDisplayHeight,
             canvasHeight: canvasHeight,
             scaleFactor: scaleFactor,
             canvasY: canvasY,
@@ -2335,9 +2366,98 @@ class PDFOverlayUnifiedModule {
             return;
         }
         
-        // SOLUTION RADICALE : Ne jamais activer le mode signature
-        this.isPositioningActive = false;
-        console.log('🚫 Mode signature bloqué - défilement toujours autorisé');
+        // SOLUTION MOBILE : Détecter si on est sur mobile et éviter le mode signature
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+                        ('ontouchstart' in window) || 
+                        (navigator.maxTouchPoints > 0);
+        
+        if (isMobile) {
+            console.log('📱 Mode mobile détecté - positionnement par clic/touch sur canvas');
+            this.isPositioningActive = false;
+            
+            // Écouter les clics/touches sur le canvas PDF directement
+            const pdfContainer = document.getElementById(this.config.pdfContainerId);
+            if (pdfContainer) {
+                const canvas = pdfContainer.querySelector('canvas');
+                if (canvas) {
+                    console.log('🎯 Mode mobile - écoute des clics/touches sur le canvas');
+                    
+                    // Fonction pour gérer le positionnement
+                    const handlePositioning = (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        // Obtenir les coordonnées du clic/touch
+                        let clientX, clientY;
+                        if (e.touches && e.touches.length > 0) {
+                            clientX = e.touches[0].clientX;
+                            clientY = e.touches[0].clientY;
+                        } else {
+                            clientX = e.clientX;
+                            clientY = e.clientY;
+                        }
+                        
+                        // Calculer les coordonnées relatives au conteneur
+                        const containerRect = pdfContainer.getBoundingClientRect();
+                        const x = clientX - containerRect.left;
+                        const y = clientY - containerRect.top;
+                        
+                        // Calculer les coordonnées PDF
+                        const pdfX = this.convertHtmlToPdfX(x);
+                        const pdfY = this.convertHtmlToPdfY(y, type);
+                        
+                        console.log('📍 Positionnement mobile (clic/touch):', { 
+                            x, y, pdfX, pdfY,
+                            clientX, clientY,
+                            containerRect: containerRect
+                        });
+                        
+                        // Créer l'élément à la position cliquée
+                        if (type === 'signature') {
+                            this.createSignatureAtPosition(x, y, pdfX, pdfY);
+                        } else if (type === 'paraphe') {
+                            this.createParapheAtPosition(x, y, pdfX, pdfY);
+                        } else if (type === 'cachet') {
+                            this.createCachetAtPosition(x, y, pdfX, pdfY);
+                        }
+                        
+                        // Supprimer les écouteurs après utilisation
+                        canvas.removeEventListener('click', handlePositioning);
+                        canvas.removeEventListener('touchstart', handlePositioning);
+                    };
+                    
+                    // Ajouter les écouteurs
+                    canvas.addEventListener('click', handlePositioning);
+                    canvas.addEventListener('touchstart', handlePositioning);
+                    
+                    // Afficher un message à l'utilisateur
+                    this.showStatus('Cliquez/touchez sur le PDF pour positionner l\'élément', 'info');
+                } else {
+                    console.warn('⚠️ Canvas PDF non trouvé, utilisation du centre du conteneur');
+                    const rect = pdfContainer.getBoundingClientRect();
+                    const x = rect.width / 2;
+                    const y = rect.height / 2;
+                    
+                    // Calculer les coordonnées PDF pour le fallback
+                    const pdfX = this.convertHtmlToPdfX(x);
+                    const pdfY = this.convertHtmlToPdfY(y, type);
+                    
+                    // Créer l'élément directement avec les coordonnées PDF
+                    if (type === 'signature') {
+                        this.createSignatureAtPosition(x, y, pdfX, pdfY);
+                    } else if (type === 'paraphe') {
+                        this.createParapheAtPosition(x, y, pdfX, pdfY);
+                    } else if (type === 'cachet') {
+                        this.createCachetAtPosition(x, y, pdfX, pdfY);
+                    }
+                }
+            }
+            return;
+        }
+        
+        // Mode desktop : utiliser l'overlay normal
+        this.isPositioningActive = true;
+        console.log('🖥️ Mode desktop - overlay activé');
         
         const pdfContainer = document.getElementById(this.config.pdfContainerId);
         if (!pdfContainer) {
@@ -2585,7 +2705,7 @@ class PDFOverlayUnifiedModule {
     /**
      * Créer une signature à la position spécifiée
      */
-    createSignatureAtPosition(x, y) {
+    createSignatureAtPosition(x, y, pdfX = null, pdfY = null) {
         // PROTECTION : Éviter les appels multiples
         if (this.isCreatingSignature) {
             console.log('⚠️ Signature déjà en cours de création, ignoré');
@@ -2593,7 +2713,7 @@ class PDFOverlayUnifiedModule {
         }
         this.isCreatingSignature = true;
         
-        console.log('✍️ Création de la signature à la position:', { x, y });
+        console.log('✍️ Création de la signature à la position:', { x, y, pdfX, pdfY });
         
         // Calculer les dimensions proportionnelles pour l'affichage (réduites)
         const container = document.getElementById(this.config.pdfContainerId);
@@ -2608,7 +2728,10 @@ class PDFOverlayUnifiedModule {
             y: y,
             width: displayWidth,
             height: displayHeight,
-            url: this.userSignatureUrl || this.config.signatureUrl
+            url: this.userSignatureUrl || this.config.signatureUrl,
+            // Stocker les coordonnées PDF si fournies (mode mobile)
+            pdfX: pdfX,
+            pdfY: pdfY
         };
 
         this.signatures.push(signature);
@@ -2639,7 +2762,7 @@ class PDFOverlayUnifiedModule {
     /**
      * Créer un paraphe à la position spécifiée
      */
-    async createParapheAtPosition(x, y) {
+    async createParapheAtPosition(x, y, pdfX = null, pdfY = null) {
         // PROTECTION : Éviter les appels multiples
         if (this.isCreatingParaphe) {
             console.log('⚠️ Paraphe déjà en cours de création, ignoré');
@@ -2647,7 +2770,7 @@ class PDFOverlayUnifiedModule {
         }
         this.isCreatingParaphe = true;
         
-        console.log('✍️ Création du paraphe à la position:', { x, y });
+        console.log('✍️ Création du paraphe à la position:', { x, y, pdfX, pdfY });
         
         // Récupérer l'URL du paraphe si elle n'est pas disponible
         let parapheUrl = this.config.parapheUrl;
@@ -2684,7 +2807,10 @@ class PDFOverlayUnifiedModule {
             y: y,
             width: displayWidth,
             height: displayHeight,
-            url: parapheUrl
+            url: parapheUrl,
+            // Stocker les coordonnées PDF si fournies (mode mobile)
+            pdfX: pdfX,
+            pdfY: pdfY
         };
 
         this.paraphes.push(paraphe);
@@ -2713,7 +2839,7 @@ class PDFOverlayUnifiedModule {
     /**
      * Créer un cachet à la position spécifiée
      */
-    async createCachetAtPosition(x, y) {
+    async createCachetAtPosition(x, y, pdfX = null, pdfY = null) {
         // PROTECTION : Éviter les appels multiples
         if (this.isCreatingCachet) {
             console.log('⚠️ Cachet déjà en cours de création, ignoré');
@@ -2721,7 +2847,7 @@ class PDFOverlayUnifiedModule {
         }
         this.isCreatingCachet = true;
         
-        console.log('🏷️ createCachetAtPosition appelée:', { x, y });
+        console.log('🏷️ createCachetAtPosition appelée:', { x, y, pdfX, pdfY });
         
         // Utiliser userCachetUrl (chargé au démarrage) ou config.cachetUrl
         const cachetUrl = this.userCachetUrl || this.config.cachetUrl;
@@ -2745,7 +2871,10 @@ class PDFOverlayUnifiedModule {
             y: y,
             width: displayWidth,
             height: displayHeight,
-            url: cachetUrl
+            url: cachetUrl,
+            // Stocker les coordonnées PDF si fournies (mode mobile)
+            pdfX: pdfX,
+            pdfY: pdfY
         };
 
         this.cachets.push(cachet);
@@ -3010,9 +3139,12 @@ class PDFOverlayUnifiedModule {
         };
 
         document.addEventListener('touchmove', (e) => {
-            e.preventDefault();
-            moveDrag(e);
-        }, { passive: false });
+            // Seulement bloquer le scrolling si on est en train de faire du drag
+            if (isDragging) {
+                e.preventDefault();
+                moveDrag(e);
+            }
+        }, { passive: true });
 
         // Fonction unifiée pour arrêter le drag
         const stopDrag = (e) => {
@@ -3034,9 +3166,12 @@ class PDFOverlayUnifiedModule {
         };
 
         document.addEventListener('touchend', (e) => {
-            e.preventDefault();
+            // Seulement bloquer le scrolling si on est en train de faire du drag
+            if (isDragging) {
+                e.preventDefault();
+            }
             stopDrag(e);
-        });
+        }, { passive: true });
 
         // Événements de souris (utilisant les fonctions unifiées)
         element.addEventListener('mousedown', startDrag);
@@ -3129,8 +3264,8 @@ class PDFOverlayUnifiedModule {
                             
                             if (signature.pdfX !== undefined && signature.pdfY !== undefined) {
                                 // Mode responsive : utiliser les coordonnées PDF pré-calculées avec ajustements
-                                pdfX = signature.pdfX - 20; // Ajustement de 20 points vers la gauche
-                                pdfY = signature.pdfY - 30; // Ajustement de 30 points vers le bas (correction du décalage vers le haut)
+                                pdfX = signature.pdfX - 10; // Ajustement de 10 points vers la gauche
+                                pdfY = signature.pdfY - 10; // Ajustement de 10 points vers le bas (correction du décalage vers le haut)
                                 console.log('📍 Mode responsive - coordonnées PDF pré-calculées avec ajustements:', { 
                                     originalPdfX: signature.pdfX, 
                                     originalPdfY: signature.pdfY,
@@ -3216,8 +3351,8 @@ class PDFOverlayUnifiedModule {
                             
                             if (paraphe.pdfX !== undefined && paraphe.pdfY !== undefined) {
                                 // Mode responsive : utiliser les coordonnées PDF pré-calculées avec ajustements
-                                pdfX = paraphe.pdfX - 15; // Ajustement de 15 points vers la gauche
-                                pdfY = paraphe.pdfY - 20; // Ajustement de 20 points vers le bas (correction du décalage vers le haut)
+                                pdfX = paraphe.pdfX - 10; // Ajustement de 10 points vers la gauche (même que signature)
+                                pdfY = paraphe.pdfY - 10; // Ajustement de 10 points vers le bas (même que signature)
                                 console.log('📍 Mode responsive - paraphe coordonnées PDF pré-calculées avec ajustements:', { 
                                     originalPdfX: paraphe.pdfX, 
                                     originalPdfY: paraphe.pdfY,
@@ -3234,8 +3369,8 @@ class PDFOverlayUnifiedModule {
                                 });
                             }
                             
-                            // Calculer les dimensions proportionnelles basées sur la page réelle (réduites)
-                            const parapheWidth = Math.min(50, pdfPageWidth * 0.08); // Max 8% de la largeur de page
+                            // Calculer les dimensions proportionnelles basées sur la page réelle (même que signature)
+                            const parapheWidth = Math.min(80, pdfPageWidth * 0.12); // Max 12% de la largeur de page (même que signature)
                             const parapheHeight = parapheWidth * 0.4; // Ratio 2.5:1 pour un paraphe plus réaliste
                             
                             console.log('📝 Ajout du paraphe au PDF (approche module signature):', {
@@ -3309,8 +3444,8 @@ class PDFOverlayUnifiedModule {
                             
                             if (cachet.pdfX !== undefined && cachet.pdfY !== undefined) {
                                 // Mode responsive : utiliser les coordonnées PDF pré-calculées avec ajustements
-                                pdfX = cachet.pdfX - 20; // Ajustement de 20 points vers la gauche
-                                pdfY = cachet.pdfY - 30; // Ajustement de 30 points vers le bas (correction du décalage vers le haut)
+                                pdfX = cachet.pdfX - 10; // Ajustement de 10 points vers la gauche (même que signature)
+                                pdfY = cachet.pdfY - 10; // Ajustement de 10 points vers le bas (même que signature)
                                 console.log('📍 Mode responsive - cachet coordonnées PDF pré-calculées avec ajustements:', { 
                                     originalPdfX: cachet.pdfX, 
                                     originalPdfY: cachet.pdfY,
