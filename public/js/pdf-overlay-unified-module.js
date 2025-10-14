@@ -569,11 +569,15 @@ class PDFOverlayUnifiedModule {
         // Gestion des boutons de signature et paraphe
         if (this.config.addSignatureBtnId) {
             const addSignatureBtn = document.getElementById(this.config.addSignatureBtnId);
-            console.log('🔍 Recherche du bouton signature:', {
-                id: this.config.addSignatureBtnId,
-                element: addSignatureBtn,
-                found: !!addSignatureBtn
-            });
+        console.log('🔍 Recherche du bouton signature:', {
+            id: this.config.addSignatureBtnId,
+            element: addSignatureBtn,
+            found: !!addSignatureBtn
+        });
+        
+        // DIAGNOSTIC : Vérifier tous les boutons disponibles
+        const allButtons = document.querySelectorAll('button');
+        console.log('🔍 DIAGNOSTIC - Tous les boutons disponibles:', Array.from(allButtons).map(btn => ({ id: btn.id, text: btn.textContent.trim() })));
             if (addSignatureBtn) {
                 // Variable pour éviter les appels multiples
                 let isProcessing = false;
@@ -1002,9 +1006,16 @@ class PDFOverlayUnifiedModule {
         }
 
         // Soumission du formulaire
-        document.getElementById(this.config.processFormId).addEventListener('submit', (e) => {
-            this.handleFormSubmit(e);
-        });
+        if (this.config.processFormId) {
+            const processForm = document.getElementById(this.config.processFormId);
+            if (processForm) {
+                processForm.addEventListener('submit', (e) => {
+                    this.handleFormSubmit(e);
+                });
+            } else {
+                console.warn('⚠️ Formulaire de traitement non trouvé:', this.config.processFormId);
+            }
+        }
     }
 
     initializeCanvases() {
@@ -2610,9 +2621,14 @@ class PDFOverlayUnifiedModule {
         // Activer le glisser-déposer pour cette signature
         this.enableDragAndDrop(signature.id, 'signature');
         
-        // NE PAS désactiver le mode signature immédiatement
-        // La signature reste glissable jusqu'à clic hors de la signature
-        console.log('🎯 Signature placée - Mode glissement activé');
+        // DÉSACTIVER AUTOMATIQUEMENT le mode signature après placement
+        // Pour permettre le défilement immédiatement
+        this.disableSignatureMode();
+        
+        // EMPÊCHER la réactivation du mode signature
+        this.preventSignatureModeReactivation();
+        
+        console.log('🎯 Signature placée - Mode signature désactivé automatiquement');
         
         // Réinitialiser le flag de protection
         setTimeout(() => {
@@ -2679,9 +2695,14 @@ class PDFOverlayUnifiedModule {
         // Activer le glisser-déposer pour ce paraphe
         this.enableDragAndDrop(paraphe.id, 'paraphe');
         
-        // NE PAS désactiver le mode signature immédiatement
-        // Le paraphe reste glissable jusqu'à clic hors du paraphe
-        console.log('🎯 Paraphe placé - Mode glissement activé');
+        // DÉSACTIVER AUTOMATIQUEMENT le mode signature après placement
+        // Pour permettre le défilement immédiatement
+        this.disableSignatureMode();
+        
+        // EMPÊCHER la réactivation du mode signature
+        this.preventSignatureModeReactivation();
+        
+        console.log('🎯 Paraphe placé - Mode signature désactivé automatiquement');
         
         // Réinitialiser le flag de protection
         setTimeout(() => {
@@ -2738,9 +2759,14 @@ class PDFOverlayUnifiedModule {
         // Activer le glisser-déposer pour ce cachet
         this.enableDragAndDrop(cachet.id, 'cachet');
         
-        // NE PAS désactiver le mode signature immédiatement
-        // Le cachet reste glissable jusqu'à clic hors du cachet
-        console.log('🎯 Cachet placé - Mode glissement activé');
+        // DÉSACTIVER AUTOMATIQUEMENT le mode signature après placement
+        // Pour permettre le défilement immédiatement
+        this.disableSignatureMode();
+        
+        // EMPÊCHER la réactivation du mode signature
+        this.preventSignatureModeReactivation();
+        
+        console.log('🎯 Cachet placé - Mode signature désactivé automatiquement');
         
         // Réinitialiser le flag de protection
         setTimeout(() => {
@@ -2779,6 +2805,15 @@ class PDFOverlayUnifiedModule {
             // S'assurer que le body permet le défilement
             document.body.style.overflow = '';
             document.body.style.touchAction = 'pan-x pan-y pinch-zoom';
+            
+            // DIAGNOSTIC : Vérifier l'état après désactivation
+            setTimeout(() => {
+                const hasSignatureMode = pdfContainer.classList.contains('signature-mode');
+                console.log('🔍 DIAGNOSTIC - Mode signature après désactivation:', hasSignatureMode);
+                if (hasSignatureMode) {
+                    console.log('⚠️ PROBLÈME: Mode signature réactivé par un autre mécanisme!');
+                }
+            }, 200);
         }
         
         // Déclencher l'événement de désactivation du mode signature
@@ -2787,6 +2822,45 @@ class PDFOverlayUnifiedModule {
         }));
         
         console.log('✅ Mode signature désactivé - défilement autorisé');
+    }
+
+    /**
+     * Empêcher la réactivation du mode signature
+     */
+    preventSignatureModeReactivation() {
+        console.log('🛡️ Protection contre la réactivation du mode signature...');
+        
+        const pdfContainer = document.getElementById(this.config.pdfContainerId);
+        if (!pdfContainer) return;
+        
+        // Surveiller les changements de classe et les empêcher
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                    if (pdfContainer.classList.contains('signature-mode')) {
+                        console.log('🚫 TENTATIVE DE RÉACTIVATION BLOQUÉE');
+                        pdfContainer.classList.remove('signature-mode');
+                        
+                        // Forcer les propriétés de défilement
+                        pdfContainer.style.overflow = 'auto';
+                        pdfContainer.style.touchAction = 'pan-x pan-y pinch-zoom';
+                        pdfContainer.style.webkitOverflowScrolling = 'touch';
+                        pdfContainer.style.overscrollBehavior = 'auto';
+                    }
+                }
+            });
+        });
+        
+        observer.observe(pdfContainer, { 
+            attributes: true, 
+            attributeFilter: ['class'] 
+        });
+        
+        // Nettoyer l'observer après 10 secondes
+        setTimeout(() => {
+            observer.disconnect();
+            console.log('🛡️ Protection contre la réactivation désactivée');
+        }, 10000);
     }
 
     /**
@@ -2974,26 +3048,9 @@ class PDFOverlayUnifiedModule {
             e.preventDefault();
         });
         
-        // Gestionnaire pour désactiver le mode signature quand on clique hors de l'élément
-        const handleOutsideClick = (e) => {
-            // Vérifier si le clic est en dehors de l'élément
-            if (!element.contains(e.target)) {
-                console.log('🎯 Clic hors de l\'élément - Désactivation du mode signature');
-                
-                // Désactiver le mode signature pour permettre le défilement
-                this.disableSignatureMode();
-                
-                // Supprimer ce gestionnaire d'événements
-                document.removeEventListener('click', handleOutsideClick);
-                document.removeEventListener('touchstart', handleOutsideClick);
-            }
-        };
-        
-        // Ajouter les gestionnaires d'événements pour détecter les clics hors de l'élément
-        setTimeout(() => {
-            document.addEventListener('click', handleOutsideClick);
-            document.addEventListener('touchstart', handleOutsideClick);
-        }, 100);
+        // Le mode signature est maintenant désactivé automatiquement après placement
+        // Plus besoin de gestionnaire pour clic hors de l'élément
+        console.log('🎯 Glissement activé - Mode signature déjà désactivé');
     }
 
 

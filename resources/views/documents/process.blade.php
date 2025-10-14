@@ -872,10 +872,10 @@
     /* Permettre le défilement sur le canvas */
     touch-action: pan-x pan-y pinch-zoom !important;
     pointer-events: auto !important;
-    /* Forcer le défilement */
-    overflow: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    overscroll-behavior: auto !important;
+    /* Défilement naturel - géré par le module JS */
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: auto;
     /* Supprimer tous les blocages */
     user-select: auto !important;
     -webkit-user-select: auto !important;
@@ -1009,116 +1009,8 @@
     }
 }
 
-/* ===== BARRE DE DÉFILEMENT PERSONNALISÉE POUR TOUTE LA PAGE ===== */
-.custom-scrollbar {
-    position: fixed;
-    right: 8px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 20px;
-    height: 80vh;
-    z-index: 9999;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    pointer-events: auto;
-}
-
-.scrollbar-track {
-    width: 4px;
-    height: 60vh;
-    background: rgba(0, 0, 0, 0.1);
-    border-radius: 2px;
-    position: relative;
-    cursor: pointer;
-}
-
-.scrollbar-thumb {
-    width: 100%;
-    background: #3b82f6;
-    border-radius: 2px;
-    position: absolute;
-    top: 0;
-    left: 0;
-    min-height: 20px;
-    transition: all 0.2s ease;
-    cursor: pointer;
-}
-
-.scrollbar-thumb:hover {
-    background: #2563eb;
-    transform: scaleX(1.5);
-}
-
-.scrollbar-arrows {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.scrollbar-arrow {
-    width: 20px;
-    height: 20px;
-    background: rgba(59, 130, 246, 0.8);
-    border: none;
-    border-radius: 50%;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-size: 10px;
-}
-
-.scrollbar-arrow:hover {
-    background: #2563eb;
-    transform: scale(1.1);
-}
-
-.scrollbar-arrow:active {
-    transform: scale(0.95);
-}
-
-/* Responsive pour la barre de défilement */
-@media (max-width: 768px) {
-    .custom-scrollbar {
-        right: 4px;
-        width: 16px;
-        height: 150px;
-    }
-    
-    .scrollbar-track {
-        width: 3px;
-        height: 120px;
-    }
-    
-    .scrollbar-arrow {
-        width: 16px;
-        height: 16px;
-        font-size: 8px;
-    }
-}
-
-@media (max-width: 480px) {
-    .custom-scrollbar {
-        right: 2px;
-        width: 14px;
-        height: 120px;
-    }
-    
-    .scrollbar-track {
-        width: 2px;
-        height: 100px;
-    }
-    
-    .scrollbar-arrow {
-        width: 14px;
-        height: 14px;
-        font-size: 7px;
-    }
-}
+/* ===== BARRE DE DÉFILEMENT PERSONNALISÉE SUPPRIMÉE ===== */
+/* Plus nécessaire - le module JavaScript gère le défilement */
 
 /* Mode sombre pour les pages */
 @media (prefers-color-scheme: dark) {
@@ -2148,10 +2040,10 @@
         pointer-events: auto !important;
     }
     
-    /* Mode lecture : permettre le défilement et le zoom */
-    .pdf-viewer-mobile:not(.signature-mode) canvas {
-        touch-action: pan-x pan-y pinch-zoom !important;
-        -webkit-overflow-scrolling: touch !important;
+    /* Mode lecture : permettre le défilement et le zoom - GÉRÉ PAR LE MODULE JS */
+    .pdf-viewer-mobile canvas {
+        touch-action: pan-x pan-y pinch-zoom;
+        -webkit-overflow-scrolling: touch;
     }
     
     /* Amélioration de la précision tactile */
@@ -2566,306 +2458,34 @@ document.addEventListener('DOMContentLoaded', function() {
     if (pdfContainer && pdfViewer) {
         console.log('📱 SOLUTION DÉFINITIVE - Initialisation du défilement mobile');
         
-        // SOLUTION RADICALE : Forcer le défilement en permanence
-        const forceScrollMode = () => {
-            // Supprimer toutes les classes de mode
-            pdfContainer.classList.remove('signature-mode', 'scroll-mode');
-            
-            // Forcer les propriétés CSS pour le défilement
-            pdfContainer.style.overflow = 'auto';
-            pdfContainer.style.touchAction = 'pan-x pan-y pinch-zoom';
-            pdfContainer.style.webkitOverflowScrolling = 'touch';
-            pdfContainer.style.overscrollBehavior = 'auto';
-            
-            // Forcer les propriétés sur le canvas
-            const canvas = pdfContainer.querySelector('canvas');
-            if (canvas) {
-                canvas.style.touchAction = 'pan-x pan-y pinch-zoom';
-                canvas.style.pointerEvents = 'auto';
-                canvas.style.overflow = 'auto';
-                canvas.style.webkitOverflowScrolling = 'touch';
-                canvas.style.overscrollBehavior = 'auto';
-            }
-            
-            // S'assurer que le body permet le défilement
-            document.body.style.overflow = '';
-            document.body.style.touchAction = 'pan-x pan-y pinch-zoom';
-            
-            console.log('✅ Défilement forcé - mode unifié activé');
-        };
+        // SOLUTION SIMPLIFIÉE : Pas de forçage - laisser le module JavaScript gérer
+        console.log('📱 Mode signature géré entièrement par le module JavaScript');
 
-        // SOLUTION RADICALE : Intercepter et bloquer l'activation du mode signature
-        const originalAddEventListener = document.addEventListener;
-        document.addEventListener = function(type, listener, options) {
-            if (type === 'signatureModeEnabled' || type === 'signatureModeActivated') {
-                console.log('🚫 Blocage de l\'activation du mode signature');
-                return;
-            }
-            return originalAddEventListener.call(this, type, listener, options);
-        };
+        // SOLUTION SIMPLIFIÉE : Pas d'interception - laisser le module JavaScript gérer
+        console.log('📱 Pas d'interception - module JavaScript en contrôle total');
 
-        // SOLUTION RADICALE : Forcer la désactivation du mode signature toutes les 100ms
-        setInterval(() => {
-            if (pdfContainer.classList.contains('signature-mode')) {
-                console.log('🚨 Mode signature détecté - désactivation forcée');
-                forceScrollMode();
-            }
-        }, 100);
+        // SOLUTION SIMPLIFIÉE : Laisser le module JavaScript gérer le mode signature
+        console.log('📱 Mode signature géré par le module JavaScript');
 
         // SOLUTION SIMPLIFIÉE : Défilement propre sans conflits
         console.log('📱 Solution simplifiée - défilement propre activé');
         
-        // ===== BARRE DE DÉFILEMENT PERSONNALISÉE =====
-        initCustomScrollbar();
+        // ===== BARRE DE DÉFILEMENT PERSONNALISÉE SUPPRIMÉE =====
+        // Plus nécessaire - le module JavaScript gère le défilement
 
-        // SOLUTION PRATIQUE : Désactiver le mode signature en cliquant en dehors
-        document.addEventListener('click', (e) => {
-            // Vérifier si on est en mode signature
-            if (pdfContainer.classList.contains('signature-mode')) {
-                // Vérifier si le clic est en dehors des éléments de signature
-                const isSignatureElement = e.target.closest('.signature-element, .paraphe-element, .cachet-element');
-                const isPdfContainer = e.target.closest('.pdf-container-mobile');
-                
-                // Si on clique en dehors des éléments de signature mais dans le conteneur PDF
-                if (!isSignatureElement && isPdfContainer) {
-                    console.log('👆 Clic en dehors des éléments - désactivation du mode signature');
-                    forceScrollMode();
-                }
-            }
-        });
-
-        // SOLUTION PRATIQUE : Désactiver le mode signature en touchant en dehors
-        document.addEventListener('touchstart', (e) => {
-            // Vérifier si on est en mode signature
-            if (pdfContainer.classList.contains('signature-mode')) {
-                // Vérifier si le touch est en dehors des éléments de signature
-                const isSignatureElement = e.target.closest('.signature-element, .paraphe-element, .cachet-element');
-                const isPdfContainer = e.target.closest('.pdf-container-mobile');
-                
-                // Si on touche en dehors des éléments de signature mais dans le conteneur PDF
-                if (!isSignatureElement && isPdfContainer) {
-                    console.log('👆 Touch en dehors des éléments - désactivation du mode signature');
-                    forceScrollMode();
-                }
-            }
-        }, { passive: true });
+        // SOLUTION SIMPLIFIÉE : Pas de gestion des clics - laisser le module JavaScript gérer
+        console.log('📱 Gestion des clics/touches gérée par le module JavaScript');
         
-        // Appliquer immédiatement
-        forceScrollMode();
-        
-        // Observer pour maintenir le défilement
-        const scrollObserver = new MutationObserver(() => {
-            // Réappliquer les propriétés de défilement si nécessaire
-            if (pdfContainer.style.overflow !== 'auto') {
-                forceScrollMode();
-            }
-        });
-        
-        scrollObserver.observe(pdfContainer, { 
-            attributes: true, 
-            attributeFilter: ['style', 'class'] 
-        });
-        
-        // Écouter les événements de fin de signature (simplifié)
-        document.addEventListener('signatureModeDisabled', forceScrollMode);
-        
-        // Désactivation automatique après placement d'élément
-        const elementObserver = new MutationObserver((mutations) => {
-            const hasNewElement = mutations.some(mutation => 
-                Array.from(mutation.addedNodes).some(node => 
-                    node.nodeType === 1 && (
-                        node.classList?.contains('signature-element') ||
-                        node.classList?.contains('paraphe-element') ||
-                        node.classList?.contains('cachet-element')
-                    )
-                )
-            );
-            
-            if (hasNewElement) {
-                console.log('🔍 Élément placé détecté - réactivation du défilement');
-                setTimeout(forceScrollMode, 100);
-            }
-        });
-        
-        elementObserver.observe(pdfContainer, { childList: true, subtree: true });
-        
-        // Gestion des événements tactiles
-        document.addEventListener('touchstart', () => {
-            if (pdfContainer.classList.contains('signature-mode')) {
-                console.log('👆 Touch détecté - réactivation du défilement');
-                setTimeout(forceScrollMode, 50);
-            }
-        }, { passive: true });
-        
-        // Redimensionnement
-        window.addEventListener('resize', forceScrollMode);
+        // SOLUTION SIMPLIFIÉE : Pas d'observers conflictuels
+        console.log('📱 Interface simplifiée - pas de conflits avec le module JavaScript');
         
         console.log('📱 Solution définitive appliquée - défilement garanti');
-    }
-    
-    // ===== FONCTION BARRE DE DÉFILEMENT PERSONNALISÉE POUR TOUTE LA PAGE =====
-    function initCustomScrollbar() {
-        const customScrollbar = document.getElementById('custom-scrollbar');
-        const scrollbarThumb = document.getElementById('scrollbar-thumb');
-        const scrollUpBtn = document.getElementById('scroll-up');
-        const scrollDownBtn = document.getElementById('scroll-down');
         
-        if (!customScrollbar || !scrollbarThumb) {
-            console.log('⚠️ Éléments de barre de défilement non trouvés');
-            return;
-        }
-        
-        console.log('🎯 Initialisation de la barre de défilement personnalisée pour toute la page');
-        
-        let isDragging = false;
-        
-        // Fonction pour mettre à jour la barre de défilement
-        function updateScrollbar() {
-            if (!scrollbarThumb) return;
-            
-            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-            const scrollHeight = document.documentElement.scrollHeight;
-            const clientHeight = window.innerHeight;
-            
-            if (scrollHeight <= clientHeight) {
-                customScrollbar.style.display = 'none';
-                return;
-            }
-            
-            customScrollbar.style.display = 'flex';
-            
-            // Calculer la taille et position du thumb
-            const trackHeight = 60 * window.innerHeight / 100; // 60vh en pixels
-            const thumbHeight = Math.max(20, (clientHeight / scrollHeight) * trackHeight);
-            const thumbTop = (scrollTop / (scrollHeight - clientHeight)) * (trackHeight - thumbHeight);
-            
-            scrollbarThumb.style.height = thumbHeight + 'px';
-            scrollbarThumb.style.top = thumbTop + 'px';
-            
-            // Mettre à jour les boutons
-            if (scrollUpBtn) scrollUpBtn.style.opacity = scrollTop > 0 ? '1' : '0.5';
-            if (scrollDownBtn) scrollDownBtn.style.opacity = scrollTop < scrollHeight - clientHeight ? '1' : '0.5';
-        }
-        
-        // Fonction pour faire défiler
-        function scrollTo(position) {
-            const scrollHeight = document.documentElement.scrollHeight;
-            const clientHeight = window.innerHeight;
-            const maxScroll = scrollHeight - clientHeight;
-            const targetScroll = Math.max(0, Math.min(maxScroll, position));
-            
-            window.scrollTo({
-                top: targetScroll,
-                behavior: 'smooth'
-            });
-        }
-        
-        // Événements pour les boutons
-        if (scrollUpBtn) {
-            scrollUpBtn.addEventListener('click', () => {
-                const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
-                scrollTo(currentScroll - 100);
-            });
-        }
-        
-        if (scrollDownBtn) {
-            scrollDownBtn.addEventListener('click', () => {
-                const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
-                scrollTo(currentScroll + 100);
-            });
-        }
-        
-        // Événements pour le thumb
-        scrollbarThumb.addEventListener('mousedown', (e) => {
-            e.preventDefault();
-            isDragging = true;
-            scrollbarThumb.style.cursor = 'grabbing';
-        });
-        
-        document.addEventListener('mousemove', (e) => {
-            if (!isDragging) return;
-            
-            const trackRect = document.querySelector('.scrollbar-track').getBoundingClientRect();
-            const trackTop = trackRect.top;
-            const trackHeight = trackRect.height;
-            const thumbHeight = scrollbarThumb.offsetHeight;
-            
-            const mouseY = e.clientY - trackTop;
-            const thumbTop = Math.max(0, Math.min(trackHeight - thumbHeight, mouseY - thumbHeight / 2));
-            
-            const scrollHeight = document.documentElement.scrollHeight;
-            const clientHeight = window.innerHeight;
-            const maxScroll = scrollHeight - clientHeight;
-            const scrollTop = (thumbTop / (trackHeight - thumbHeight)) * maxScroll;
-            
-            window.scrollTo(0, scrollTop);
-        });
-        
-        document.addEventListener('mouseup', () => {
-            if (isDragging) {
-                isDragging = false;
-                scrollbarThumb.style.cursor = 'pointer';
-            }
-        });
-        
-        // Événements tactiles pour mobile
-        scrollbarThumb.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            isDragging = true;
-        });
-        
-        document.addEventListener('touchmove', (e) => {
-            if (!isDragging) return;
-            e.preventDefault();
-            
-            const trackRect = document.querySelector('.scrollbar-track').getBoundingClientRect();
-            const trackTop = trackRect.top;
-            const trackHeight = trackRect.height;
-            const thumbHeight = scrollbarThumb.offsetHeight;
-            
-            const touchY = e.touches[0].clientY - trackTop;
-            const thumbTop = Math.max(0, Math.min(trackHeight - thumbHeight, touchY - thumbHeight / 2));
-            
-            const scrollHeight = document.documentElement.scrollHeight;
-            const clientHeight = window.innerHeight;
-            const maxScroll = scrollHeight - clientHeight;
-            const scrollTop = (thumbTop / (trackHeight - thumbHeight)) * maxScroll;
-            
-            window.scrollTo(0, scrollTop);
-        });
-        
-        document.addEventListener('touchend', () => {
-            if (isDragging) {
-                isDragging = false;
-            }
-        });
-        
-        // Événement de défilement de la page
-        window.addEventListener('scroll', updateScrollbar);
-        
-        // Mise à jour initiale
-        setTimeout(updateScrollbar, 100);
-        
-        // Mise à jour périodique
-        setInterval(updateScrollbar, 500);
-        
-        console.log('✅ Barre de défilement personnalisée initialisée');
-    }
-});
+        // ===== BARRE DE DÉFILEMENT PERSONNALISÉE SUPPRIMÉE =====
+        // Plus nécessaire - le module JavaScript gère le défilement
+        console.log('📱 Barre de défilement personnalisée supprimée - module JS gère le défilement');
+    });
 </script>
 
-<!-- Barre de défilement personnalisée pour toute la page -->
-<div id="custom-scrollbar" class="custom-scrollbar">
-    <div class="scrollbar-track">
-        <div class="scrollbar-thumb" id="scrollbar-thumb"></div>
-    </div>
-    <div class="scrollbar-arrows">
-        <button class="scrollbar-arrow scrollbar-arrow-up" id="scroll-up">
-            <i class="fas fa-chevron-up"></i>
-        </button>
-        <button class="scrollbar-arrow scrollbar-arrow-down" id="scroll-down">
-            <i class="fas fa-chevron-down"></i>
-        </button>
-    </div>
-</div>
+<!-- Barre de défilement personnalisée supprimée - module JS gère le défilement -->
 @endsection
