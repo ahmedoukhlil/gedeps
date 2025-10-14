@@ -1994,6 +1994,13 @@ class PDFOverlayUnifiedModule {
     }
 
     updateFormData() {
+        // Protection contre les appels multiples
+        if (this.isUpdatingForm) {
+            console.log('⚠️ updateFormData déjà en cours, ignoré');
+            return;
+        }
+        this.isUpdatingForm = true;
+        
         console.log('📝 Mise à jour des données du formulaire...');
         console.log('📊 Signatures:', this.signatures);
         console.log('📊 Paraphes:', this.paraphes);
@@ -2130,6 +2137,11 @@ class PDFOverlayUnifiedModule {
         }
         
         console.log('✅ Données du formulaire mises à jour');
+        
+        // Réinitialiser le flag après un délai
+        setTimeout(() => {
+            this.isUpdatingForm = false;
+        }, 100);
     }
 
     // Navigation entre les pages
@@ -2256,8 +2268,8 @@ class PDFOverlayUnifiedModule {
         const pdfX = (canvasX / canvasWidth) * pdfPageWidth;
         
         // Utiliser exactement la même logique que le mode normal (sans ajustements)
-        // Log de débogage pour vérifier les calculs
-        console.log(`🔍 Conversion X (mode normal):`, {
+        // Log de débogage détaillé pour vérifier les calculs
+        console.log(`🔍 DEBUG Conversion X (mode normal):`, {
             htmlX: htmlX,
             containerWidth: containerWidth,
             canvasDisplayWidth: canvasDisplayWidth,
@@ -2265,7 +2277,9 @@ class PDFOverlayUnifiedModule {
             scaleFactor: scaleFactor,
             canvasX: canvasX,
             pdfPageWidth: pdfPageWidth,
-            pdfX: pdfX
+            pdfX: pdfX,
+            finalPdfX: Math.round(pdfX),
+            ratio: (htmlX / containerWidth) * 100 + '%'
         });
         
         return Math.round(pdfX);
@@ -2320,10 +2334,16 @@ class PDFOverlayUnifiedModule {
         // Convertir la position canvas en position PDF
         let pdfY = (invertedCanvasY / canvasHeight) * pdfPageHeight;
         
-        // CORRECTION : Ajuster pour le décalage vers le haut
+        // CORRECTION : Ajuster pour le décalage vers le haut selon le type d'élément
         // Le système de coordonnées PDF a (0,0) en bas à gauche
-        // Nous devons ajuster pour que la signature apparaisse au bon endroit
-        pdfY = pdfY - 20; // Ajustement de 20 points vers le bas pour corriger le décalage
+        // Nous devons ajuster pour que l'élément apparaisse au bon endroit
+        if (elementType === 'cachet') {
+            pdfY = pdfY - 10; // Ajustement réduit pour le cachet (correction décalage vers le haut)
+        } else if (elementType === 'signature') {
+            pdfY = pdfY - 5; // Ajustement réduit pour la signature (correction décalage vers le haut)
+        } else {
+            pdfY = pdfY - 20; // Ajustement normal pour paraphe
+        }
         
         // Ajuster pour tenir compte de la hauteur de l'élément
         // L'élément HTML est positionné par son coin supérieur gauche
@@ -2338,8 +2358,8 @@ class PDFOverlayUnifiedModule {
             Math.min(80, pdfPageHeight * 0.12) * 0.4;  // Hauteur paraphe (même que signature)
         
         // Utiliser exactement la même logique que le mode normal (sans ajustements)
-        // Log de débogage pour vérifier les calculs
-        console.log(`🔍 Conversion Y (mode normal) - ${elementType}:`, {
+        // Log de débogage détaillé pour vérifier les calculs
+        console.log(`🔍 DEBUG Conversion Y (mode normal) - ${elementType}:`, {
             htmlY: htmlY,
             containerHeight: containerHeight,
             canvasDisplayHeight: canvasDisplayHeight,
@@ -2348,7 +2368,11 @@ class PDFOverlayUnifiedModule {
             canvasY: canvasY,
             invertedCanvasY: invertedCanvasY,
             pdfPageHeight: pdfPageHeight,
-            pdfY: pdfY
+            pdfY: pdfY,
+            finalPdfY: Math.round(Math.max(0, pdfY)),
+            ratio: (htmlY / containerHeight) * 100 + '%',
+            elementType: elementType,
+            elementHeight: elementHeight
         });
         
         return Math.round(Math.max(0, pdfY));
@@ -2406,10 +2430,15 @@ class PDFOverlayUnifiedModule {
                         const pdfX = this.convertHtmlToPdfX(x);
                         const pdfY = this.convertHtmlToPdfY(y, type);
                         
-                        console.log('📍 Positionnement mobile (clic/touch):', { 
+                        console.log('📍 DEBUG Positionnement mobile (clic/touch):', { 
                             x, y, pdfX, pdfY,
                             clientX, clientY,
-                            containerRect: containerRect
+                            containerRect: containerRect,
+                            type: type,
+                            ratioX: (x / containerRect.width) * 100 + '%',
+                            ratioY: (y / containerRect.height) * 100 + '%',
+                            finalPdfX: Math.round(pdfX),
+                            finalPdfY: Math.round(pdfY)
                         });
                         
                         // Créer l'élément à la position cliquée
@@ -2550,7 +2579,14 @@ class PDFOverlayUnifiedModule {
             y = Math.max(0, Math.min(y, rect.height));
             
             // Utiliser exactement la même logique que le mode normal
-            console.log('📍 Coordonnées du clic (HTML):', { x, y, rect: rect });
+            console.log('📍 DEBUG Coordonnées du clic (HTML) - Mode Desktop:', { 
+                x, y, rect: rect,
+                coords: coords,
+                clientX: coords.x,
+                clientY: coords.y,
+                containerLeft: rect.left,
+                containerTop: rect.top
+            });
             
             // Convertir les coordonnées exactement comme dans le mode normal
             let pdfX, pdfY;
@@ -2558,9 +2594,14 @@ class PDFOverlayUnifiedModule {
             pdfX = this.convertHtmlToPdfX(x);
             pdfY = this.convertHtmlToPdfY(y, type);
             
-            console.log('📍 Coordonnées converties (PDF):', { pdfX, pdfY });
-            console.log('📍 Mode responsive - conversion identique au mode normal:', {
-                htmlX: x, htmlY: y,
+            console.log('📍 DEBUG Coordonnées converties (PDF) - Mode Desktop:', { 
+                pdfX, pdfY,
+                originalX: x,
+                originalY: y,
+                type: type
+            });
+            console.log('📍 DEBUG Mode desktop - conversion identique au mode normal:', {
+                htmlX: x, htmlY: y, 
                 pdfX: pdfX, pdfY: pdfY,
                 type: type
             });
@@ -2590,7 +2631,13 @@ class PDFOverlayUnifiedModule {
             
             // Créer l'élément à la position cliquée/touchée
             if (type === 'signature') {
-                console.log('✍️ Création de la signature à la position:', { x, y, pdfX, pdfY });
+                console.log('✍️ DEBUG Création de la signature à la position:', { 
+                    x, y, pdfX, pdfY,
+                    hasPdfX: pdfX !== null,
+                    hasPdfY: pdfY !== null,
+                    finalPdfX: pdfX ? Math.round(pdfX) : 'null',
+                    finalPdfY: pdfY ? Math.round(pdfY) : 'null'
+                });
                 // Créer la signature avec les coordonnées HTML pour l'affichage
                 this.createSignatureAtPosition(x, y);
                 // Mettre à jour les coordonnées PDF pour la génération finale
@@ -2626,7 +2673,13 @@ class PDFOverlayUnifiedModule {
                     }, 100);
                 });
             } else if (type === 'cachet') {
-                console.log('🏷️ Création du cachet à la position:', { x, y, pdfX, pdfY });
+                console.log('🏷️ DEBUG Création du cachet à la position:', { 
+                    x, y, pdfX, pdfY,
+                    hasPdfX: pdfX !== null,
+                    hasPdfY: pdfY !== null,
+                    finalPdfX: pdfX ? Math.round(pdfX) : 'null',
+                    finalPdfY: pdfY ? Math.round(pdfY) : 'null'
+                });
                 // Créer le cachet avec les coordonnées HTML pour l'affichage
                 this.createCachetAtPosition(x, y).then(() => {
                     // Mettre à jour les coordonnées PDF pour la génération finale
@@ -2713,7 +2766,13 @@ class PDFOverlayUnifiedModule {
         }
         this.isCreatingSignature = true;
         
-        console.log('✍️ Création de la signature à la position:', { x, y, pdfX, pdfY });
+        console.log('✍️ DEBUG Création de la signature à la position:', { 
+            x, y, pdfX, pdfY,
+            hasPdfX: pdfX !== null,
+            hasPdfY: pdfY !== null,
+            finalPdfX: pdfX ? Math.round(pdfX) : 'null',
+            finalPdfY: pdfY ? Math.round(pdfY) : 'null'
+        });
         
         // Calculer les dimensions proportionnelles pour l'affichage (réduites)
         const container = document.getElementById(this.config.pdfContainerId);
@@ -2847,7 +2906,13 @@ class PDFOverlayUnifiedModule {
         }
         this.isCreatingCachet = true;
         
-        console.log('🏷️ createCachetAtPosition appelée:', { x, y, pdfX, pdfY });
+        console.log('🏷️ DEBUG createCachetAtPosition appelée:', { 
+            x, y, pdfX, pdfY,
+            hasPdfX: pdfX !== null,
+            hasPdfY: pdfY !== null,
+            finalPdfX: pdfX ? Math.round(pdfX) : 'null',
+            finalPdfY: pdfY ? Math.round(pdfY) : 'null'
+        });
         
         // Utiliser userCachetUrl (chargé au démarrage) ou config.cachetUrl
         const cachetUrl = this.userCachetUrl || this.config.cachetUrl;
@@ -3135,7 +3200,13 @@ class PDFOverlayUnifiedModule {
                 }
             }
             
-            this.updateFormData();
+            // Debounce pour éviter les appels trop fréquents pendant le drag
+            if (this.updateFormDataTimeout) {
+                clearTimeout(this.updateFormDataTimeout);
+            }
+            this.updateFormDataTimeout = setTimeout(() => {
+                this.updateFormData();
+            }, 100); // Délai de 100ms
         };
 
         document.addEventListener('touchmove', (e) => {
@@ -3144,7 +3215,7 @@ class PDFOverlayUnifiedModule {
                 e.preventDefault();
                 moveDrag(e);
             }
-        }, { passive: true });
+        }, { passive: false });
 
         // Fonction unifiée pour arrêter le drag
         const stopDrag = (e) => {
@@ -3163,6 +3234,15 @@ class PDFOverlayUnifiedModule {
             element.style.transition = 'all 0.2s ease';
             
             this.showStatus(`${type === 'signature' ? 'Signature' : 'Paraphe'} repositionné`, 'info');
+            
+            // Nettoyer le timeout de debounce
+            if (this.updateFormDataTimeout) {
+                clearTimeout(this.updateFormDataTimeout);
+                this.updateFormDataTimeout = null;
+            }
+            
+            // Mise à jour finale des coordonnées après le drag
+            this.updateFormData();
         };
 
         document.addEventListener('touchend', (e) => {
@@ -3171,7 +3251,7 @@ class PDFOverlayUnifiedModule {
                 e.preventDefault();
             }
             stopDrag(e);
-        }, { passive: true });
+        }, { passive: false });
 
         // Événements de souris (utilisant les fonctions unifiées)
         element.addEventListener('mousedown', startDrag);
@@ -3264,13 +3344,17 @@ class PDFOverlayUnifiedModule {
                             
                             if (signature.pdfX !== undefined && signature.pdfY !== undefined) {
                                 // Mode responsive : utiliser les coordonnées PDF pré-calculées avec ajustements
-                                pdfX = signature.pdfX - 10; // Ajustement de 10 points vers la gauche
-                                pdfY = signature.pdfY - 10; // Ajustement de 10 points vers le bas (correction du décalage vers le haut)
-                                console.log('📍 Mode responsive - coordonnées PDF pré-calculées avec ajustements:', { 
+                                pdfX = signature.pdfX - 15; // Ajustement de 15 points vers la gauche (réduit)
+                                pdfY = signature.pdfY - 15; // Ajustement de 15 points vers le bas (réduit)
+                                console.log('📍 DEBUG Mode responsive - coordonnées PDF pré-calculées avec ajustements:', { 
                                     originalPdfX: signature.pdfX, 
                                     originalPdfY: signature.pdfY,
                                     adjustedPdfX: pdfX,
-                                    adjustedPdfY: pdfY
+                                    adjustedPdfY: pdfY,
+                                    adjustmentX: signature.pdfX - pdfX,
+                                    adjustmentY: signature.pdfY - pdfY,
+                                    finalPdfX: Math.round(pdfX),
+                                    finalPdfY: Math.round(pdfY)
                                 });
                             } else {
                                 // Mode normal : conversion pure sans ajustements
@@ -3444,13 +3528,17 @@ class PDFOverlayUnifiedModule {
                             
                             if (cachet.pdfX !== undefined && cachet.pdfY !== undefined) {
                                 // Mode responsive : utiliser les coordonnées PDF pré-calculées avec ajustements
-                                pdfX = cachet.pdfX - 10; // Ajustement de 10 points vers la gauche (même que signature)
-                                pdfY = cachet.pdfY - 10; // Ajustement de 10 points vers le bas (même que signature)
-                                console.log('📍 Mode responsive - cachet coordonnées PDF pré-calculées avec ajustements:', { 
+                                pdfX = cachet.pdfX - 25; // Ajustement de 25 points vers la gauche
+                                pdfY = cachet.pdfY - 25; // Ajustement de 25 points vers le bas
+                                console.log('📍 DEBUG Mode responsive - cachet coordonnées PDF pré-calculées avec ajustements:', { 
                                     originalPdfX: cachet.pdfX, 
                                     originalPdfY: cachet.pdfY,
                                     adjustedPdfX: pdfX,
-                                    adjustedPdfY: pdfY
+                                    adjustedPdfY: pdfY,
+                                    adjustmentX: cachet.pdfX - pdfX,
+                                    adjustmentY: cachet.pdfY - pdfY,
+                                    finalPdfX: Math.round(pdfX),
+                                    finalPdfY: Math.round(pdfY)
                                 });
                             } else {
                                 // Mode normal : conversion pure sans ajustements
