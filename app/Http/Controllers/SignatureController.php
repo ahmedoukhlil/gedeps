@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Document;
 use App\Models\DocumentSignature;
 use App\Services\PdfSignatureService;
+use App\Events\DocumentSigned;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -129,6 +130,9 @@ class SignatureController extends Controller
 
             // Mettre à jour le statut du document
             $document->update(['status' => 'signed']);
+
+            // Déclencher l'événement DocumentSigned pour envoyer les notifications
+            DocumentSigned::dispatch($document, $signature);
 
             $signatureTypeText = $signatureType === 'live' ? 'signature live' : 'signature PNG';
             return redirect()->route('signatures.index')
@@ -272,13 +276,16 @@ class SignatureController extends Controller
                 $signatureRecord['signature_positions'] = $signatureData['signatures'] ?? [];
             }
             
-            DocumentSignature::create($signatureRecord);
+            $signature = DocumentSignature::create($signatureRecord);
 
             // Mettre à jour le statut du document
             $document->update([
                 'status' => 'signed',
                 'signed_at' => now()
             ]);
+
+            // Déclencher l'événement DocumentSigned pour envoyer les notifications
+            DocumentSigned::dispatch($document, $signature);
 
             return response()->json([
                 'success' => true,

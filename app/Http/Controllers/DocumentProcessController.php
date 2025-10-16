@@ -10,6 +10,8 @@ use App\Models\User;
 use App\Services\PdfSigningService;
 use App\Services\NotificationService;
 use App\Traits\CanProcessDocument;
+use App\Events\DocumentSigned;
+use App\Events\DocumentRefused;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -465,7 +467,18 @@ class DocumentProcessController extends Controller
             $document->update([
                 'status' => 'signed',
                 'signed_at' => now()
-            ]);return response()->json([
+            ]);
+
+            // Déclencher l'événement DocumentSigned pour envoyer les notifications
+            DocumentSigned::dispatch($document, $signature);
+
+            \Log::info('Événement DocumentSigned déclenché', [
+                'document_id' => $document->id,
+                'signature_id' => $signature->id,
+                'uploader_email' => $document->uploader->email ?? 'N/A'
+            ]);
+
+            return response()->json([
                 'success' => true,
                 'message' => 'PDF signé stocké avec succès',
                 'path' => $path,
