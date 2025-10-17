@@ -277,14 +277,14 @@
                         <i class="fas fa-cloud-upload-alt text-emerald-800 text-2xl font-bold"></i>
                                     </div>
                                 <div>
-                        <label for="file" class="cursor-pointer">
+                        <div class="cursor-pointer">
                             <span class="text-lg font-medium text-gray-900">Glissez-déposez votre fichier ici</span>
                             <br>
                             <span class="text-sm text-gray-500">ou cliquez pour sélectionner</span>
-                        </label>
-                        <input type="file" 
-                                       name="file" 
-                               id="file" 
+                        </div>
+                        <input type="file"
+                                       name="file"
+                               id="file"
                                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
                                class="hidden @error('file') border-red-500 @enderror"
                                        required>
@@ -297,20 +297,25 @@
                         </div>
 
             <!-- Aperçu du fichier sélectionné -->
-            <div id="file-preview" class="hidden mt-4 p-4 bg-gray-50 rounded-lg">
+            <div id="file-preview" class="hidden mt-4 p-5 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-lg shadow-md">
                 <div class="flex items-center justify-between">
-                    <div class="flex items-center">
-                        <i class="fas fa-file text-blue-600 mr-3"></i>
-                        <div>
-                            <div class="font-medium text-gray-900" id="file-name"></div>
-                            <div class="text-sm text-gray-500" id="file-size"></div>
-                                </div>
-                                </div>
-                    <button type="button" id="remove-file" class="text-red-500 hover:text-red-700">
-                                    <i class="fas fa-times"></i>
-                                </button>
+                    <div class="flex items-center gap-4 flex-1">
+                        <div class="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center shadow-md flex-shrink-0">
+                            <i class="fas fa-check text-white text-xl"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="font-semibold text-gray-900 mb-1 truncate" id="file-name"></div>
+                            <div class="text-sm text-gray-600 flex items-center gap-2">
+                                <i class="fas fa-info-circle"></i>
+                                <span id="file-size"></span>
                             </div>
                         </div>
+                    </div>
+                    <button type="button" id="remove-file" class="ml-4 w-10 h-10 flex items-center justify-center text-red-500 hover:text-white hover:bg-red-500 rounded-lg transition-all duration-200 flex-shrink-0">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
+            </div>
 
             @error('file')
                 <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
@@ -527,19 +532,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Drag & drop events
     fileDropZone.addEventListener('dragover', function(e) {
+        // Ne traiter que si la zone est visible
+        if (fileDropZone.style.display === 'none') return;
         e.preventDefault();
         fileDropZone.classList.add('border-blue-400', 'bg-blue-50');
     });
 
     fileDropZone.addEventListener('dragleave', function(e) {
+        // Ne traiter que si la zone est visible
+        if (fileDropZone.style.display === 'none') return;
         e.preventDefault();
         fileDropZone.classList.remove('border-blue-400', 'bg-blue-50');
     });
 
     fileDropZone.addEventListener('drop', function(e) {
+        // Ne traiter que si la zone est visible
+        if (fileDropZone.style.display === 'none') return;
         e.preventDefault();
         fileDropZone.classList.remove('border-blue-400', 'bg-blue-50');
-        
+
         const files = e.dataTransfer.files;
         if (files.length > 0) {
             handleFileSelection(files[0]);
@@ -547,8 +558,11 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Click to select file
-    fileDropZone.addEventListener('click', function() {
-        fileInput.click();
+    fileDropZone.addEventListener('click', function(e) {
+        // Ne déclencher que si la zone est visible
+        if (fileDropZone.style.display !== 'none') {
+            fileInput.click();
+        }
     });
     
     // File input change
@@ -558,10 +572,23 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // Empêcher le file input d'être cliqué accidentellement après sélection
+    fileInput.addEventListener('click', function(e) {
+        // Si un fichier est déjà sélectionné et l'aperçu est visible, annuler
+        if (!filePreview.classList.contains('hidden')) {
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+        }
+    });
+
     // Remove file
-    removeFileBtn.addEventListener('click', function() {
+    removeFileBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
         fileInput.value = '';
         filePreview.classList.add('hidden');
+        fileDropZone.style.display = 'block';
+        fileDropZone.style.pointerEvents = 'auto';
         fileDropZone.classList.remove('border-blue-400', 'bg-blue-50');
     });
 
@@ -580,11 +607,13 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // Afficher l'aperçu
+        // Afficher l'aperçu et cacher la zone de drop
         fileName.textContent = file.name;
         fileSize.textContent = formatFileSize(file.size);
         filePreview.classList.remove('hidden');
-        
+        fileDropZone.style.display = 'none';
+        fileDropZone.style.pointerEvents = 'none';
+
         // Mettre à jour l'input
         fileInput.files = new DataTransfer().files;
         const dataTransfer = new DataTransfer();
