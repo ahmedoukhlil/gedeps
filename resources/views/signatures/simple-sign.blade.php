@@ -120,6 +120,11 @@
                         <i class="fas fa-question-circle mr-2"></i>
                         Aide
                     </button>
+                    
+                    <button id="testSignatureBtn" class="inline-flex items-center px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors">
+                        <i class="fas fa-bug mr-2"></i>
+                        Test Signature
+                    </button>
                 </div>
                 
                 <!-- Zone d'affichage du PDF -->
@@ -173,9 +178,19 @@
 </div>
 
 <!-- Scripts nécessaires pour le système de signature PDF -->
+<!-- CDN MIXTE : cdnjs pour PDF.js, unpkg pour PDF-lib et Fabric.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-<script src="{{ asset('js/pdf-overlay-signature-module.js') }}"></script>
+<script src="https://unpkg.com/fabric@5.3.0/dist/fabric.min.js" 
+        onload="console.log('✅ Fabric.js unpkg chargé:', fabric.version)" 
+        onerror="console.error('❌ CDN unpkg Fabric.js échoué, chargement local...'); 
+                 var script = document.createElement('script'); 
+                 script.src = '{{ asset('js/fabric.min.js') }}'; 
+                 script.onload = function() { console.log('✅ Fabric.js local chargé:', fabric.version); }; 
+                 script.onerror = function() { console.error('❌ Fichier local échoué'); }; 
+                 document.head.appendChild(script);"></script>
+    
+    <script src="{{ asset('js/pdf-overlay-unified-module.js') }}"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -186,10 +201,185 @@ document.addEventListener('DOMContentLoaded', function() {
         csrfToken: '{{ csrf_token() }}',
         userId: {{ auth()->id() }},
         userName: '{{ auth()->user()->name }}',
-        saveUrl: '{{ route("signatures.simple.save-signed-pdf", $document) }}'
+        saveUrl: '{{ route("signatures.simple.save-signed-pdf", $document) }}',
+        containerId: 'pdfContainer',
+        pdfContainerId: 'pdfContainer',
+        actionType: 'sign_only',
+        // IDs des boutons dans la vue
+        addSignatureBtnId: 'signDocumentBtn',
+        addParapheBtnId: 'initialDocumentBtn',
+        clearAllBtnId: 'clearSignaturesBtn',
+        submitBtnId: 'savePdfBtn'
     };
     
     console.log('🚀 Configuration du document:', window.documentConfig);
+    
+    // Test immédiat de Fabric.js
+    console.log('🔍 TEST IMMÉDIAT FABRIC.JS:');
+    console.log('📚 typeof fabric:', typeof fabric);
+    console.log('🎨 fabric.version:', typeof fabric !== 'undefined' ? fabric.version : 'N/A');
+    console.log('🌐 window.fabric:', typeof window.fabric);
+    console.log('🔍 window.fabric.version:', typeof window.fabric !== 'undefined' ? window.fabric.version : 'N/A');
+    console.log('🔍 Tous les scripts chargés:', document.scripts.length);
+    
+    // Test direct de création d'objet Fabric
+    if (typeof fabric !== 'undefined') {
+        try {
+            console.log('🧪 Test direct Fabric.js...');
+            const testCanvas = document.createElement('canvas');
+            testCanvas.id = 'test-fabric-canvas';
+            testCanvas.style.display = 'none';
+            document.body.appendChild(testCanvas);
+            
+            const fabricCanvas = new fabric.Canvas('test-fabric-canvas');
+            console.log('✅ Fabric.js fonctionne ! Canvas créé:', fabricCanvas);
+            document.body.removeChild(testCanvas);
+        } catch (error) {
+            console.error('❌ Erreur Fabric.js:', error);
+        }
+    } else {
+        console.log('⚠️ Fabric.js non disponible pour le test direct');
+    }
+    
+        // Attendre que Fabric.js soit chargé via CDN
+        function waitForFabric() {
+            console.log('🔍 Vérification Fabric.js...');
+            console.log('📚 typeof fabric:', typeof fabric);
+            console.log('🎨 fabric.version:', typeof fabric !== 'undefined' ? fabric.version : 'N/A');
+            console.log('🌐 window.fabric:', typeof window.fabric);
+            console.log('🔍 Tous les scripts chargés:', document.scripts.length);
+            
+            if (typeof fabric !== 'undefined' && fabric.version) {
+                console.log('✅ Fabric.js chargé via CDN - Version:', fabric.version);
+                // Attendre un peu plus pour s'assurer que Fabric.js est complètement initialisé
+                setTimeout(() => {
+                    initializePdfModule();
+                }, 100);
+            } else {
+                console.log('⏳ Attente de Fabric.js... (tentative)');
+                // Limiter à 50 tentatives (5 secondes max)
+                if (waitForFabric.attempts === undefined) waitForFabric.attempts = 0;
+                waitForFabric.attempts++;
+                
+                if (waitForFabric.attempts < 50) {
+                    setTimeout(waitForFabric, 100);
+                } else {
+                    console.warn('⚠️ Fabric.js non chargé après 5s, utilisation du mode classique');
+                    initializePdfModule();
+                }
+            }
+        }
+    
+    function initializePdfModule() {
+        // Initialiser le module PDF avec Fabric.js
+        if (typeof PDFOverlayUnifiedModule !== 'undefined') {
+            console.log('🚀 Initialisation du module PDF...');
+            const pdfModule = new PDFOverlayUnifiedModule(window.documentConfig);
+            pdfModule.init();
+            
+            // Stocker l'instance globalement pour débogage
+            window.pdfModule = pdfModule;
+            console.log('✅ Module PDF initialisé:', pdfModule);
+        } else {
+            console.error('❌ PDFOverlayUnifiedModule non trouvé !');
+        }
+    }
+    
+        // Démarrer l'attente
+        waitForFabric();
+    
+    // Ajouter des logs de débogage pour les boutons
+    setTimeout(() => {
+        console.log('🔍 DIAGNOSTIC BOUTONS:');
+        const signBtn = document.getElementById('signDocumentBtn');
+        const initialBtn = document.getElementById('initialDocumentBtn');
+        const clearBtn = document.getElementById('clearSignaturesBtn');
+        
+        console.log('📝 Bouton Signer:', {
+            existe: !!signBtn,
+            visible: signBtn ? signBtn.offsetParent !== null : false,
+            disabled: signBtn ? signBtn.disabled : 'N/A',
+            style: signBtn ? signBtn.style.display : 'N/A'
+        });
+        
+        console.log('✍️ Bouton Parapher:', {
+            existe: !!initialBtn,
+            visible: initialBtn ? initialBtn.offsetParent !== null : false,
+            disabled: initialBtn ? initialBtn.disabled : 'N/A'
+        });
+        
+        console.log('🗑️ Bouton Effacer:', {
+            existe: !!clearBtn,
+            visible: clearBtn ? clearBtn.offsetParent !== null : false,
+            disabled: clearBtn ? clearBtn.disabled : 'N/A'
+        });
+        
+        // Tester les événements
+        if (signBtn) {
+            signBtn.addEventListener('click', (e) => {
+                console.log('🖱️ Clic sur Signer le document détecté !', e);
+                console.log('🔍 État du module PDF:', {
+                    moduleExiste: !!window.pdfModule,
+                    isAddingSignature: window.pdfModule ? window.pdfModule.isAddingSignature : 'N/A',
+                    isPositioningActive: window.pdfModule ? window.pdfModule.isPositioningActive : 'N/A'
+                });
+            });
+        }
+        
+        // Test direct de la méthode addSignature
+        if (window.pdfModule) {
+            console.log('🧪 Test direct de addSignature()...');
+            try {
+                window.pdfModule.addSignature();
+                console.log('✅ addSignature() exécuté avec succès');
+            } catch (error) {
+                console.error('❌ Erreur dans addSignature():', error);
+            }
+        }
+        
+        // Bouton de test direct
+        const testBtn = document.getElementById('testSignatureBtn');
+        if (testBtn) {
+            testBtn.addEventListener('click', () => {
+                console.log('🧪 Test direct du bouton signature...');
+                if (window.pdfModule) {
+                    console.log('📝 Appel direct de addSignature()...');
+                    window.pdfModule.addSignature();
+                } else {
+                    console.error('❌ Module PDF non disponible');
+                }
+            });
+        }
+        
+        // Test Fabric.js
+        console.log('🔍 DIAGNOSTIC FABRIC.JS:');
+        console.log('📚 Fabric.js disponible:', typeof fabric !== 'undefined');
+        console.log('🎨 Fabric.js version:', typeof fabric !== 'undefined' ? fabric.version : 'N/A');
+        console.log('🔧 Module PDF Fabric initialisé:', window.pdfModule ? window.pdfModule.isFabricInitialized : 'N/A');
+        
+        // Test direct de Fabric.js
+        if (typeof fabric !== 'undefined') {
+            console.log('🧪 Test direct Fabric.js...');
+            try {
+                const testCanvas = new fabric.Canvas('test-fabric-canvas');
+                console.log('✅ Fabric.js fonctionne ! Canvas créé:', testCanvas);
+                testCanvas.dispose(); // Nettoyer
+            } catch (error) {
+                console.error('❌ Erreur Fabric.js:', error);
+            }
+        }
+        
+        if (window.pdfModule && !window.pdfModule.isFabricInitialized) {
+            console.log('🔄 Tentative d\'initialisation Fabric.js...');
+            if (typeof fabric !== 'undefined') {
+                window.pdfModule.initializeFabricCanvas().then(success => {
+                    console.log('🎨 Fabric.js initialisé:', success);
+                });
+            } else {
+                console.log('⚠️ Fabric.js non disponible pour l\'initialisation');
+            }
+        }
+    }, 2000);
 });
 </script>
 @endsection

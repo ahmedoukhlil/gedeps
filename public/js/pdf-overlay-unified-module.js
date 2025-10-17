@@ -965,9 +965,9 @@ class PDFOverlayUnifiedModule {
                 desynchronized: this.device.isMobile
             });
 
-            // Pixel ratio adapté
+            // Pixel ratio adapté - Haute qualité pour mobile
             const pixelRatio = this.device.isMobile ?
-                Math.min(this.device.pixelRatio, 2) :
+                Math.min(this.device.pixelRatio, 3) :
                 this.device.pixelRatio;
 
             canvas.width = viewport.width * pixelRatio;
@@ -1008,8 +1008,9 @@ class PDFOverlayUnifiedModule {
     }
 
     getQuality() {
-        if (this.device.type === 'phone') return 'medium';
-        if (this.device.type === 'tablet') return 'high';
+        // Qualité haute pour tous les devices pour une meilleure lisibilité
+        if (this.device.type === 'phone') return 'high';
+        if (this.device.type === 'tablet') return 'ultra';
         return 'ultra';
     }
 

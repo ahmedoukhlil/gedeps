@@ -186,6 +186,18 @@
                                         </div>
                                     @endif
                                     
+                                    @if($allowCachet)
+                                        <button type="button" id="addCachetBtn" class="inline-flex items-center gap-2 px-4 py-2 sophisticated-btn-primary text-white rounded-lg sophisticated-btn-primary focus:ring-2 sophisticated-focus focus:ring-offset-2 transition-colors"
+                                                aria-label="Ajouter un cachet au document"
+                                                aria-describedby="cachet-help">
+                                            <i class="fas fa-stamp" aria-hidden="true"></i>
+                                            <span>Cacheter</span>
+                                        </button>
+                                        <div id="cachet-help" class="sr-only">
+                                            Cliquez pour ajouter un cachet au document. Vous pourrez ensuite cliquer sur le document pour le positionner.
+                                        </div>
+                                    @endif
+                                    
                                     <button type="button" id="clearAllBtn" class="inline-flex items-center gap-2 px-4 py-2 sophisticated-btn-primary text-white rounded-lg sophisticated-btn-primary focus:ring-2 sophisticated-focus focus:ring-offset-2 transition-colors"
                                             aria-label="Effacer toutes les signatures et paraphes"
                                             aria-describedby="clear-help">
@@ -241,10 +253,6 @@
                 
                 <!-- Zone d'affichage PDF -->
                 <div id="pdfViewer" class="pdf-viewer-container">
-                    <div class="pdf-loading" id="pdfLoading">
-                        <div class="loading-spinner"></div>
-                        <p class="loading-text">Chargement du document PDF...</p>
-                    </div>
                 </div>
             </div>
         </div>
@@ -253,6 +261,8 @@
 
 <!-- Scripts nécessaires -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<!-- Fabric.js via Vite (plus fiable que CDN) -->
+@vite(['resources/js/fabric-bundle.js'])
 <script src="{{ asset('js/pdf-overlay-unified-module.js') }}"></script>
 
 <script>
@@ -270,6 +280,7 @@ document.addEventListener('DOMContentLoaded', function() {
         pdfUrl: '{{ $pdfUrl }}',
         signatureUrl: '{{ $signatureUrl }}',
         parapheUrl: '{{ $parapheUrl }}',
+        cachetUrl: '{{ $cachetUrl }}',
         documentId: {{ $document->id }},
         containerId: 'pdfViewer',
         processFormId: 'processForm',
@@ -284,6 +295,7 @@ document.addEventListener('DOMContentLoaded', function() {
         parapheYInputId: 'paraphe_y',
         addSignatureBtnId: 'addSignatureBtn',
         addParapheBtnId: 'addParapheBtn',
+        addCachetBtnId: 'addCachetBtn',
         clearAllBtnId: 'clearAllBtn',
         submitBtnId: 'submitBtn',
         zoomInBtnId: 'zoomInBtn',
@@ -301,6 +313,17 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     const unifiedModule = new PDFOverlayUnifiedModule(config);
+    
+    // Initialiser le module
+    unifiedModule.init().catch(error => {
+        console.error('Erreur initialisation module PDF:', error);
+        
+        // Essayer l'initialisation manuelle après un délai
+        setTimeout(() => {
+            console.log('🔄 Tentative d\'initialisation manuelle...');
+            unifiedModule.initManual();
+        }, 2000);
+    });
 });
 </script>
 
@@ -308,41 +331,15 @@ document.addEventListener('DOMContentLoaded', function() {
 /* Styles pour l'interface sophistiquée */
 .pdf-viewer-container {
     position: relative;
-    min-height: 600px;
     background: #f8f9fa;
     border: 2px solid #dee2e6;
     border-radius: 8px;
     overflow: hidden;
-}
-
-.pdf-loading {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    height: 400px;
-    color: #6c757d;
 }
 
-.loading-spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid #007bff;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin-bottom: 20px;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-.loading-text {
-    font-size: 16px;
-    font-weight: 500;
-}
 
 /* Styles pour les boutons sophistiqués */
 .sophisticated-btn-primary {

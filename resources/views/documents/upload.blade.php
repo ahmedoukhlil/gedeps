@@ -62,27 +62,6 @@
         </div>
     </div>
                 
-    <!-- Messages -->
-    @if(session('success'))
-        <div class="alert alert-success mb-6">
-            <i class="fas fa-check-circle"></i>
-            <div>
-                <h4 class="font-bold">Succès !</h4>
-                <p>{{ session('success') }}</p>
-            </div>
-        </div>
-    @endif
-
-    @if(session('error'))
-        <div class="alert alert-error mb-6">
-            <i class="fas fa-exclamation-circle"></i>
-            <div>
-                <h4 class="font-bold">Erreur</h4>
-                <p>{{ session('error') }}</p>
-            </div>
-        </div>
-    @endif
-
     <!-- Formulaire -->
             <form action="{{ route('documents.store') }}" method="POST" enctype="multipart/form-data" id="uploadForm">
                 @csrf
@@ -391,155 +370,49 @@
 @endpush
 
 <script>
-// Script direct pour gérer les signatures séquentielles
+// Script complet pour la gestion des signatures
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Script de signatures séquentielles chargé');
-    
-    // Fonction pour basculer entre les sections
+    const addSequentialSignerBtn = document.getElementById('add-sequential-signer');
+    const sequentialSignersList = document.getElementById('sequential-signers-list');
+    const simpleSigner = document.getElementById('simple-signer');
+    const sequentialSigners = document.getElementById('sequential-signers');
+    let signerCount = 0;
+
+    // Fonction pour basculer entre les types de signature
     function toggleSignatureSections(type) {
-        console.log('🔄 Basculement vers:', type);
-        
-        const simpleSigner = document.getElementById('simple-signer');
-        const sequentialSigners = document.getElementById('sequential-signers');
-        
-        console.log('🔍 Éléments trouvés:', {
-            simpleSigner: !!simpleSigner,
-            sequentialSigners: !!sequentialSigners
-        });
-        
         if (type === 'simple') {
-            if (simpleSigner) {
-                simpleSigner.classList.remove('hidden');
-                console.log('✅ Section simple affichée');
-            }
-            if (sequentialSigners) {
-                sequentialSigners.classList.add('hidden');
-                console.log('✅ Section séquentielle masquée');
-            }
+            if (simpleSigner) simpleSigner.classList.remove('hidden');
+            if (sequentialSigners) sequentialSigners.classList.add('hidden');
         } else if (type === 'sequential') {
-            if (simpleSigner) {
-                simpleSigner.classList.add('hidden');
-                console.log('✅ Section simple masquée');
-            }
-            if (sequentialSigners) {
-                sequentialSigners.classList.remove('hidden');
-                console.log('✅ Section séquentielle affichée');
-            }
+            if (simpleSigner) simpleSigner.classList.add('hidden');
+            if (sequentialSigners) sequentialSigners.classList.remove('hidden');
         }
     }
-    
-    // Gestion des clics sur les options
-    document.querySelectorAll('.signature-option').forEach(option => {
-        option.addEventListener('click', function(e) {
-            console.log('🖱️ Clic sur option:', this.dataset.type);
-            const radio = this.querySelector('input[type="radio"]');
-            if (radio) {
-                radio.checked = true;
-                toggleSignatureSections(radio.value);
-            }
-        });
-    });
-    
-    // Gestion des changements de radio
+
+    // Gestion des changements de type de signature
     document.querySelectorAll('input[name="signature_type"]').forEach(radio => {
         radio.addEventListener('change', function() {
-            console.log('🔄 Radio changé:', this.value);
             toggleSignatureSections(this.value);
         });
     });
-    
-    // Initialisation
-    const selectedRadio = document.querySelector('input[name="signature_type"]:checked');
-    if (selectedRadio) {
-        console.log('🎯 Initialisation avec:', selectedRadio.value);
-        toggleSignatureSections(selectedRadio.value);
-    }
-    
-    // Gestion des signataires séquentiels
-    const addSequentialSignerBtn = document.getElementById('add-sequential-signer');
-    const sequentialSignersList = document.getElementById('sequential-signers-list');
-    let signerCount = 0;
-    
-    console.log('🔍 Éléments signataires:', {
-        addSequentialSignerBtn: !!addSequentialSignerBtn,
-        sequentialSignersList: !!sequentialSignersList
+
+    // Gestion des clics sur les cartes d'option
+    document.querySelectorAll('.signature-option').forEach(option => {
+        option.addEventListener('click', function(e) {
+            // Ne pas traiter si c'est déjà un clic sur le label ou le radio
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'LABEL') {
+                return;
+            }
+            const radio = this.querySelector('input[type="radio"]');
+            if (radio) {
+                radio.checked = true;
+                // Déclencher l'événement change pour que la bascule fonctionne
+                radio.dispatchEvent(new Event('change'));
+            }
+        });
     });
-    
-    if (addSequentialSignerBtn && sequentialSignersList) {
-        // Fonction pour remplir les options des signataires
-        function populateSignerOptions(selectElement) {
-            const existingSelect = document.getElementById('signer_id');
-            if (existingSelect) {
-                const options = existingSelect.querySelectorAll('option');
-                options.forEach(option => {
-                    if (option.value !== '') {
-                        const newOption = option.cloneNode(true);
-                        selectElement.appendChild(newOption);
-                    }
-                });
-            }
-        }
-        
-        // Ajouter un signataire séquentiel
-        addSequentialSignerBtn.addEventListener('click', function() {
-            console.log('➕ Ajout d\'un signataire séquentiel');
-            signerCount++;
-            const signerDiv = document.createElement('div');
-            signerDiv.className = 'bg-white border border-gray-200 rounded-lg p-4 shadow-sm mb-3';
-            signerDiv.innerHTML = `
-                <div class="flex items-center justify-between mb-3">
-                    <div class="flex items-center">
-                        <div class="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center text-white font-bold text-sm mr-3">
-                            ${signerCount}
-                        </div>
-                        <span class="font-medium text-gray-900">Signataire ${signerCount}</span>
-                    </div>
-                    <button type="button" class="remove-signer text-red-500 hover:text-red-700 transition-colors">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-                <div class="relative">
-                    <select name="sequential_signers[]" class="w-full px-4 py-2.5 sm:py-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-success-500 focus:border-success-500 appearance-none bg-white text-sm sm:text-base" required>
-                        <option value="">Sélectionner un signataire</option>
-                    </select>
-                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                        <i class="fas fa-chevron-down text-gray-400 text-sm"></i>
-                    </div>
-                </div>
-                <input type="hidden" name="sequential_signers_order[]" value="${signerCount}">
-            `;
-            sequentialSignersList.appendChild(signerDiv);
-            
-            // Remplir les options du select
-            const selectElement = signerDiv.querySelector('select');
-            populateSignerOptions(selectElement);
-            
-            console.log('✅ Signataire ajouté');
-        });
-        
-        // Supprimer un signataire séquentiel
-        document.addEventListener('click', function(e) {
-            if (e.target.closest('.remove-signer')) {
-                console.log('🗑️ Suppression d\'un signataire');
-                const signerDiv = e.target.closest('.bg-white.border');
-                if (signerDiv) {
-                    signerDiv.remove();
-                }
-            }
-        });
-    }
-});
-</script>
 
-@push('scripts')
-<script>
-// Script simplifié pour les signataires séquentiels
-document.addEventListener('DOMContentLoaded', function() {
-    const addSequentialSignerBtn = document.getElementById('add-sequential-signer');
-    const sequentialSignersList = document.getElementById('sequential-signers-list');
-    let signerCount = 0;
-
-    // Gestion des signataires séquentiels uniquement
+    // Gestion des signataires séquentiels
     
     // Fonction pour remplir les options des signataires
     function populateSignerOptions(selectElement) {
@@ -638,19 +511,10 @@ document.addEventListener('DOMContentLoaded', function() {
         signerCount = signerDivs.length;
     }
 
-    // Initialiser l'état selon la valeur sélectionnée
+    // Initialiser l'état au chargement de la page
     const selectedType = document.querySelector('input[name="signature_type"]:checked');
     if (selectedType) {
-        // Mettre en évidence l'option sélectionnée
-        if (selectedType.value === 'simple') {
-            selectedType.closest('.signature-option').classList.add('ring-2', 'ring-blue-500');
-            selectedType.closest('.signature-option').querySelector('.option-card').classList.add('border-blue-500');
-        } else if (selectedType.value === 'sequential') {
-            selectedType.closest('.signature-option').classList.add('ring-2', 'ring-green-500');
-            selectedType.closest('.signature-option').querySelector('.option-card').classList.add('border-green-500');
-            simpleSigner.classList.add('hidden');
-            sequentialSigners.classList.remove('hidden');
-        }
+        toggleSignatureSections(selectedType.value);
     }
 
     // Gestion du fichier avec drag & drop
@@ -737,6 +601,5 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
-@endpush
 
 @endsection
