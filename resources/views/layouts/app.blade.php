@@ -89,8 +89,8 @@
                                 <div class="absolute -top-1 -right-1 w-4 h-4 bg-success-500 rounded-full border-2 border-white"></div>
                             </div>
                             <div class="hidden sm:block">
-                                <div class="text-sm sm:text-base lg:text-lg font-bold text-gray-900 group-hover:text-primary-600 transition-colors">GEDEPS</div>
-                                <div class="text-[10px] sm:text-xs text-gray-500 -mt-0.5">Gestion Documentaire</div>
+                                <div class="text-sm sm:text-base lg:text-lg font-bold text-gray-900 group-hover:text-primary-600 transition-colors leading-tight">GEDEPS</div>
+                                <div class="text-xs text-gray-500 -mt-0.5 leading-tight">Gestion Documentaire</div>
                             </div>
                         </a>
 
@@ -210,12 +210,12 @@
                 </div>
                 
                 <!-- Menu mobile élégant - Slide depuis la gauche -->
-                <div class="lg:hidden fixed inset-0 z-50 hidden" id="navbarNavMobile">
+                <div class="lg:hidden fixed inset-0 z-[9999] hidden" id="navbarNavMobile">
                     <!-- Overlay avec animation -->
-                    <div class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm transition-opacity duration-300 opacity-0" id="mobileMenuOverlay"></div>
-                    
+                    <div class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm transition-opacity duration-300 opacity-0 z-[9998]" id="mobileMenuOverlay"></div>
+
                     <!-- Menu Panel avec slide animation -->
-                    <div class="fixed top-0 left-0 bottom-0 w-80 max-w-[85vw] bg-white shadow-2xl transform -translate-x-full transition-transform duration-300 ease-out overflow-y-auto" id="mobileMenuPanel">
+                    <div class="fixed top-0 left-0 bottom-0 w-80 max-w-[85vw] bg-white shadow-2xl transform -translate-x-full transition-transform duration-300 ease-out overflow-y-auto z-[9999]" id="mobileMenuPanel">
                         @auth
                             <!-- Header mobile élégant -->
                             <div class="sticky top-0 bg-gradient-to-r from-primary-500 to-primary-600 p-6 shadow-lg z-10">
