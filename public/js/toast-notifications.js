@@ -80,12 +80,12 @@ class ToastNotifications {
         toast.innerHTML = `
             <div class="toast-header">
                 <div class="toast-icon ${type}">${toastIcon}</div>
-                <h4 class="toast-title">${title}</h4>
-                <button class="toast-close" onclick="toastNotifications.hide('${id}')">
+                <h4 class="toast-title !text-green-700 !font-semibold !text-base">${title}</h4>
+                <button class="toast-close !text-green-600 hover:!text-green-800" onclick="toastNotifications.hide('${id}')">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <div class="toast-body">
+            <div class="toast-body !text-green-600">
                 ${message}
             </div>
             <div class="toast-progress">

@@ -456,7 +456,7 @@
   position: fixed;
   top: 20px;
   right: 20px;
-  z-index: 9999;
+  z-index: 999999;
   max-width: 400px;
 }
 
@@ -530,7 +530,7 @@
 
 .toast-title {
   font-weight: 600;
-  color: #1e293b;
+  color: #1e293b !important;
   font-size: 16px;
   margin: 0;
 }
@@ -539,7 +539,7 @@
   margin-left: auto;
   background: none;
   border: none;
-  color: #64748b;
+  color: #64748b !important;
   cursor: pointer;
   padding: 4px;
   border-radius: 4px;
@@ -548,12 +548,12 @@
 
 .toast-close:hover {
   background: #f1f5f9;
-  color: #1e293b;
+  color: #1e293b !important;
 }
 
 .toast-body {
   padding: 0 20px 16px;
-  color: #64748b;
+  color: #64748b !important;
   line-height: 1.5;
 }
 
