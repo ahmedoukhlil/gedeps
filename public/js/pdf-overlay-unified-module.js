@@ -1092,16 +1092,10 @@ class PDFOverlayUnifiedModule {
         );
     }
 
-    handleTap(e) {
-        const coords = this.getTouchCoords(e);
-        const width = this.device.viewport.width;
-        
-        // Navigation par zones
-        if (coords.x < width * 0.2) {
-            this.previousPage();
-        } else if (coords.x > width * 0.8) {
-            this.nextPage();
-        }
+    handleTap() {
+        // Fonction désactivée pour éviter la navigation accidentelle par tap
+        this.log('🚫 handleTap désactivé');
+        return;
     }
 
     handlePinchZoom(scale) {
