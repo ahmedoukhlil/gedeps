@@ -697,18 +697,55 @@ class PDFOverlayUnifiedModule {
         this.state.positioningType = null;
     }
 
-    placeElement(type, x, y) {
+    async placeElement(type, x, y) {
         const size = this.getElementSize(type);
         const url = this.getUrlForType(type);
-        
+
+        //  Charger l'image pour obtenir son ratio réel
+        let imageAspectRatio = null;
+        let realHeight = size.height;
+
+        try {
+            // Vérifier si l'image est déjà en cache
+            let img = this.cache.images.get(type);
+
+            if (!img) {
+                // Charger l'image si pas en cache
+                img = await new Promise((resolve, reject) => {
+                    const image = new Image();
+                    image.onload = () => resolve(image);
+                    image.onerror = () => reject(new Error('Failed to load image'));
+                    image.src = url;
+                });
+            }
+
+            // Calculer le vrai ratio d'aspect
+            imageAspectRatio = img.width / img.height;
+            realHeight = size.width / imageAspectRatio;
+
+            this.log(`📐 Ratio d'aspect réel de ${type}:`, {
+                imageWidth: img.width,
+                imageHeight: img.height,
+                ratio: imageAspectRatio.toFixed(3),
+                overlayWidth: size.width,
+                overlayHeight: realHeight.toFixed(2)
+            });
+
+        } catch (error) {
+            this.log(`⚠️ Impossible de charger l'image ${type}, utilisation ratio par défaut`);
+            // Utiliser le ratio par défaut de getElementSize
+            imageAspectRatio = size.width / size.height;
+        }
+
         const element = {
             id: Date.now(),
             type,
             page: this.state.currentPage,
             x: x - size.width / 2,
-            y: y - size.height / 2,
+            y: y - realHeight / 2,
             width: size.width,
-            height: size.height,
+            height: realHeight,
+            imageAspectRatio, // Stocker le ratio pour référence
             url
         };
 
@@ -716,7 +753,7 @@ class PDFOverlayUnifiedModule {
         if (type === 'signature') this.signatures.push(element);
         else if (type === 'paraphe') this.paraphes.push(element);
         else if (type === 'cachet') this.cachets.push(element);
-        
+
         this.renderElements();
         this.updateFormData();
         this.showToast(`${type} ajouté`, 'success');
@@ -887,6 +924,13 @@ class PDFOverlayUnifiedModule {
         this.state.isRendering = true;
 
         try {
+            // Supprimer le loader initial s'il existe (premier rendu uniquement)
+            const loader = container.querySelector('.flex.flex-col.items-center');
+            if (loader && loader.querySelector('.animate-spin')) {
+                loader.remove();
+                this.log('🗑️ Loader initial supprimé');
+            }
+
             // Vérifier le cache
             const quality = this.getQuality();
             const cacheKey = `${pageNum}_${this.state.scale}_${quality}`;
@@ -1492,28 +1536,44 @@ class PDFOverlayUnifiedModule {
                 if (!page) continue;
                 
                 const pageSize = page.getSize();
-                
-                // Conversion PRÉCISE des coordonnées
-                const pdfX = await this.convertHtmlToPdfX(element.x);
-                const pdfY = await this.convertHtmlToPdfY(element.y, type);
-                
+
                 // Calculer la taille proportionnelle de l'élément en PDF
                 const data = await this.getConversionData();
-                const elementSize = this.getElementSize(type);
-                
-                // Convertir la taille HTML en taille PDF
-                const widthRatio = elementSize.width / data.containerWidth;
-                const heightRatio = elementSize.height / data.containerHeight;
-                
+
+                // Utiliser directement les dimensions de l'élément (qui contiennent déjà le bon ratio)
+                const elementWidth = element.width;
+                const elementHeight = element.height;
+
+                // Convertir les dimensions HTML en dimensions PDF
+                const widthRatio = elementWidth / data.containerWidth;
+                const heightRatio = elementHeight / data.containerHeight;
+
                 const width = widthRatio * pageSize.width;
                 const height = heightRatio * pageSize.height;
+
+                // Conversion PRÉCISE des coordonnées
+                const pdfX = await this.convertHtmlToPdfX(element.x);
+
+                // Pour Y : Conversion avec inversion (HTML = origine en haut, PDF = origine en bas)
+                // 1. Position relative dans le container HTML (0 = haut, 1 = bas)
+                const relativeY = element.y / data.containerHeight;
+
+                // 2. Inverser pour PDF (0 = bas, 1 = haut)
+                const invertedY = 1 - relativeY;
+
+                // 3. Convertir en points PDF
+                const pdfYTop = invertedY * data.pdfPageHeight;
+
+                // 4. Soustraire la hauteur de l'élément (car PDF mesure depuis le bas gauche)
+                const pdfY = Math.max(0, pdfYTop - height);
                 
                 this.log('📝 Placement élément:', {
                     type,
                     page: element.page,
-                    htmlPos: { x: element.x, y: element.y },
-                    pdfPos: { x: pdfX, y: pdfY },
-                    htmlSize: { width: elementSize.width, height: elementSize.height },
+                    htmlPos: { x: Math.round(element.x), y: Math.round(element.y) },
+                    pdfPos: { x: Math.round(pdfX), y: Math.round(pdfY) },
+                    htmlSize: { width: elementWidth.toFixed(2), height: elementHeight.toFixed(2) },
+                    imageRatio: element.imageAspectRatio ? element.imageAspectRatio.toFixed(3) : 'N/A',
                     pdfSize: { width: width.toFixed(2), height: height.toFixed(2) },
                     pageSize: { width: pageSize.width, height: pageSize.height }
                 });
