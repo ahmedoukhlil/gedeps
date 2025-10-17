@@ -259,20 +259,25 @@ class PDFOverlayUnifiedModule {
 
     initMobileEvents() {
         this.log('📱 Initialisation événements mobile');
-        
+
         // Boutons d'action - TOUCH PRIORITY
         this.attachMobileButton(this.config.addSignatureBtnId, () => this.startPositioning('signature'));
         this.attachMobileButton(this.config.addParapheBtnId, () => this.startPositioning('paraphe'));
         this.attachMobileButton(this.config.addCachetBtnId, () => this.startPositioning('cachet'));
         this.attachMobileButton(this.config.clearAllBtnId, () => this.clearAll());
         this.attachMobileButton(this.config.submitBtnId, () => this.submitForm());
-        
+
         // Navigation
         this.attachMobileButton(this.config.prevPageBtnId, () => this.previousPage());
         this.attachMobileButton(this.config.nextPageBtnId, () => this.nextPage());
         this.attachMobileButton('firstPageBtn', () => this.goToPage(1));
         this.attachMobileButton('lastPageBtn', () => this.goToPage(this.state.totalPages));
-        
+
+        // Boutons de zoom
+        this.attachMobileButton('zoomInBtn', () => this.zoomIn());
+        this.attachMobileButton('zoomOutBtn', () => this.zoomOut());
+        this.attachMobileButton('resetZoomBtn', () => this.resetZoom());
+
         // Canvas PDF - Touch gestures
         this.initMobilePDFGestures();
     }
@@ -436,22 +441,30 @@ class PDFOverlayUnifiedModule {
 
     initDesktopEvents() {
         this.log('🖥️ Initialisation événements desktop');
-        
+
         // Boutons - Click simple
         this.attachDesktopButton(this.config.addSignatureBtnId, () => this.startPositioningOverlay('signature'));
         this.attachDesktopButton(this.config.addParapheBtnId, () => this.startPositioningOverlay('paraphe'));
         this.attachDesktopButton(this.config.addCachetBtnId, () => this.startPositioningOverlay('cachet'));
         this.attachDesktopButton(this.config.clearAllBtnId, () => this.clearAll());
         this.attachDesktopButton(this.config.submitBtnId, () => this.submitForm());
-        
+
         // Navigation
         this.attachDesktopButton(this.config.prevPageBtnId, () => this.previousPage());
         this.attachDesktopButton(this.config.nextPageBtnId, () => this.nextPage());
         this.attachDesktopButton('firstPageBtn', () => this.goToPage(1));
         this.attachDesktopButton('lastPageBtn', () => this.goToPage(this.state.totalPages));
-        
+
+        // Boutons de zoom
+        this.attachDesktopButton('zoomInBtn', () => this.zoomIn());
+        this.attachDesktopButton('zoomOutBtn', () => this.zoomOut());
+        this.attachDesktopButton('resetZoomBtn', () => this.resetZoom());
+
         // Drag & drop desktop sur le container
         this.initDesktopDragDrop();
+
+        // Zoom par molette (Ctrl+Scroll)
+        this.initDesktopWheelZoom();
     }
 
     initDesktopDragDrop() {
@@ -534,17 +547,48 @@ class PDFOverlayUnifiedModule {
         });
     }
 
+    initDesktopWheelZoom() {
+        const container = document.getElementById(this.config.containerId);
+        if (!container) return;
+
+        const wheelHandler = (e) => {
+            // Zoom uniquement avec Ctrl+Scroll
+            if (e.ctrlKey || e.metaKey) {
+                e.preventDefault();
+
+                const delta = e.deltaY;
+                const zoomFactor = delta > 0 ? 0.9 : 1.1; // Zoom out ou zoom in
+
+                const newScale = this.state.scale * zoomFactor;
+                this.state.scale = Math.max(0.3, Math.min(3.0, newScale));
+
+                // Invalider le cache et re-rendre
+                this.cache.pages.clear();
+                this.invalidateConversionCache();
+                this.renderPage(this.state.currentPage);
+
+                this.showToast(`Zoom: ${Math.round(this.state.scale * 100)}%`, 'info');
+            }
+        };
+
+        container.addEventListener('wheel', wheelHandler, { passive: false });
+
+        this.cleanup.push(() => {
+            container.removeEventListener('wheel', wheelHandler);
+        });
+    }
+
     attachDesktopButton(btnId, handler) {
         if (!btnId) return;
-        
+
         const btn = document.getElementById(btnId);
         if (!btn) return;
-        
+
         btn.addEventListener('click', (e) => {
             e.preventDefault();
             handler();
         });
-        
+
         this.cleanup.push(() => {
             btn.removeEventListener('click', handler);
         });
@@ -1018,8 +1062,74 @@ class PDFOverlayUnifiedModule {
 
     handlePinchZoom(scale) {
         const newScale = this.state.scale * scale;
-        this.state.scale = Math.max(0.3, Math.min(2.5, newScale));
+        const clampedScale = Math.max(0.3, Math.min(3.0, newScale));
+
+        // Éviter les re-rendus si le changement est trop petit
+        if (Math.abs(clampedScale - this.state.scale) > 0.01) {
+            this.state.scale = clampedScale;
+
+            // Throttle le rendu pour éviter trop d'appels
+            if (!this._pinchZoomTimeout) {
+                this._pinchZoomTimeout = setTimeout(() => {
+                    this.cache.pages.clear();
+                    this.invalidateConversionCache();
+                    this.renderPage(this.state.currentPage);
+                    this._pinchZoomTimeout = null;
+                }, 100);
+            }
+        }
+    }
+
+    // ========================================
+    // ZOOM
+    // ========================================
+    zoomIn() {
+        const newScale = this.state.scale * 1.2;
+        this.setZoom(newScale);
+    }
+
+    zoomOut() {
+        const newScale = this.state.scale / 1.2;
+        this.setZoom(newScale);
+    }
+
+    resetZoom() {
+        const initialScale = this.getInitialScale();
+        this.setZoom(initialScale);
+    }
+
+    setZoom(newScale) {
+        const clampedScale = Math.max(0.3, Math.min(3.0, newScale));
+
+        if (clampedScale === this.state.scale) {
+            this.showToast('Limite de zoom atteinte', 'warning');
+            return;
+        }
+
+        this.state.scale = clampedScale;
+
+        // Invalider le cache et re-rendre
+        this.cache.pages.clear();
+        this.invalidateConversionCache();
         this.renderPage(this.state.currentPage);
+
+        const percentage = Math.round(this.state.scale * 100);
+        this.showToast(`Zoom: ${percentage}%`, 'info');
+
+        // Mettre à jour l'affichage du zoom si un élément existe
+        this.updateZoomDisplay(percentage);
+    }
+
+    updateZoomDisplay(percentage) {
+        const zoomDisplay = document.getElementById('zoomDisplay');
+        if (zoomDisplay) {
+            zoomDisplay.textContent = `${percentage}%`;
+        }
+
+        const zoomValue = document.getElementById('zoomValue');
+        if (zoomValue) {
+            zoomValue.textContent = `${percentage}%`;
+        }
     }
 
     // ========================================
