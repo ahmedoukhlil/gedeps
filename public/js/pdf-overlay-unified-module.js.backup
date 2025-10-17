@@ -1,0 +1,571 @@
+﻿class PDFOverlayUnifiedModule {
+    constructor(config) {
+        this.config = config;
+        this.pdfDoc = null;
+        this.currentPage = 1;
+        this.scale = 1.0;
+        
+        // Canvas natif pour les overlays
+        this.overlayCanvas = null;
+        this.overlayCtx = null;
+        
+        // Stockage des éléments
+        this.signatures = [];
+        this.paraphes = [];
+        this.cachets = [];
+        
+        // État du glisser-déposer
+        this.isDragging = false;
+        this.draggedElement = null;
+        this.dragOffsetX = 0;
+        this.dragOffsetY = 0;
+    }
+
+    async init() {
+        await this.loadPDF();
+        this.initializeOverlayCanvas();
+        this.setupEventListeners();
+        this.updateInterface();
+    }
+
+    /**
+     * Initialiser le canvas overlay transparent
+     */
+    initializeOverlayCanvas() {
+        const container = document.getElementById(this.config.containerId);
+        const pdfCanvas = container.querySelector('canvas');
+        
+        if (!pdfCanvas) {
+            console.error('Canvas PDF non trouvé');
+            return;
+        }
+
+        // Créer le canvas overlay
+        this.overlayCanvas = document.createElement('canvas');
+        this.overlayCanvas.id = 'overlay-canvas';
+        this.overlayCanvas.style.cssText = `
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1000;
+            cursor: crosshair;
+            pointer-events: auto;
+        `;
+        
+        // Synchroniser les dimensions avec le canvas PDF
+        const rect = pdfCanvas.getBoundingClientRect();
+        this.overlayCanvas.width = rect.width;
+        this.overlayCanvas.height = rect.height;
+        this.overlayCanvas.style.width = rect.width + 'px';
+        this.overlayCanvas.style.height = rect.height + 'px';
+        
+        // Positionner le conteneur
+        container.style.position = 'relative';
+        container.appendChild(this.overlayCanvas);
+        
+        // Obtenir le contexte 2D
+        this.overlayCtx = this.overlayCanvas.getContext('2d');
+        
+        console.log('✅ Canvas overlay initialisé:', {
+            width: this.overlayCanvas.width,
+            height: this.overlayCanvas.height
+        });
+    }
+
+    /**
+     * Redessiner tous les éléments sur le canvas
+     */
+    redrawOverlay() {
+        // Nettoyer le canvas
+        this.overlayCtx.clearRect(0, 0, this.overlayCanvas.width, this.overlayCanvas.height);
+        
+        // Redessiner les signatures
+        this.signatures
+            .filter(sig => sig.page === this.currentPage)
+            .forEach(sig => this.drawSignature(sig));
+        
+        // Redessiner les paraphes
+        this.paraphes
+            .filter(par => par.page === this.currentPage)
+            .forEach(par => this.drawParaphe(par));
+        
+        // Redessiner les cachets
+        this.cachets
+            .filter(cac => cac.page === this.currentPage)
+            .forEach(cac => this.drawCachet(cac));
+    }
+
+    /**
+     * Dessiner une signature sur le canvas
+     */
+    drawSignature(signature) {
+        if (!signature.image) return;
+        
+        this.overlayCtx.save();
+        
+        // Dessiner l'image
+        this.overlayCtx.drawImage(
+            signature.image,
+            signature.x,
+            signature.y,
+            signature.width,
+            signature.height
+        );
+        
+        // Dessiner le cadre de sélection si sélectionné
+        if (signature.selected) {
+            this.overlayCtx.strokeStyle = '#007bff';
+            this.overlayCtx.lineWidth = 2;
+            this.overlayCtx.strokeRect(
+                signature.x,
+                signature.y,
+                signature.width,
+                signature.height
+            );
+            
+            // Dessiner les poignées de redimensionnement
+            this.drawResizeHandles(signature);
+        }
+        
+        this.overlayCtx.restore();
+    }
+
+    /**
+     * Dessiner les poignées de redimensionnement
+     */
+    drawResizeHandles(element) {
+        const handleSize = 8;
+        const handles = [
+            { x: element.x, y: element.y }, // Coin supérieur gauche
+            { x: element.x + element.width, y: element.y }, // Coin supérieur droit
+            { x: element.x, y: element.y + element.height }, // Coin inférieur gauche
+            { x: element.x + element.width, y: element.y + element.height } // Coin inférieur droit
+        ];
+        
+        this.overlayCtx.fillStyle = '#007bff';
+        handles.forEach(handle => {
+            this.overlayCtx.fillRect(
+                handle.x - handleSize / 2,
+                handle.y - handleSize / 2,
+                handleSize,
+                handleSize
+            );
+        });
+    }
+
+    /**
+     * Dessiner un paraphe (même logique)
+     */
+    drawParaphe(paraphe) {
+        if (!paraphe.image) return;
+        
+        this.overlayCtx.save();
+        this.overlayCtx.drawImage(
+            paraphe.image,
+            paraphe.x,
+            paraphe.y,
+            paraphe.width,
+            paraphe.height
+        );
+        
+        if (paraphe.selected) {
+            this.overlayCtx.strokeStyle = '#667eea';
+            this.overlayCtx.lineWidth = 2;
+            this.overlayCtx.strokeRect(
+                paraphe.x,
+                paraphe.y,
+                paraphe.width,
+                paraphe.height
+            );
+        }
+        
+        this.overlayCtx.restore();
+    }
+
+    /**
+     * Dessiner un cachet (même logique)
+     */
+    drawCachet(cachet) {
+        if (!cachet.image) return;
+        
+        this.overlayCtx.save();
+        this.overlayCtx.drawImage(
+            cachet.image,
+            cachet.x,
+            cachet.y,
+            cachet.width,
+            cachet.height
+        );
+        
+        if (cachet.selected) {
+            this.overlayCtx.strokeStyle = '#8B5CF6';
+            this.overlayCtx.lineWidth = 2;
+            this.overlayCtx.strokeRect(
+                cachet.x,
+                cachet.y,
+                cachet.width,
+                cachet.height
+            );
+        }
+        
+        this.overlayCtx.restore();
+    }
+
+    /**
+     * Configurer les événements du canvas
+     */
+    setupEventListeners() {
+        // Événements souris
+        this.overlayCanvas.addEventListener('mousedown', this.handleMouseDown.bind(this));
+        this.overlayCanvas.addEventListener('mousemove', this.handleMouseMove.bind(this));
+        this.overlayCanvas.addEventListener('mouseup', this.handleMouseUp.bind(this));
+        
+        // Événements tactiles (mobile)
+        this.overlayCanvas.addEventListener('touchstart', this.handleTouchStart.bind(this), { passive: false });
+        this.overlayCanvas.addEventListener('touchmove', this.handleTouchMove.bind(this), { passive: false });
+        this.overlayCanvas.addEventListener('touchend', this.handleTouchEnd.bind(this), { passive: false });
+        
+        // Redimensionnement
+        window.addEventListener('resize', this.handleResize.bind(this));
+    }
+
+    /**
+     * Gérer le clic/toucher
+     */
+    handleMouseDown(e) {
+        const rect = this.overlayCanvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        // Vérifier si on clique sur un élément
+        const element = this.getElementAt(x, y);
+        
+        if (element) {
+            // Démarrer le glisser-déposer
+            this.isDragging = true;
+            this.draggedElement = element;
+            this.dragOffsetX = x - element.x;
+            this.dragOffsetY = y - element.y;
+            
+            // Marquer comme sélectionné
+            this.deselectAll();
+            element.selected = true;
+            
+            this.overlayCanvas.style.cursor = 'move';
+            this.redrawOverlay();
+        } else if (this.isPositioningActive) {
+            // Mode placement d'un nouvel élément
+            this.createElementAt(x, y);
+        }
+    }
+
+    /**
+     * Gérer le déplacement
+     */
+    handleMouseMove(e) {
+        if (!this.isDragging || !this.draggedElement) return;
+        
+        const rect = this.overlayCanvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        // Mettre à jour la position
+        this.draggedElement.x = x - this.dragOffsetX;
+        this.draggedElement.y = y - this.dragOffsetY;
+        
+        // Contraindre aux limites du canvas
+        this.draggedElement.x = Math.max(0, Math.min(this.draggedElement.x, this.overlayCanvas.width - this.draggedElement.width));
+        this.draggedElement.y = Math.max(0, Math.min(this.draggedElement.y, this.overlayCanvas.height - this.draggedElement.height));
+        
+        this.redrawOverlay();
+    }
+
+    /**
+     * Gérer le relâchement
+     */
+    handleMouseUp(e) {
+        if (this.isDragging) {
+            this.isDragging = false;
+            this.draggedElement = null;
+            this.overlayCanvas.style.cursor = 'default';
+            
+            // Mettre à jour les données du formulaire
+            this.updateFormData();
+        }
+    }
+
+    /**
+     * Support tactile (mobile)
+     */
+    handleTouchStart(e) {
+        e.preventDefault();
+        if (e.touches.length > 0) {
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousedown', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            this.handleMouseDown(mouseEvent);
+        }
+    }
+
+    handleTouchMove(e) {
+        e.preventDefault();
+        if (e.touches.length > 0) {
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousemove', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            this.handleMouseMove(mouseEvent);
+        }
+    }
+
+    handleTouchEnd(e) {
+        e.preventDefault();
+        this.handleMouseUp(e);
+    }
+
+    /**
+     * Trouver un élément à une position donnée
+     */
+    getElementAt(x, y) {
+        // Vérifier les signatures
+        for (let i = this.signatures.length - 1; i >= 0; i--) {
+            const sig = this.signatures[i];
+            if (sig.page === this.currentPage &&
+                x >= sig.x && x <= sig.x + sig.width &&
+                y >= sig.y && y <= sig.y + sig.height) {
+                return sig;
+            }
+        }
+        
+        // Vérifier les paraphes
+        for (let i = this.paraphes.length - 1; i >= 0; i--) {
+            const par = this.paraphes[i];
+            if (par.page === this.currentPage &&
+                x >= par.x && x <= par.x + par.width &&
+                y >= par.y && y <= par.y + par.height) {
+                return par;
+            }
+        }
+        
+        // Vérifier les cachets
+        for (let i = this.cachets.length - 1; i >= 0; i--) {
+            const cac = this.cachets[i];
+            if (cac.page === this.currentPage &&
+                x >= cac.x && x <= cac.x + cac.width &&
+                y >= cac.y && y <= cac.y + cac.height) {
+                return cac;
+            }
+        }
+        
+        return null;
+    }
+
+    /**
+     * Désélectionner tous les éléments
+     */
+    deselectAll() {
+        this.signatures.forEach(s => s.selected = false);
+        this.paraphes.forEach(p => p.selected = false);
+        this.cachets.forEach(c => c.selected = false);
+    }
+
+    /**
+     * Ajouter une signature
+     */
+    async addSignature() {
+        this.isPositioningActive = true;
+        this.currentElementType = 'signature';
+        this.overlayCanvas.style.cursor = 'crosshair';
+        this.showStatus('Cliquez pour positionner la signature', 'info');
+    }
+
+    /**
+     * Créer un élément à la position cliquée
+     */
+    async createElementAt(x, y) {
+        if (!this.isPositioningActive) return;
+        
+        const type = this.currentElementType;
+        let url, defaultWidth, defaultHeight;
+        
+        if (type === 'signature') {
+            url = this.userSignatureUrl || this.config.signatureUrl;
+            defaultWidth = 150;
+            defaultHeight = 75;
+        } else if (type === 'paraphe') {
+            url = this.userParapheUrl || this.config.parapheUrl;
+            defaultWidth = 100;
+            defaultHeight = 50;
+        } else if (type === 'cachet') {
+            url = this.userCachetUrl || this.config.cachetUrl;
+            defaultWidth = 120;
+            defaultHeight = 120;
+        }
+        
+        if (!url) {
+            this.showStatus(`Aucun ${type} configuré`, 'error');
+            return;
+        }
+        
+        // Charger l'image
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        
+        img.onload = () => {
+            const element = {
+                id: Date.now(),
+                type: type,
+                page: this.currentPage,
+                x: x - defaultWidth / 2,
+                y: y - defaultHeight / 2,
+                width: defaultWidth,
+                height: defaultHeight,
+                image: img,
+                url: url,
+                selected: false
+            };
+            
+            // Ajouter au tableau approprié
+            if (type === 'signature') {
+                this.signatures.push(element);
+            } else if (type === 'paraphe') {
+                this.paraphes.push(element);
+            } else if (type === 'cachet') {
+                this.cachets.push(element);
+            }
+            
+            // Redessiner
+            this.redrawOverlay();
+            
+            // Désactiver le mode positionnement
+            this.isPositioningActive = false;
+            this.overlayCanvas.style.cursor = 'default';
+            
+            this.showStatus(`${type} ajouté - Glissez pour repositionner`, 'success');
+        };
+        
+        img.onerror = () => {
+            this.showStatus(`Erreur de chargement du ${type}`, 'error');
+        };
+        
+        img.src = url;
+    }
+
+    /**
+     * Générer le PDF final avec les coordonnées PRÉCISES
+     */
+    async generateFinalPdf() {
+        try {
+            const { PDFDocument } = window.PDFLib;
+            
+            // Charger le PDF original
+            const existingPdfBytes = await fetch(this.config.pdfUrl).then(res => res.arrayBuffer());
+            const pdfDoc = await PDFDocument.load(existingPdfBytes);
+            const pages = pdfDoc.getPages();
+            
+            // Traiter chaque signature
+            for (const signature of this.signatures) {
+                const page = pages[signature.page - 1];
+                const { width: pageWidth, height: pageHeight } = page.getSize();
+                
+                // CONVERSION PRÉCISE canvas HTML → PDF
+                const scaleX = pageWidth / this.overlayCanvas.width;
+                const scaleY = pageHeight / this.overlayCanvas.height;
+                
+                const pdfX = signature.x * scaleX;
+                const pdfY = pageHeight - ((signature.y + signature.height) * scaleY);
+                const pdfWidth = signature.width * scaleX;
+                const pdfHeight = signature.height * scaleY;
+                
+                console.log('📍 Conversion signature:', {
+                    canvas: { x: signature.x, y: signature.y, w: signature.width, h: signature.height },
+                    pdf: { x: Math.round(pdfX), y: Math.round(pdfY), w: Math.round(pdfWidth), h: Math.round(pdfHeight) },
+                    scale: { x: scaleX.toFixed(4), y: scaleY.toFixed(4) }
+                });
+                
+                // Charger l'image
+                const imageBytes = await fetch(signature.url).then(res => res.arrayBuffer());
+                const image = await pdfDoc.embedPng(imageBytes);
+                
+                // Dessiner sur le PDF
+                page.drawImage(image, {
+                    x: pdfX,
+                    y: pdfY,
+                    width: pdfWidth,
+                    height: pdfHeight,
+                    opacity: 0.8
+                });
+            }
+            
+            // Même chose pour paraphes et cachets
+            // ... (code similaire)
+            
+            // Sauvegarder
+            const pdfBytes = await pdfDoc.save();
+            await this.uploadPdfToServer(pdfBytes, `document_signe_${Date.now()}.pdf`);
+            
+        } catch (error) {
+            console.error('Erreur génération PDF:', error);
+            this.showStatus('Erreur lors de la génération du PDF', 'error');
+        }
+    }
+
+    /**
+     * Gérer le redimensionnement
+     */
+    handleResize() {
+        const pdfCanvas = document.querySelector('canvas[data-page-number]');
+        if (!pdfCanvas) return;
+        
+        const rect = pdfCanvas.getBoundingClientRect();
+        const oldWidth = this.overlayCanvas.width;
+        const oldHeight = this.overlayCanvas.height;
+        
+        // Nouvelles dimensions
+        this.overlayCanvas.width = rect.width;
+        this.overlayCanvas.height = rect.height;
+        this.overlayCanvas.style.width = rect.width + 'px';
+        this.overlayCanvas.style.height = rect.height + 'px';
+        
+        // Recalculer les positions des éléments
+        const scaleX = rect.width / oldWidth;
+        const scaleY = rect.height / oldHeight;
+        
+        this.signatures.forEach(sig => {
+            sig.x *= scaleX;
+            sig.y *= scaleY;
+            sig.width *= scaleX;
+            sig.height *= scaleY;
+        });
+        
+        this.paraphes.forEach(par => {
+            par.x *= scaleX;
+            par.y *= scaleY;
+            par.width *= scaleX;
+            par.height *= scaleY;
+        });
+        
+        this.cachets.forEach(cac => {
+            cac.x *= scaleX;
+            cac.y *= scaleY;
+            cac.width *= scaleX;
+            cac.height *= scaleY;
+        });
+        
+        this.redrawOverlay();
+    }
+
+    /**
+     * Nettoyer tout
+     */
+    clearAll() {
+        this.signatures = [];
+        this.paraphes = [];
+        this.cachets = [];
+        this.redrawOverlay();
+        this.showStatus('Toutes les annotations supprimées', 'info');
+    }
+}

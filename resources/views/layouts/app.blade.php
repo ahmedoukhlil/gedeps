@@ -208,174 +208,174 @@
                         @endauth
                     </div>
                 </div>
-                
-                <!-- Menu mobile élégant - Slide depuis la gauche -->
-                <div class="lg:hidden fixed inset-0 z-[9999] hidden" id="navbarNavMobile">
-                    <!-- Overlay avec animation -->
-                    <div class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm transition-opacity duration-300 opacity-0 z-[9998]" id="mobileMenuOverlay"></div>
+            </div>
+        </nav>
 
-                    <!-- Menu Panel avec slide animation -->
-                    <div class="fixed top-0 left-0 bottom-0 w-80 max-w-[85vw] bg-white shadow-2xl transform -translate-x-full transition-transform duration-300 ease-out overflow-y-auto z-[9999]" id="mobileMenuPanel">
-                        @auth
-                            <!-- Header mobile élégant -->
-                            <div class="sticky top-0 bg-gradient-to-r from-primary-500 to-primary-600 p-6 shadow-lg z-10">
-                                <div class="flex items-center justify-between mb-4">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-12 h-12 bg-white bg-opacity-20 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-lg ring-2 ring-white ring-opacity-50">
-                                            <span class="text-white text-lg font-bold">{{ substr(Auth::user()->name ?? 'U', 0, 1) }}</span>
-                                        </div>
-                                        <div>
-                                            <div class="text-sm font-semibold text-white">{{ Auth::user()->name ?? 'Utilisateur' }}</div>
-                                            <div class="text-xs text-white text-opacity-90 flex items-center gap-1.5">
-                                                @if(auth()->user()->isAdmin())
-                                                    <i class="fas fa-crown"></i>
-                                                    <span>Administrateur</span>
-                                                @elseif(auth()->user()->isSignataire())
-                                                    <i class="fas fa-pen-fancy"></i>
-                                                    <span>Signataire</span>
-                                                @else
-                                                    <i class="fas fa-user"></i>
-                                                    <span>Agent</span>
-                                                @endif
-                                            </div>
-                                        </div>
+        <!-- Menu mobile élégant - Slide depuis la gauche - SORTI DE LA NAVBAR -->
+        <div class="lg:hidden fixed inset-0 hidden" style="z-index: 99999 !important;" id="navbarNavMobile">
+            <!-- Overlay avec animation -->
+            <div class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm transition-opacity duration-300 opacity-0" style="z-index: 99998 !important;" id="mobileMenuOverlay"></div>
+
+            <!-- Menu Panel avec slide animation -->
+            <div class="fixed top-0 left-0 bottom-0 w-80 max-w-[85vw] bg-white shadow-2xl transform -translate-x-full transition-transform duration-300 ease-out overflow-y-auto" style="z-index: 99999 !important;" id="mobileMenuPanel">
+                @auth
+                    <!-- Header mobile élégant -->
+                    <div class="sticky top-0 bg-gradient-to-r from-primary-500 to-primary-600 p-6 shadow-lg z-10">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 bg-white bg-opacity-20 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-lg ring-2 ring-white ring-opacity-50">
+                                    <span class="text-white text-lg font-bold">{{ substr(Auth::user()->name ?? 'U', 0, 1) }}</span>
+                                </div>
+                                <div>
+                                    <div class="text-sm font-semibold text-white">{{ Auth::user()->name ?? 'Utilisateur' }}</div>
+                                    <div class="text-xs text-white text-opacity-90 flex items-center gap-1.5">
+                                        @if(auth()->user()->isAdmin())
+                                            <i class="fas fa-crown"></i>
+                                            <span>Administrateur</span>
+                                        @elseif(auth()->user()->isSignataire())
+                                            <i class="fas fa-pen-fancy"></i>
+                                            <span>Signataire</span>
+                                        @else
+                                            <i class="fas fa-user"></i>
+                                            <span>Agent</span>
+                                        @endif
                                     </div>
-                                    <button class="w-10 h-10 flex items-center justify-center bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg transition-all duration-200" id="mobileMenuClose" aria-label="Fermer le menu">
-                                        <i class="fas fa-times text-white text-lg"></i>
-                                    </button>
                                 </div>
                             </div>
-                        
-                        <!-- Navigation mobile organisée -->
-                        <div class="p-4 space-y-6">
-                            <!-- Section Actions Principales -->
-                            @if(!auth()->user()->isAdmin())
-                            <div class="space-y-2">
-                                <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider px-3 mb-3 flex items-center gap-2">
-                                    <i class="fas fa-bolt text-primary-500"></i>
-                                    <span>Actions Rapides</span>
-                                </h3>
-                                <a href="{{ route('documents.upload') }}" 
-                                   class="group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {{ request()->routeIs('documents.upload') ? 'bg-gradient-to-r from-success-50 to-success-100 text-success-700' : 'hover:bg-gray-50 text-gray-700' }}">
-                                    <div class="w-10 h-10 flex items-center justify-center rounded-lg {{ request()->routeIs('documents.upload') ? 'bg-success-500 text-white' : 'bg-gray-100 text-gray-600 group-hover:bg-success-500 group-hover:text-white' }} transition-all duration-200">
-                                        <i class="fas fa-upload"></i>
-                                    </div>
-                                    <span class="font-medium flex-1">Soumettre</span>
-                                    @if(request()->routeIs('documents.upload'))
-                                        <i class="fas fa-check-circle text-success-500"></i>
-                                    @else
-                                        <i class="fas fa-chevron-right text-gray-400 group-hover:translate-x-1 transition-transform"></i>
-                                    @endif
-                                </a>
+                            <button class="w-10 h-10 flex items-center justify-center bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg transition-all duration-200" id="mobileMenuClose" aria-label="Fermer le menu">
+                                <i class="fas fa-times text-white text-lg"></i>
+                            </button>
+                        </div>
+                    </div>
 
-                                <a href="{{ route('signatures.index') }}" 
-                                   class="group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {{ request()->routeIs('signatures.index') ? 'bg-gradient-to-r from-primary-50 to-primary-100 text-primary-700' : 'hover:bg-gray-50 text-gray-700' }}">
-                                    <div class="w-10 h-10 flex items-center justify-center rounded-lg {{ request()->routeIs('signatures.index') ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-600 group-hover:bg-primary-500 group-hover:text-white' }} transition-all duration-200">
-                                        <i class="fas fa-pen-fancy"></i>
-                                    </div>
-                                    <span class="font-medium flex-1">Signatures Simples</span>
-                                    @if(request()->routeIs('signatures.index'))
-                                        <i class="fas fa-check-circle text-primary-500"></i>
-                                    @else
-                                        <i class="fas fa-chevron-right text-gray-400 group-hover:translate-x-1 transition-transform"></i>
-                                    @endif
-                                </a>
-                                    
-                                <a href="{{ route('signatures.simple.index') }}" 
-                                   class="group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {{ request()->routeIs('signatures.simple.*') ? 'bg-gradient-to-r from-primary-50 to-primary-100 text-primary-700' : 'hover:bg-gray-50 text-gray-700' }}">
-                                    <div class="w-10 h-10 flex items-center justify-center rounded-lg {{ request()->routeIs('signatures.simple.*') ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-600 group-hover:bg-primary-500 group-hover:text-white' }} transition-all duration-200">
-                                        <i class="fas fa-list-ol"></i>
-                                    </div>
-                                    <span class="font-medium flex-1">Signatures Séquentielles</span>
-                                    @if(request()->routeIs('signatures.simple.*'))
-                                        <i class="fas fa-check-circle text-primary-500"></i>
-                                    @else
-                                        <i class="fas fa-chevron-right text-gray-400 group-hover:translate-x-1 transition-transform"></i>
-                                    @endif
-                                </a>
-                            </div>
-                            @endif
+                    <!-- Navigation mobile organisée -->
+                    <div class="p-4 space-y-6">
+                        <!-- Section Actions Principales -->
+                        @if(!auth()->user()->isAdmin())
+                        <div class="space-y-2">
+                            <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider px-3 mb-3 flex items-center gap-2">
+                                <i class="fas fa-bolt text-primary-500"></i>
+                                <span>Actions Rapides</span>
+                            </h3>
+                            <a href="{{ route('documents.upload') }}"
+                               class="group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {{ request()->routeIs('documents.upload') ? 'bg-gradient-to-r from-success-50 to-success-100 text-success-700' : 'hover:bg-gray-50 text-gray-700' }}">
+                                <div class="w-10 h-10 flex items-center justify-center rounded-lg {{ request()->routeIs('documents.upload') ? 'bg-success-500 text-white' : 'bg-gray-100 text-gray-600 group-hover:bg-success-500 group-hover:text-white' }} transition-all duration-200">
+                                    <i class="fas fa-upload"></i>
+                                </div>
+                                <span class="font-medium flex-1">Soumettre</span>
+                                @if(request()->routeIs('documents.upload'))
+                                    <i class="fas fa-check-circle text-success-500"></i>
+                                @else
+                                    <i class="fas fa-chevron-right text-gray-400 group-hover:translate-x-1 transition-transform"></i>
+                                @endif
+                            </a>
 
-                            <!-- Section Navigation -->
-                            <div class="space-y-2">
-                                <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider px-3 mb-3 flex items-center gap-2">
-                                    <i class="fas fa-compass text-info-500"></i>
-                                    <span>Navigation</span>
-                                </h3>
-                                <a href="{{ route('documents.pending') }}" 
-                                   class="group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {{ request()->routeIs('documents.pending') ? 'bg-gradient-to-r from-warning-50 to-warning-100 text-warning-700' : 'hover:bg-gray-50 text-gray-700' }}">
-                                    <div class="w-10 h-10 flex items-center justify-center rounded-lg {{ request()->routeIs('documents.pending') ? 'bg-warning-500 text-white' : 'bg-gray-100 text-gray-600 group-hover:bg-warning-500 group-hover:text-white' }} transition-all duration-200">
-                                        <i class="fas fa-clock"></i>
+                            <a href="{{ route('signatures.index') }}"
+                               class="group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {{ request()->routeIs('signatures.index') ? 'bg-gradient-to-r from-primary-50 to-primary-100 text-primary-700' : 'hover:bg-gray-50 text-gray-700' }}">
+                                <div class="w-10 h-10 flex items-center justify-center rounded-lg {{ request()->routeIs('signatures.index') ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-600 group-hover:bg-primary-500 group-hover:text-white' }} transition-all duration-200">
+                                    <i class="fas fa-pen-fancy"></i>
+                                </div>
+                                <span class="font-medium flex-1">Signatures Simples</span>
+                                @if(request()->routeIs('signatures.index'))
+                                    <i class="fas fa-check-circle text-primary-500"></i>
+                                @else
+                                    <i class="fas fa-chevron-right text-gray-400 group-hover:translate-x-1 transition-transform"></i>
+                                @endif
+                            </a>
+
+                            <a href="{{ route('signatures.simple.index') }}"
+                               class="group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {{ request()->routeIs('signatures.simple.*') ? 'bg-gradient-to-r from-primary-50 to-primary-100 text-primary-700' : 'hover:bg-gray-50 text-gray-700' }}">
+                                <div class="w-10 h-10 flex items-center justify-center rounded-lg {{ request()->routeIs('signatures.simple.*') ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-600 group-hover:bg-primary-500 group-hover:text-white' }} transition-all duration-200">
+                                    <i class="fas fa-list-ol"></i>
+                                </div>
+                                <span class="font-medium flex-1">Signatures Séquentielles</span>
+                                @if(request()->routeIs('signatures.simple.*'))
+                                    <i class="fas fa-check-circle text-primary-500"></i>
+                                @else
+                                    <i class="fas fa-chevron-right text-gray-400 group-hover:translate-x-1 transition-transform"></i>
+                                @endif
+                            </a>
+                        </div>
+                        @endif
+
+                        <!-- Section Navigation -->
+                        <div class="space-y-2">
+                            <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider px-3 mb-3 flex items-center gap-2">
+                                <i class="fas fa-compass text-info-500"></i>
+                                <span>Navigation</span>
+                            </h3>
+                            <a href="{{ route('documents.pending') }}"
+                               class="group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {{ request()->routeIs('documents.pending') ? 'bg-gradient-to-r from-warning-50 to-warning-100 text-warning-700' : 'hover:bg-gray-50 text-gray-700' }}">
+                                <div class="w-10 h-10 flex items-center justify-center rounded-lg {{ request()->routeIs('documents.pending') ? 'bg-warning-500 text-white' : 'bg-gray-100 text-gray-600 group-hover:bg-warning-500 group-hover:text-white' }} transition-all duration-200">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                                <span class="font-medium flex-1">En Attente</span>
+                                @if(request()->routeIs('documents.pending'))
+                                    <i class="fas fa-check-circle text-warning-500"></i>
+                                @else
+                                    <i class="fas fa-chevron-right text-gray-400 group-hover:translate-x-1 transition-transform"></i>
+                                @endif
+                            </a>
+
+                            <a href="{{ route('documents.history') }}"
+                               class="group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {{ request()->routeIs('documents.history') ? 'bg-gradient-to-r from-info-50 to-info-100 text-info-700' : 'hover:bg-gray-50 text-gray-700' }}">
+                                <div class="w-10 h-10 flex items-center justify-center rounded-lg {{ request()->routeIs('documents.history') ? 'bg-info-500 text-white' : 'bg-gray-100 text-gray-600 group-hover:bg-info-500 group-hover:text-white' }} transition-all duration-200">
+                                    <i class="fas fa-history"></i>
+                                </div>
+                                <span class="font-medium flex-1">Historique</span>
+                                @if(request()->routeIs('documents.history'))
+                                    <i class="fas fa-check-circle text-info-500"></i>
+                                @else
+                                    <i class="fas fa-chevron-right text-gray-400 group-hover:translate-x-1 transition-transform"></i>
+                                @endif
+                            </a>
+
+                            <a href="{{ route('profile.index') }}"
+                               class="group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {{ request()->routeIs('profile.*') ? 'bg-gradient-to-r from-secondary-50 to-secondary-100 text-secondary-700' : 'hover:bg-gray-50 text-gray-700' }}">
+                                <div class="w-10 h-10 flex items-center justify-center rounded-lg {{ request()->routeIs('profile.*') ? 'bg-secondary-500 text-white' : 'bg-gray-100 text-gray-600 group-hover:bg-secondary-500 group-hover:text-white' }} transition-all duration-200">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <span class="font-medium flex-1">Mon Profil</span>
+                                @if(request()->routeIs('profile.*'))
+                                    <i class="fas fa-check-circle text-secondary-500"></i>
+                                @else
+                                    <i class="fas fa-chevron-right text-gray-400 group-hover:translate-x-1 transition-transform"></i>
+                                @endif
+                            </a>
+
+                            @if(auth()->user()->isAdmin())
+                                <a href="{{ route('admin.dashboard') }}"
+                                   class="group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {{ request()->routeIs('admin.*') ? 'bg-gradient-to-r from-warning-50 to-warning-100 text-warning-700' : 'hover:bg-gray-50 text-gray-700' }}">
+                                    <div class="w-10 h-10 flex items-center justify-center rounded-lg {{ request()->routeIs('admin.*') ? 'bg-warning-500 text-white' : 'bg-gray-100 text-gray-600 group-hover:bg-warning-500 group-hover:text-white' }} transition-all duration-200">
+                                        <i class="fas fa-crown"></i>
                                     </div>
-                                    <span class="font-medium flex-1">En Attente</span>
-                                    @if(request()->routeIs('documents.pending'))
+                                    <span class="font-medium flex-1">Administration</span>
+                                    @if(request()->routeIs('admin.*'))
                                         <i class="fas fa-check-circle text-warning-500"></i>
                                     @else
                                         <i class="fas fa-chevron-right text-gray-400 group-hover:translate-x-1 transition-transform"></i>
                                     @endif
                                 </a>
-
-                                <a href="{{ route('documents.history') }}" 
-                                   class="group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {{ request()->routeIs('documents.history') ? 'bg-gradient-to-r from-info-50 to-info-100 text-info-700' : 'hover:bg-gray-50 text-gray-700' }}">
-                                    <div class="w-10 h-10 flex items-center justify-center rounded-lg {{ request()->routeIs('documents.history') ? 'bg-info-500 text-white' : 'bg-gray-100 text-gray-600 group-hover:bg-info-500 group-hover:text-white' }} transition-all duration-200">
-                                        <i class="fas fa-history"></i>
-                                    </div>
-                                    <span class="font-medium flex-1">Historique</span>
-                                    @if(request()->routeIs('documents.history'))
-                                        <i class="fas fa-check-circle text-info-500"></i>
-                                    @else
-                                        <i class="fas fa-chevron-right text-gray-400 group-hover:translate-x-1 transition-transform"></i>
-                                    @endif
-                                </a>
-
-                                <a href="{{ route('profile.index') }}" 
-                                   class="group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {{ request()->routeIs('profile.*') ? 'bg-gradient-to-r from-secondary-50 to-secondary-100 text-secondary-700' : 'hover:bg-gray-50 text-gray-700' }}">
-                                    <div class="w-10 h-10 flex items-center justify-center rounded-lg {{ request()->routeIs('profile.*') ? 'bg-secondary-500 text-white' : 'bg-gray-100 text-gray-600 group-hover:bg-secondary-500 group-hover:text-white' }} transition-all duration-200">
-                                        <i class="fas fa-user"></i>
-                                    </div>
-                                    <span class="font-medium flex-1">Mon Profil</span>
-                                    @if(request()->routeIs('profile.*'))
-                                        <i class="fas fa-check-circle text-secondary-500"></i>
-                                    @else
-                                        <i class="fas fa-chevron-right text-gray-400 group-hover:translate-x-1 transition-transform"></i>
-                                    @endif
-                                </a>
-
-                                @if(auth()->user()->isAdmin())
-                                    <a href="{{ route('admin.dashboard') }}" 
-                                       class="group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {{ request()->routeIs('admin.*') ? 'bg-gradient-to-r from-warning-50 to-warning-100 text-warning-700' : 'hover:bg-gray-50 text-gray-700' }}">
-                                        <div class="w-10 h-10 flex items-center justify-center rounded-lg {{ request()->routeIs('admin.*') ? 'bg-warning-500 text-white' : 'bg-gray-100 text-gray-600 group-hover:bg-warning-500 group-hover:text-white' }} transition-all duration-200">
-                                            <i class="fas fa-crown"></i>
-                                        </div>
-                                        <span class="font-medium flex-1">Administration</span>
-                                        @if(request()->routeIs('admin.*'))
-                                            <i class="fas fa-check-circle text-warning-500"></i>
-                                        @else
-                                            <i class="fas fa-chevron-right text-gray-400 group-hover:translate-x-1 transition-transform"></i>
-                                        @endif
-                                    </a>
-                                @endif
-                            </div>
-                            
-                            <!-- Section Déconnexion -->
-                            <div class="pt-4 border-t border-gray-200">
-                                <form method="POST" action="{{ route('logout') }}">
-                                    @csrf
-                                    <button type="submit" class="group w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-danger-50 text-gray-700 hover:text-danger-600 transition-all duration-200">
-                                        <div class="w-10 h-10 flex items-center justify-center bg-danger-100 rounded-lg group-hover:bg-danger-500 transition-all duration-200">
-                                            <i class="fas fa-sign-out-alt text-danger-600 group-hover:text-white"></i>
-                                        </div>
-                                        <span class="font-medium flex-1 text-left">Déconnexion</span>
-                                        <i class="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
-                                    </button>
-                                </form>
-                            </div>
+                            @endif
                         </div>
-                    @endauth
+
+                        <!-- Section Déconnexion -->
+                        <div class="pt-4 border-t border-gray-200">
+                            <form method="POST" action="{{ route('logout') }}">
+                                @csrf
+                                <button type="submit" class="group w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-danger-50 text-gray-700 hover:text-danger-600 transition-all duration-200">
+                                    <div class="w-10 h-10 flex items-center justify-center bg-danger-100 rounded-lg group-hover:bg-danger-500 transition-all duration-200">
+                                        <i class="fas fa-sign-out-alt text-danger-600 group-hover:text-white"></i>
+                                    </div>
+                                    <span class="font-medium flex-1 text-left">Déconnexion</span>
+                                    <i class="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                                </button>
+                            </form>
+                        </div>
                     </div>
-                </div>
+                @endauth
             </div>
-        </nav>
+        </div>
 
         <!-- Flash Messages -->
         @if(session('success'))
@@ -690,6 +690,14 @@
             const navbarNavMobile = document.getElementById('navbarNavMobile');
             const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
             const mobileMenuPanel = document.getElementById('mobileMenuPanel');
+
+            console.log('🔍 Éléments menu mobile:', {
+                mobileMenuToggle: !!mobileMenuToggle,
+                mobileMenuClose: !!mobileMenuClose,
+                navbarNavMobile: !!navbarNavMobile,
+                mobileMenuOverlay: !!mobileMenuOverlay,
+                mobileMenuPanel: !!mobileMenuPanel
+            });
             
             // Fonction pour ouvrir le menu
             function openMenu() {
@@ -703,6 +711,11 @@
                     mobileMenuOverlay.classList.add('opacity-100');
                     mobileMenuPanel.classList.remove('-translate-x-full');
                     mobileMenuPanel.classList.add('translate-x-0');
+                    // Forcer le transform avec inline style
+                    mobileMenuPanel.style.transform = 'translateX(0)';
+
+                    console.log('📏 Largeur du panel:', mobileMenuPanel.offsetWidth + 'px');
+                    console.log('📐 Viewport width:', window.innerWidth + 'px');
                 }, 10);
 
                 // Empêcher le scroll du body
@@ -712,18 +725,23 @@
             
             // Fonction pour fermer le menu
             function closeMenu() {
+                console.log('🚪 Fermeture du menu mobile');
                 mobileMenuOverlay.classList.remove('opacity-100');
                 mobileMenuOverlay.classList.add('opacity-0');
                 mobileMenuPanel.classList.remove('translate-x-0');
                 mobileMenuPanel.classList.add('-translate-x-full');
-                
+                // Forcer le transform avec inline style
+                mobileMenuPanel.style.transform = 'translateX(-100%)';
+
                 // Attendre la fin de l'animation avant de cacher
                 setTimeout(() => {
                     navbarNavMobile.classList.add('hidden');
+                    navbarNavMobile.style.display = 'none';
                 }, 300);
-                
+
                 // Réactiver le scroll du body
                 document.body.style.overflow = '';
+                console.log('✅ Menu mobile fermé');
             }
             
             if (mobileMenuToggle && navbarNavMobile) {

@@ -211,11 +211,16 @@ function enhanceNavigation() {
 }
 
 function initializeMobileMenu() {
+    // DÉSACTIVÉ - Le menu mobile est géré dans app.blade.php pour éviter les conflits
+    console.log('⚠️ Menu mobile géré par app.blade.php');
+    return;
+
+    /* ANCIEN CODE DÉSACTIVÉ POUR ÉVITER LES CONFLITS
     const mobileMenuToggle = document.getElementById('mobileMenuToggle');
     const mobileMenu = document.getElementById('navbarNavMobile');
     const mobileMenuClose = document.getElementById('mobileMenuClose');
     const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
-    
+
     if (mobileMenuToggle && mobileMenu) {
         // Ouvrir le menu mobile
         mobileMenuToggle.addEventListener('click', function() {
@@ -223,7 +228,7 @@ function initializeMobileMenu() {
             mobileMenu.classList.add('mobile-menu', 'active');
             document.body.style.overflow = 'hidden';
         });
-        
+
         // Fermer le menu mobile
         function closeMobileMenu() {
             mobileMenu.classList.remove('active');
@@ -233,22 +238,22 @@ function initializeMobileMenu() {
             }, 300);
             document.body.style.overflow = '';
         }
-        
+
         if (mobileMenuClose) {
             mobileMenuClose.addEventListener('click', closeMobileMenu);
         }
-        
+
         if (mobileMenuOverlay) {
             mobileMenuOverlay.addEventListener('click', closeMobileMenu);
         }
-        
+
         // Fermer avec la touche Escape
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape' && mobileMenu.classList.contains('active')) {
                 closeMobileMenu();
             }
         });
-        
+
         // Fermer en cliquant sur un lien
         const mobileMenuLinks = mobileMenu.querySelectorAll('.mobile-menu-link');
         mobileMenuLinks.forEach(link => {
@@ -257,6 +262,7 @@ function initializeMobileMenu() {
             });
         });
     }
+    */
 }
 
 function enhanceForms() {

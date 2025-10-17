@@ -1,0 +1,4448 @@
+/**
+ * Module PDF Overlay UnifiÃ© - Signature & Paraphe
+ * Gestion unifiÃ©e des signatures et paraphes sur documents PDF
+ */
+/**
+ * Classe pour la conversion robuste des coordonnÃ©es HTML vers PDF
+ */
+class PDFCoordinateConverter {
+    constructor(pdfDocument, pageNumber) {
+        this.pdfDocument = pdfDocument;
+        this.pageNumber = pageNumber;
+        this.canvas = null;
+        this.realScale = null;
+        this.viewport = null;
+    }
+
+    /**
+     * Initialise le convertisseur en dÃ©tectant le scale rÃ©el
+     */
+    async initialize() {
+        // RÃ©cupÃ©rer la page PDF
+        const page = await this.pdfDocument.getPage(this.pageNumber);
+        
+        // Trouver le canvas correspondant Ã  cette page
+        this.canvas = document.querySelector(`canvas[data-page-number="${this.pageNumber}"]`) 
+                   || document.querySelector('canvas');
+        
+        if (!this.canvas) {
+            console.error('Canvas non trouvÃ© !');
+            return false;
+        }
+
+        // Calculer le scale rÃ©el utilisÃ© pour le rendu
+        const rect = this.canvas.getBoundingClientRect();
+        const baseViewport = page.getViewport({ scale: 1.0 });
+        this.realScale = rect.width / baseViewport.width;
+        
+        // CrÃ©er le viewport avec le scale rÃ©el
+        this.viewport = page.getViewport({ scale: this.realScale });
+
+        console.log('ðŸ” Initialisation du convertisseur:', {
+            canvasWidth: this.canvas.width,
+            canvasHeight: this.canvas.height,
+            displayWidth: rect.width,
+            displayHeight: rect.height,
+            baseViewportWidth: baseViewport.width,
+            baseViewportHeight: baseViewport.height,
+            realScale: this.realScale,
+            viewportWidth: this.viewport.width,
+            viewportHeight: this.viewport.height
+        });
+
+        return true;
+    }
+
+    /**
+     * Convertit les coordonnÃ©es HTML vers PDF
+     */
+    convertToPDF(htmlX, htmlY) {
+        if (!this.canvas || !this.viewport) {
+            console.error('Convertisseur non initialisÃ© !');
+            return null;
+        }
+
+        // RÃ©cupÃ©rer les dimensions du canvas affichÃ©
+        const rect = this.canvas.getBoundingClientRect();
+        
+        // RÃ©cupÃ©rer les offsets si le PDF a des marges
+        const containerOffset = this.getContainerOffset();
+        
+        // Ajuster les coordonnÃ©es HTML pour enlever les marges
+        const adjustedX = htmlX - containerOffset.x;
+        const adjustedY = htmlY - containerOffset.y;
+
+        // Convertir en coordonnÃ©es relatives (0-1)
+        const relativeX = adjustedX / rect.width;
+        const relativeY = adjustedY / rect.height;
+
+        // Convertir vers les coordonnÃ©es PDF
+        const pdfX = relativeX * this.viewport.width;
+        // CORRECTION : Formule Y corrigÃ©e pour Ã©viter les valeurs nÃ©gatives
+        const pdfY = this.viewport.height - (relativeY * this.viewport.height);
+        
+        // VÃ©rifier et corriger les valeurs nÃ©gatives
+        const correctedPdfY = Math.max(0, pdfY);
+        
+        // Diagnostic des valeurs nÃ©gatives
+        if (pdfY < 0) {
+            console.warn('âš ï¸ Y nÃ©gatif dÃ©tectÃ©:', {
+                htmlY: htmlY,
+                relativeY: relativeY,
+                viewportHeight: this.viewport.height,
+                originalPdfY: pdfY,
+                correctedPdfY: correctedPdfY,
+                cause: 'relativeY > 1.0 (clique en dehors du canvas)'
+            });
+        }
+
+        console.log('ðŸ“ Conversion des coordonnÃ©es:', {
+            input: { htmlX, htmlY },
+            containerOffset,
+            adjusted: { adjustedX, adjustedY },
+            relative: { relativeX, relativeY },
+            originalPdfY: pdfY,
+            correctedPdfY: correctedPdfY,
+            output: { pdfX, y: correctedPdfY }
+        });
+        
+        // DIAGNOSTIC DÃ‰TAILLÃ‰ du dÃ©calage X
+        console.log('ðŸ” DIAGNOSTIC DÃ‰CALAGE X:', {
+            htmlX: htmlX,
+            containerOffsetX: containerOffset.x,
+            adjustedX: adjustedX,
+            relativeX: relativeX,
+            viewportWidth: this.viewport.width,
+            pdfX: pdfX,
+            decalageX: pdfX - htmlX,
+            cause: containerOffset.x !== 0 ? 'Container offset' : 'Scale/viewport mismatch'
+        });
+
+        return { x: pdfX, y: correctedPdfY };
+    }
+
+    /**
+     * DÃ©tecte les offsets du conteneur PDF
+     */
+    getContainerOffset() {
+        const container = this.canvas.closest('.pdf-viewer-container') 
+                       || this.canvas.parentElement;
+        
+        if (!container) {
+            return { x: 0, y: 0 };
+        }
+
+        const containerRect = container.getBoundingClientRect();
+        const canvasRect = this.canvas.getBoundingClientRect();
+
+        return {
+            x: canvasRect.left - containerRect.left,
+            y: canvasRect.top - containerRect.top
+        };
+    }
+}
+
+class PDFOverlayUnifiedModule {
+    constructor(config) {
+        this.config = config;
+        this.pdfDoc = null;
+        this.currentPage = 1;
+        this.totalPages = 0;
+        this.scale = 0.8;
+        this.signatures = [];
+        this.paraphes = [];
+        this.cachets = [];
+        this.actionType = this.config.actionType || 'sign_only';
+        this.cachetCanvas = null;
+        this.cachetCtx = null;
+        this.isPositioningActive = false;
+        this.devicePixelRatio = window.devicePixelRatio || 1; // Support haute rÃ©solution
+        this.qualityMode = 'ultra'; // Mode qualitÃ©: 'low', 'medium', 'high', 'ultra'
+    }
+
+    /**
+     * Calculer le ratio de pixels pour la qualitÃ©
+     */
+    getQualityPixelRatio() {
+        const baseRatio = this.devicePixelRatio;
+        switch (this.qualityMode) {
+            case 'low': return baseRatio * 1.0;
+            case 'medium': return baseRatio * 1.2;
+            case 'high': return baseRatio * 1.5;
+            case 'ultra': return baseRatio * 2.0;
+            default: return baseRatio * 1.2;
+        }
+    }
+
+    /**
+     * Changer le mode de qualitÃ©
+     */
+    setQualityMode(mode) {
+        this.qualityMode = mode;
+        if (this.pdfDoc) {
+            this.renderPage(this.currentPage);
+        }
+    }
+
+    async init() {
+        try {
+            await this.loadPDF();
+            
+            // Charger signature, paraphe et cachet en parallÃ¨le (sans bloquer si une Ã©choue)
+            await Promise.allSettled([
+                this.loadUserSignature(),
+                this.loadUserParaphe(),
+                this.loadUserCachet()
+            ]).then(results => {
+                results.forEach((result, index) => {
+                    const types = ['signature', 'paraphe', 'cachet'];
+                    if (result.status === 'rejected') {
+                        console.error(`âŒ Erreur chargement ${types[index]}:`, result.reason);
+                    }
+                });
+            });
+            
+            this.initializeEvents();
+            this.initializeCanvases();
+            this.updateInterface();
+            this.updateNavigationButtons();
+            
+            // Afficher le bouton de dÃ©bogage
+            this.showDebugButton();
+            
+            // Si en mode lecture seule, dÃ©sactiver toutes les interactions
+            if (this.config.isReadOnly) {
+                this.disableAllInteractions();
+            }
+            
+            this.showStatus('PDF chargÃ© avec succÃ¨s', 'success');
+        } catch (error) {
+            console.error('Erreur lors du chargement du PDF:', error);
+            this.showStatus('Erreur lors du chargement du PDF: ' + error.message, 'error');
+        }
+    }
+
+    async loadUserSignature() {
+        try {
+            console.log('ðŸ”„ Chargement de la signature utilisateur...');
+            
+            const response = await fetch('/signatures/user-signature', {
+                method: 'GET',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    'Accept': 'application/json'
+                },
+                credentials: 'same-origin' // Inclure les cookies de session
+            });
+            
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    console.log('âš ï¸ Utilisateur non authentifiÃ©, signature non disponible');
+                    return null;
+                }
+                throw new Error(`Erreur API: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            console.log('ðŸ“¡ RÃ©ponse API signature:', data);
+            
+            if (data.success && data.signature_url) {
+                this.userSignatureUrl = data.signature_url;
+                console.log('âœ… Signature utilisateur chargÃ©e:', this.userSignatureUrl);
+            } else {
+                console.warn('âš ï¸ Aucune signature utilisateur trouvÃ©e');
+                this.userSignatureUrl = null;
+            }
+            
+        } catch (error) {
+            console.error('âŒ Erreur chargement signature:', error);
+            // Ne pas afficher d'erreur si l'utilisateur n'est pas authentifiÃ©
+            if (!error.message.includes('401') && !error.message.includes('403')) {
+                this.showStatus(`Erreur signature: ${error.message}`, 'error');
+            }
+            this.userSignatureUrl = null;
+        }
+    }
+
+    async loadUserParaphe() {
+        try {
+            console.log('ðŸ”„ Chargement du paraphe utilisateur...');
+            
+            const response = await fetch('/signatures/user-paraphe', {
+                method: 'GET',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    'Accept': 'application/json'
+                },
+                credentials: 'same-origin'
+            });
+            
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    console.log('âš ï¸ Utilisateur non authentifiÃ©, paraphe non disponible');
+                    return null;
+                }
+                if (response.status === 404) {
+                    console.log('âš ï¸ Paraphe non trouvÃ© (404) - L\'utilisateur n\'a pas encore uploadÃ© de paraphe');
+                    this.userParapheUrl = null;
+                    return null;
+                }
+                throw new Error(`Erreur API: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            console.log('ðŸ“¡ RÃ©ponse API paraphe:', data);
+            
+            if (data.success && data.paraphe_url) {
+                this.userParapheUrl = data.paraphe_url;
+                console.log('âœ… Paraphe utilisateur chargÃ©:', this.userParapheUrl);
+            } else {
+                console.warn('âš ï¸ Aucun paraphe utilisateur trouvÃ©');
+                this.userParapheUrl = null;
+            }
+            
+        } catch (error) {
+            console.error('âŒ Erreur chargement paraphe:', error);
+            this.userParapheUrl = null;
+        }
+    }
+
+    async loadUserCachet() {
+        try {
+            console.log('ðŸ”„ Chargement du cachet utilisateur...');
+            
+            const cachetUrl = this.config.cachetUrl || '/signatures/user-cachet';
+            console.log('ðŸ“ URL de l\'API cachet:', cachetUrl);
+            
+            const response = await fetch(cachetUrl, {
+                method: 'GET',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    'Accept': 'application/json, image/*'
+                },
+                credentials: 'same-origin'
+            });
+            
+            console.log('ðŸ“¡ Statut de la rÃ©ponse:', response.status);
+            
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    console.log('âš ï¸ Utilisateur non authentifiÃ©, cachet non disponible');
+                    return null;
+                }
+                if (response.status === 404) {
+                    console.log('âš ï¸ Cachet non trouvÃ© (404) - L\'utilisateur n\'a pas encore uploadÃ© de cachet');
+                    this.userCachetUrl = null;
+                    return null;
+                }
+                throw new Error(`Erreur API: ${response.status}`);
+            }
+            
+            // VÃ©rifier le type de contenu
+            const contentType = response.headers.get('content-type');
+            console.log('ðŸ“¡ Type de contenu:', contentType);
+            
+            if (contentType && contentType.includes('application/json')) {
+                // RÃ©ponse JSON
+                const data = await response.json();
+                console.log('ðŸ“¡ RÃ©ponse API cachet JSON:', data);
+                
+                if (data.success && (data.cachet_url || data.cachetUrl)) {
+                    this.userCachetUrl = data.cachet_url || data.cachetUrl;
+                    console.log('âœ… Cachet utilisateur chargÃ© (JSON):', this.userCachetUrl);
+                } else {
+                    console.warn('âš ï¸ Aucun cachet utilisateur trouvÃ© dans la rÃ©ponse JSON');
+                    this.userCachetUrl = null;
+                }
+            } else if (contentType && contentType.includes('image/')) {
+                // RÃ©ponse image directe
+                this.userCachetUrl = cachetUrl;
+                console.log('âœ… Cachet utilisateur chargÃ© (image directe):', this.userCachetUrl);
+            } else {
+                console.warn('âš ï¸ Type de contenu non reconnu:', contentType);
+                this.userCachetUrl = null;
+            }
+            
+        } catch (error) {
+            console.error('âŒ Erreur chargement cachet:', error);
+            this.userCachetUrl = null;
+        }
+    }
+
+    async loadPDF() {
+        try {
+            const loadingTask = pdfjsLib.getDocument(this.config.pdfUrl);
+            this.pdfDoc = await loadingTask.promise;
+            this.totalPages = this.pdfDoc.numPages;
+            
+            // DÃ©clencher l'Ã©vÃ©nement pdfLoaded
+            document.dispatchEvent(new CustomEvent('pdfLoaded', {
+                detail: { 
+                    totalPages: this.totalPages,
+                    currentPage: this.currentPage 
+                }
+            }));
+            
+            // Afficher le PDF Ã  100% par dÃ©faut
+            this.scale = 1.0;
+            await this.renderPage(this.currentPage);
+            this.updatePageInfo();
+            this.showStatus('PDF chargÃ© avec succÃ¨s', 'success');
+        } catch (error) {
+            throw new Error('Impossible de charger le PDF: ' + error.message);
+        }
+    }
+
+    async renderPage(pageNum) {
+        const container = document.getElementById(this.config.containerId);
+        container.innerHTML = '';
+
+        const page = await this.pdfDoc.getPage(pageNum);
+        
+        // Calculer l'Ã©chelle responsive
+        let responsiveScale = this.scale;
+        
+        if (container) {
+            const containerWidth = container.clientWidth;
+            const pageWidth = page.getViewport({ scale: 1.0 }).width;
+            
+            // Ajuster l'Ã©chelle selon la largeur du conteneur
+            if (containerWidth < 768) {
+                responsiveScale = Math.min(this.scale, containerWidth / pageWidth * 0.9);
+            } else if (containerWidth < 1200) {
+                responsiveScale = Math.min(this.scale, containerWidth / pageWidth * 0.8);
+            }
+        }
+        
+        const viewport = page.getViewport({ scale: responsiveScale });
+        
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Ajouter l'attribut data-page-number pour la conversion robuste
+        canvas.setAttribute('data-page-number', pageNum);
+        
+        // Configuration haute qualitÃ© avec support DPI
+        const pixelRatio = this.getQualityPixelRatio();
+        
+        // Dimensions du canvas pour le rendu haute qualitÃ©
+        canvas.width = viewport.width * pixelRatio;
+        canvas.height = viewport.height * pixelRatio;
+        
+        // Dimensions d'affichage (conservation des dimensions originales)
+        canvas.style.width = viewport.width + 'px';
+        canvas.style.height = viewport.height + 'px';
+        
+        // Configuration du contexte pour la qualitÃ©
+        ctx.scale(pixelRatio, pixelRatio);
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        canvas.style.width = '100%';
+        canvas.style.height = 'auto';
+        canvas.style.border = '1px solid #ddd';
+        canvas.style.borderRadius = '8px';
+        canvas.style.display = 'block';
+        canvas.style.margin = '0 auto';
+        canvas.style.maxWidth = '100%';
+        
+        // Styles responsive pour mobile
+        canvas.style.transition = 'transform 0.2s ease';
+        canvas.style.touchAction = 'pan-x pan-y';
+        canvas.style.userSelect = 'none';
+        canvas.style.webkitUserSelect = 'none';
+        canvas.style.mozUserSelect = 'none';
+        canvas.style.msUserSelect = 'none';
+        
+        // Ajouter les classes responsive
+        canvas.classList.add('pdf-canvas-responsive');
+        
+        // Gestion des Ã©vÃ©nements tactiles pour mobile - PERMETTRE LE SCROLLING
+        canvas.addEventListener('touchstart', (e) => {
+            // Ne pas bloquer le scrolling - seulement si on dessine
+            if (this.isDrawingSignature || this.isDrawingParaphe || this.isDrawingCachet) {
+            e.preventDefault();
+            }
+        }, { passive: true });
+        
+        canvas.addEventListener('touchmove', (e) => {
+            // Ne pas bloquer le scrolling - seulement si on dessine
+            if (this.isDrawingSignature || this.isDrawingParaphe || this.isDrawingCachet) {
+            e.preventDefault();
+            }
+        }, { passive: true });
+        
+        canvas.addEventListener('touchend', (e) => {
+            // Ne pas bloquer le scrolling - seulement si on dessine
+            if (this.isDrawingSignature || this.isDrawingParaphe || this.isDrawingCachet) {
+            e.preventDefault();
+            }
+        }, { passive: true });
+        
+        // Optimisations pour mobile/tablette - PERMETTRE LE SCROLLING
+        canvas.style.touchAction = 'pan-x pan-y pinch-zoom'; // Permettre le scrolling et le zoom
+        canvas.style.userSelect = 'none'; // EmpÃªche la sÃ©lection de texte
+        canvas.style.webkitUserSelect = 'none';
+        canvas.style.mozUserSelect = 'none';
+        canvas.style.msUserSelect = 'none';
+
+        const renderContext = {
+            canvasContext: ctx,
+            viewport: viewport,
+            intent: 'display', // OptimisÃ© pour l'affichage
+            enableWebGL: false, // DÃ©sactiver WebGL pour la compatibilitÃ©
+            renderInteractiveForms: false // DÃ©sactiver les formulaires interactifs pour les performances
+        };
+
+        try {
+            await page.render(renderContext).promise;
+            container.appendChild(canvas);
+            
+            // Ajouter les signatures et paraphes existants
+            this.renderSignatures(container);
+            this.renderParaphes(container);
+            this.renderCachets(container);
+        } catch (error) {
+            console.error('Erreur lors du rendu de la page:', error);
+            this.showStatus('Erreur lors du rendu de la page', 'error');
+        }
+    }
+
+
+    createSignatureElement(signature) {
+        const signatureDiv = document.createElement('div');
+        signatureDiv.className = 'signature-overlay';
+        signatureDiv.style.position = 'absolute';
+        signatureDiv.style.left = signature.x + 'px';
+        signatureDiv.style.top = signature.y + 'px';
+        signatureDiv.style.width = signature.width + 'px';
+        signatureDiv.style.height = signature.height + 'px';
+        signatureDiv.style.border = '2px solid #28a745';
+        signatureDiv.style.borderRadius = '4px';
+        signatureDiv.style.backgroundColor = 'rgba(40, 167, 69, 0.1)';
+        signatureDiv.style.cursor = 'move';
+        signatureDiv.style.zIndex = '1000';
+        signatureDiv.draggable = true;
+        signatureDiv.dataset.signatureId = signature.id;
+
+        if (signature.url) {
+            const img = document.createElement('img');
+            img.src = signature.url;
+            img.style.width = '100%';
+            img.style.height = '100%';
+            img.style.objectFit = 'contain';
+            img.style.borderRadius = '2px';
+            
+            // Ajouter des gestionnaires d'Ã©vÃ©nements pour diagnostiquer
+            img.onload = () => {
+                console.log('âœ… Image de signature chargÃ©e avec succÃ¨s:', signature.url);
+            };
+            
+            img.onerror = (error) => {
+                console.error('âŒ Erreur de chargement de l\'image de signature:', error);
+                console.error('URL de l\'image:', signature.url);
+                
+                // Afficher un texte de remplacement
+                signatureDiv.innerHTML = '<div style="color: red; text-align: center; padding: 10px; font-size: 12px;">âŒ Erreur de chargement de la signature</div>';
+            };
+            
+            signatureDiv.appendChild(img);
+        } else {
+            const icon = document.createElement('i');
+            icon.className = 'fas fa-pen-fancy';
+            icon.style.color = '#28a745';
+            icon.style.fontSize = '16px';
+            icon.style.position = 'absolute';
+            icon.style.top = '50%';
+            icon.style.left = '50%';
+            icon.style.transform = 'translate(-50%, -50%)';
+            signatureDiv.appendChild(icon);
+        }
+
+        return signatureDiv;
+    }
+
+    createParapheElement(paraphe) {
+        const parapheDiv = document.createElement('div');
+        parapheDiv.className = 'paraphe-overlay';
+        parapheDiv.style.position = 'absolute';
+        parapheDiv.style.left = paraphe.x + 'px';
+        parapheDiv.style.top = paraphe.y + 'px';
+        parapheDiv.style.width = paraphe.width + 'px';
+        parapheDiv.style.height = paraphe.height + 'px';
+        parapheDiv.style.border = '2px solid #667eea';
+        parapheDiv.style.borderRadius = '4px';
+        parapheDiv.style.backgroundColor = 'rgba(102, 126, 234, 0.1)';
+        parapheDiv.style.cursor = 'move';
+        parapheDiv.style.zIndex = '1000';
+        parapheDiv.draggable = true;
+        parapheDiv.dataset.parapheId = paraphe.id;
+
+        if (paraphe.url) {
+            const img = document.createElement('img');
+            img.src = paraphe.url;
+            img.style.width = '100%';
+            img.style.height = '100%';
+            img.style.objectFit = 'contain';
+            img.style.borderRadius = '2px';
+            
+            // Gestion des erreurs d'image
+            img.onerror = function() {
+                console.error('Erreur de chargement de l\'image paraphe:', paraphe.url);
+                // Remplacer par une icÃ´ne de fallback
+                const fallbackIcon = document.createElement('i');
+                fallbackIcon.className = 'fas fa-exclamation-triangle';
+                fallbackIcon.style.color = '#dc3545';
+                fallbackIcon.style.fontSize = '16px';
+                fallbackIcon.style.position = 'absolute';
+                fallbackIcon.style.top = '50%';
+                fallbackIcon.style.left = '50%';
+                fallbackIcon.style.transform = 'translate(-50%, -50%)';
+                parapheDiv.appendChild(fallbackIcon);
+            };
+            
+            img.onload = function() {
+                console.log('Image paraphe chargÃ©e avec succÃ¨s:', paraphe.url);
+            };
+            
+            parapheDiv.appendChild(img);
+        } else {
+            const icon = document.createElement('i');
+            icon.className = 'fas fa-pen-nib';
+            icon.style.color = '#667eea';
+            icon.style.fontSize = '12px';
+            icon.style.position = 'absolute';
+            icon.style.top = '50%';
+            icon.style.left = '50%';
+            icon.style.transform = 'translate(-50%, -50%)';
+            parapheDiv.appendChild(icon);
+        }
+
+        return parapheDiv;
+    }
+
+    makeDraggable(element, type) {
+        let isDragging = false;
+        let startX, startY, initialX, initialY;
+
+        element.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            initialX = element.offsetLeft;
+            initialY = element.offsetTop;
+            element.style.zIndex = '1001';
+            element.style.transform = 'scale(1.05)';
+            element.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)';
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+
+            const deltaX = e.clientX - startX;
+            const deltaY = e.clientY - startY;
+            
+            element.style.left = (initialX + deltaX) + 'px';
+            element.style.top = (initialY + deltaY) + 'px';
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                element.style.zIndex = '1000';
+                element.style.transform = 'scale(1)';
+                element.style.boxShadow = 'none';
+                
+                // Mettre Ã  jour la position
+                if (type === 'signature') {
+                    const signatureId = element.dataset.signatureId;
+                    const signature = this.signatures.find(s => s.id === signatureId);
+                    if (signature) {
+                        signature.x = element.offsetLeft;
+                        signature.y = element.offsetTop;
+                    }
+                } else if (type === 'paraphe') {
+                    const parapheId = element.dataset.parapheId;
+                    const paraphe = this.paraphes.find(p => p.id === parapheId);
+                    if (paraphe) {
+                        paraphe.x = element.offsetLeft;
+                        paraphe.y = element.offsetTop;
+                    }
+                }
+            }
+        });
+    }
+
+    initializeEvents() {
+        console.log('ðŸš€ Initialisation des Ã©vÃ©nements...');
+        console.log('ðŸ“‹ Configuration reÃ§ue:', this.config);
+        
+        // DÃ©tection du type d'appareil
+        const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        console.log('ðŸ“± Appareil tactile dÃ©tectÃ©:', isTouchDevice);
+        console.log('ðŸ“± User Agent:', navigator.userAgent);
+        console.log('ðŸ“± Touch Points:', navigator.maxTouchPoints);
+        
+        // Configuration du responsive
+        this.setupResponsiveHandling();
+        
+        // Attendre que le DOM soit complÃ¨tement chargÃ©
+        setTimeout(() => {
+            this.attachEvents(isTouchDevice);
+        }, 100);
+    }
+    
+    setupResponsiveHandling() {
+        // Gestion du redimensionnement de la fenÃªtre
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                this.handleResponsiveResize();
+            }, 250);
+        });
+        
+        // Gestion de l'orientation sur mobile
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => {
+                this.handleResponsiveResize();
+            }, 500);
+        });
+    }
+    
+    async handleResponsiveResize() {
+        if (this.pdfDoc && this.currentPage) {
+            try {
+                await this.renderPage(this.currentPage);
+                this.updatePageInfo();
+            } catch (error) {
+                console.warn('Erreur lors du redimensionnement responsive:', error);
+            }
+        }
+    }
+
+    attachEvents(isTouchDevice) {
+        console.log('ðŸ”— Attachement des Ã©vÃ©nements...');
+        
+        // VÃ©rifier que tous les Ã©lÃ©ments existent
+        console.log('ðŸ” VÃ©rification des Ã©lÃ©ments DOM...');
+        console.log('ðŸ“‹ Tous les boutons dans le DOM:', document.querySelectorAll('button[id]'));
+        console.log('ðŸ“‹ Bouton signature direct:', document.getElementById('addSignatureBtn'));
+        console.log('ðŸ“‹ Bouton submit direct:', document.getElementById('submitBtn'));
+        
+        // Gestion des boutons de signature et paraphe
+        if (this.config.addSignatureBtnId) {
+            const addSignatureBtn = document.getElementById(this.config.addSignatureBtnId);
+            console.log('ðŸ” Recherche du bouton signature:', {
+                id: this.config.addSignatureBtnId,
+                element: addSignatureBtn,
+                found: !!addSignatureBtn
+            });
+        
+        // DIAGNOSTIC : VÃ©rifier tous les boutons disponibles
+        const allButtons = document.querySelectorAll('button');
+        console.log('ðŸ” DIAGNOSTIC - Tous les boutons disponibles:', Array.from(allButtons).map(btn => ({ id: btn.id, text: btn.textContent.trim() })));
+            if (addSignatureBtn) {
+                // Variable pour Ã©viter les appels multiples
+                let isProcessing = false;
+                
+                const handleSignatureClick = (e) => {
+                    if (isProcessing) {
+                        console.log('âš ï¸ Signature dÃ©jÃ  en cours de traitement, ignorÃ©');
+                        return;
+                    }
+                    
+                    isProcessing = true;
+                    console.log('ðŸ–±ï¸ Clic sur le bouton Signer dÃ©tectÃ©');
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    this.addSignature();
+                    
+                    // RÃ©initialiser aprÃ¨s un dÃ©lai
+                    setTimeout(() => {
+                        isProcessing = false;
+                    }, 1000);
+                };
+                
+                // Ã‰vÃ©nement clic pour desktop
+                addSignatureBtn.addEventListener('click', handleSignatureClick);
+                
+                // Ã‰vÃ©nements tactiles pour mobile/tablette
+                if (isTouchDevice) {
+                    console.log('ðŸ“± Ajout des Ã©vÃ©nements tactiles pour le bouton signature');
+                    
+                    addSignatureBtn.addEventListener('touchstart', (e) => {
+                        console.log('ðŸ‘† Touch START sur le bouton Signer dÃ©tectÃ©');
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleSignatureClick(e);
+                    }, { passive: false });
+                    
+                    addSignatureBtn.addEventListener('touchend', (e) => {
+                        console.log('ðŸ‘† Touch END sur le bouton Signer dÃ©tectÃ©');
+                        e.preventDefault();
+                        e.stopPropagation();
+                        // Ne pas appeler addSignature() ici pour Ã©viter les doubles appels
+                    }, { passive: false });
+                }
+                
+            } else {
+                console.error('âŒ Bouton signature non trouvÃ© avec l\'ID:', this.config.addSignatureBtnId);
+            }
+            
+            // Test direct du bouton aprÃ¨s un dÃ©lai
+            setTimeout(() => {
+                const testBtn = document.getElementById(this.config.addSignatureBtnId);
+                if (testBtn) {
+                    console.log('ðŸ§ª Test du bouton signature aprÃ¨s dÃ©lai:', {
+                        existe: !!testBtn,
+                        visible: testBtn.offsetParent !== null,
+                        disabled: testBtn.disabled,
+                        style: testBtn.style.display,
+                        computedStyle: window.getComputedStyle(testBtn).display
+                    });
+                    
+                    // Test manuel de l'Ã©vÃ©nement
+                    testBtn.addEventListener('mousedown', () => {
+                        console.log('ðŸ–±ï¸ Mouse down dÃ©tectÃ© sur le bouton');
+                    });
+                    
+                    testBtn.addEventListener('pointerdown', () => {
+                        console.log('ðŸ‘† Pointer down dÃ©tectÃ© sur le bouton');
+                    });
+                    
+                    // Ã‰vÃ©nements pointer pour une meilleure compatibilitÃ©
+                    testBtn.addEventListener('pointerdown', (e) => {
+                        console.log('ðŸ‘† Pointer down dÃ©tectÃ©:', e.pointerType);
+                        if (e.pointerType === 'touch') {
+                            console.log('ðŸ“± Touch via pointer dÃ©tectÃ©');
+                            e.preventDefault();
+                            e.stopPropagation();
+                            this.addSignature();
+                        }
+                    });
+                }
+            }, 1000);
+        }
+
+        if (this.config.addParapheBtnId) {
+            const addParapheBtn = document.getElementById(this.config.addParapheBtnId);
+            if (addParapheBtn) {
+                // Variable pour Ã©viter les appels multiples
+                let isProcessingParaphe = false;
+                
+                const handleParapheClick = async (e) => {
+                    if (isProcessingParaphe) {
+                        console.log('âš ï¸ Paraphe dÃ©jÃ  en cours de traitement, ignorÃ©');
+                        return;
+                    }
+                    
+                    isProcessingParaphe = true;
+                    console.log('ðŸ–±ï¸ Clic sur le bouton Parapher dÃ©tectÃ©');
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    await this.addParaphe();
+                    
+                    // RÃ©initialiser aprÃ¨s un dÃ©lai
+                    setTimeout(() => {
+                        isProcessingParaphe = false;
+                    }, 1000);
+                };
+                
+                // Ã‰vÃ©nement clic pour desktop
+                addParapheBtn.addEventListener('click', handleParapheClick);
+                
+                // Ã‰vÃ©nements tactiles pour mobile/tablette
+                if (isTouchDevice) {
+                    addParapheBtn.addEventListener('touchstart', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleParapheClick(e);
+                    }, { passive: false });
+                }
+            }
+
+            // Bouton Signer & Parapher
+            const addSignAndParapheBtn = document.getElementById(this.config.addSignAndParapheBtnId);
+            if (addSignAndParapheBtn) {
+                let isProcessingSignAndParaphe = false;
+                
+                const handleSignAndParapheClick = async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    if (isProcessingSignAndParaphe) return;
+                    
+                    isProcessingSignAndParaphe = true;
+                    await this.addSignAndParaphe();
+                    
+                    // DÃ©sactiver temporairement le bouton
+                    addSignAndParapheBtn.disabled = true;
+                    setTimeout(() => {
+                        addSignAndParapheBtn.disabled = false;
+                        isProcessingSignAndParaphe = false;
+                    }, 1000);
+                };
+                
+                // Ã‰vÃ©nement clic pour desktop
+                addSignAndParapheBtn.addEventListener('click', handleSignAndParapheClick);
+                
+                // Ã‰vÃ©nements tactiles pour mobile/tablette
+                if (isTouchDevice) {
+                    addSignAndParapheBtn.addEventListener('touchstart', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleSignAndParapheClick(e);
+                    }, { passive: false });
+                }
+            }
+        }
+
+        // Bouton Cacheter
+        if (this.config.addCachetBtnId) {
+            const addCachetBtn = document.getElementById(this.config.addCachetBtnId);
+            if (addCachetBtn) {
+                // Variable pour Ã©viter les appels multiples
+                let isProcessingCachet = false;
+                
+                const handleCachetClick = async (e) => {
+                    if (isProcessingCachet) {
+                        console.log('âš ï¸ Cachet dÃ©jÃ  en cours de traitement, ignorÃ©');
+                        return;
+                    }
+                    
+                    isProcessingCachet = true;
+                    console.log('ðŸ–±ï¸ Clic sur le bouton Cacheter dÃ©tectÃ©');
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    await this.addCachet();
+                    
+                    // RÃ©initialiser aprÃ¨s un dÃ©lai
+                    setTimeout(() => {
+                        isProcessingCachet = false;
+                    }, 1000);
+                };
+                
+                // Ã‰vÃ©nement clic pour desktop
+                addCachetBtn.addEventListener('click', handleCachetClick);
+                
+                // Ã‰vÃ©nements tactiles pour mobile/tablette
+                if (isTouchDevice) {
+                    addCachetBtn.addEventListener('touchstart', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleCachetClick(e);
+                    }, { passive: false });
+                }
+            } else {
+                console.log('âš ï¸ Bouton cachet non trouvÃ© avec l\'ID:', this.config.addCachetBtnId);
+            }
+        }
+
+        if (this.config.clearAllBtnId) {
+            const clearAllBtn = document.getElementById(this.config.clearAllBtnId);
+            if (clearAllBtn) {
+                // Ã‰vÃ©nement clic pour desktop
+                clearAllBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.clearAll();
+                });
+                
+                // Ã‰vÃ©nements tactiles pour mobile/tablette
+                if (isTouchDevice) {
+                    clearAllBtn.addEventListener('touchstart', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        this.clearAll();
+                    }, { passive: false });
+                }
+            }
+        }
+        
+        // Gestion du bouton "Signer le document" (Enregistrer/Submit)
+        if (this.config.submitBtnId) {
+            const submitBtn = document.getElementById(this.config.submitBtnId);
+            if (submitBtn) {
+                console.log('ðŸ” Bouton "Signer le document" trouvÃ©:', submitBtn);
+                
+                // Ã‰vÃ©nement clic pour desktop
+                submitBtn.addEventListener('click', (e) => {
+                    console.log('ðŸ–±ï¸ Clic sur "Signer le document" dÃ©tectÃ©');
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.submitForm();
+                });
+                
+                // Ã‰vÃ©nements tactiles pour mobile/tablette
+                if (isTouchDevice) {
+                    console.log('ðŸ“± Ajout des Ã©vÃ©nements tactiles pour le bouton "Signer le document"');
+                    
+                    submitBtn.addEventListener('touchstart', (e) => {
+                        console.log('ðŸ‘† Touch START sur "Signer le document" dÃ©tectÃ©');
+                        e.preventDefault();
+                        e.stopPropagation();
+                        this.submitForm();
+                    }, { passive: false });
+                    
+                    submitBtn.addEventListener('touchend', (e) => {
+                        console.log('ðŸ‘† Touch END sur "Signer le document" dÃ©tectÃ©');
+                        e.preventDefault();
+                        e.stopPropagation();
+                        // Ne pas appeler submitForm() ici pour Ã©viter les doubles appels
+                    }, { passive: false });
+                    
+                    // Ã‰vÃ©nement pointer pour une meilleure compatibilitÃ©
+                    submitBtn.addEventListener('pointerdown', (e) => {
+                        console.log('ðŸ‘† Pointer down sur "Signer le document":', e.pointerType);
+                        if (e.pointerType === 'touch') {
+                            console.log('ðŸ“± Touch via pointer sur "Signer le document"');
+                            e.preventDefault();
+                            e.stopPropagation();
+                            this.submitForm();
+                        }
+                    });
+                }
+            } else {
+                console.error('âŒ Bouton "Signer le document" non trouvÃ© avec l\'ID:', this.config.submitBtnId);
+            }
+            
+            // Test direct du bouton "Signer le document" aprÃ¨s un dÃ©lai
+            setTimeout(() => {
+                const testSubmitBtn = document.getElementById(this.config.submitBtnId);
+                if (testSubmitBtn) {
+                    console.log('ðŸ§ª Test du bouton "Signer le document" aprÃ¨s dÃ©lai:', {
+                        existe: !!testSubmitBtn,
+                        visible: testSubmitBtn.offsetParent !== null,
+                        disabled: testSubmitBtn.disabled,
+                        style: testSubmitBtn.style.display,
+                        computedStyle: window.getComputedStyle(testSubmitBtn).display,
+                        text: testSubmitBtn.textContent
+                    });
+                    
+                    // Test manuel de l'Ã©vÃ©nement
+                    testSubmitBtn.addEventListener('mousedown', () => {
+                        console.log('ðŸ–±ï¸ Mouse down dÃ©tectÃ© sur "Signer le document"');
+                    });
+                    
+                    testSubmitBtn.addEventListener('pointerdown', () => {
+                        console.log('ðŸ‘† Pointer down dÃ©tectÃ© sur "Signer le document"');
+                    });
+                }
+            }, 1000);
+        }
+
+        // Gestion du type d'action
+        document.querySelectorAll('input[name="action_type"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                this.actionType = e.target.value;
+                this.updateInterface();
+            });
+        });
+
+        // Gestion des types de signature/paraphe supprimÃ©e - seulement les signatures prÃ©chargÃ©es
+
+        // Boutons de zoom
+        if (this.config.zoomInBtnId) {
+            const zoomInBtn = document.getElementById(this.config.zoomInBtnId);
+            if (zoomInBtn) {
+                zoomInBtn.addEventListener('click', () => {
+                    this.zoomIn();
+                });
+            }
+        }
+
+        if (this.config.zoomOutBtnId) {
+            const zoomOutBtn = document.getElementById(this.config.zoomOutBtnId);
+            if (zoomOutBtn) {
+                zoomOutBtn.addEventListener('click', () => {
+                    this.zoomOut();
+                });
+            }
+        }
+
+        if (this.config.resetZoomBtnId) {
+            const resetZoomBtn = document.getElementById(this.config.resetZoomBtnId);
+            if (resetZoomBtn) {
+                resetZoomBtn.addEventListener('click', () => {
+                    this.resetZoom();
+                });
+            }
+        }
+
+
+
+        if (this.config.prevPageBtnId) {
+            const prevPageBtn = document.getElementById(this.config.prevPageBtnId);
+            if (prevPageBtn) {
+                console.log('âœ… Bouton page prÃ©cÃ©dente trouvÃ© et connectÃ©');
+                prevPageBtn.addEventListener('click', () => {
+                    console.log('ðŸ§­ Navigation vers page prÃ©cÃ©dente');
+                    this.previousPage();
+                });
+            } else {
+                console.warn('âš ï¸ Bouton page prÃ©cÃ©dente non trouvÃ©:', this.config.prevPageBtnId);
+            }
+        }
+
+        if (this.config.nextPageBtnId) {
+            const nextPageBtn = document.getElementById(this.config.nextPageBtnId);
+            if (nextPageBtn) {
+                console.log('âœ… Bouton page suivante trouvÃ© et connectÃ©');
+                nextPageBtn.addEventListener('click', () => {
+                    console.log('ðŸ§­ Navigation vers page suivante');
+                    this.nextPage();
+                });
+            } else {
+                console.warn('âš ï¸ Bouton page suivante non trouvÃ©:', this.config.nextPageBtnId);
+            }
+        }
+
+        // Navigation rapide - PremiÃ¨re page
+        const firstPageBtn = document.getElementById('firstPageBtn');
+        if (firstPageBtn) {
+            console.log('âœ… Bouton premiÃ¨re page trouvÃ© et connectÃ©');
+            firstPageBtn.addEventListener('click', () => {
+                console.log('ðŸ§­ Navigation vers premiÃ¨re page');
+                this.goToPage(1);
+            });
+        } else {
+            console.warn('âš ï¸ Bouton premiÃ¨re page non trouvÃ©');
+        }
+
+        // Navigation rapide - DerniÃ¨re page
+        const lastPageBtn = document.getElementById('lastPageBtn');
+        if (lastPageBtn) {
+            console.log('âœ… Bouton derniÃ¨re page trouvÃ© et connectÃ©');
+            lastPageBtn.addEventListener('click', () => {
+                console.log('ðŸ§­ Navigation vers derniÃ¨re page');
+                if (this.pdfDocument) {
+                    this.goToPage(this.pdfDocument.numPages);
+                }
+            });
+        } else {
+            console.warn('âš ï¸ Bouton derniÃ¨re page non trouvÃ©');
+        }
+
+        // ContrÃ´les mobiles de navigation
+        const mobilePrevPageBtn = document.getElementById('mobilePrevPageBtn');
+        if (mobilePrevPageBtn) {
+            mobilePrevPageBtn.addEventListener('click', () => {
+                this.previousPage();
+            });
+        }
+
+        const mobileNextPageBtn = document.getElementById('mobileNextPageBtn');
+        if (mobileNextPageBtn) {
+            mobileNextPageBtn.addEventListener('click', () => {
+                this.nextPage();
+            });
+        }
+
+        const mobileFirstPageBtn = document.getElementById('mobileFirstPageBtn');
+        if (mobileFirstPageBtn) {
+            mobileFirstPageBtn.addEventListener('click', () => {
+                this.goToPage(1);
+            });
+        }
+
+        const mobileLastPageBtn = document.getElementById('mobileLastPageBtn');
+        if (mobileLastPageBtn) {
+            mobileLastPageBtn.addEventListener('click', () => {
+                if (this.pdfDocument) {
+                    this.goToPage(this.pdfDocument.numPages);
+                }
+            });
+        }
+
+        // Soumission du formulaire
+        if (this.config.processFormId) {
+            const processForm = document.getElementById(this.config.processFormId);
+            if (processForm) {
+                processForm.addEventListener('submit', (e) => {
+            this.handleFormSubmit(e);
+        });
+            } else {
+                console.warn('âš ï¸ Formulaire de traitement non trouvÃ©:', this.config.processFormId);
+            }
+        }
+    }
+
+    initializeCanvases() {
+        // Plus de canvas live - seulement les signatures prÃ©chargÃ©es
+        console.log('âœ… Mode signature live dÃ©sactivÃ© - utilisation des signatures prÃ©chargÃ©es uniquement');
+    }
+
+    // MÃ©thode setupCanvasEvents supprimÃ©e - plus de signature live
+
+    updateInterface() {
+        const signatureConfig = document.getElementById('signatureConfig');
+        const parapheConfig = document.getElementById('parapheConfig');
+        const cachetConfig = document.getElementById('cachetConfig');
+
+        // Masquer toutes les sections
+        if (signatureConfig) signatureConfig.style.display = 'none';
+        if (parapheConfig) parapheConfig.style.display = 'none';
+        if (cachetConfig) cachetConfig.style.display = 'none';
+
+        // Afficher selon le type d'action
+        switch (this.actionType) {
+            case 'sign_only':
+                if (signatureConfig) signatureConfig.style.display = 'block';
+                break;
+            case 'paraphe_only':
+                if (parapheConfig) parapheConfig.style.display = 'block';
+                break;
+            case 'cachet_only':
+                if (cachetConfig) cachetConfig.style.display = 'block';
+                break;
+            case 'both':
+            case 'sign_paraphe':
+                if (signatureConfig) signatureConfig.style.display = 'block';
+                if (parapheConfig) parapheConfig.style.display = 'block';
+                break;
+            case 'sign_cachet':
+                if (signatureConfig) signatureConfig.style.display = 'block';
+                if (cachetConfig) cachetConfig.style.display = 'block';
+                break;
+            case 'paraphe_cachet':
+                if (parapheConfig) parapheConfig.style.display = 'block';
+                if (cachetConfig) cachetConfig.style.display = 'block';
+                break;
+            case 'all':
+                if (signatureConfig) signatureConfig.style.display = 'block';
+                if (parapheConfig) parapheConfig.style.display = 'block';
+                if (cachetConfig) cachetConfig.style.display = 'block';
+                break;
+        }
+
+        // Mettre Ã  jour le bouton de soumission
+        const submitBtn = document.getElementById(this.config.submitBtnId);
+        if (submitBtn) {
+            const submitText = submitBtn.querySelector('span');
+            if (submitText) {
+        
+                switch (this.actionType) {
+                    case 'sign_only':
+                        submitText.textContent = 'Signer le Document';
+                        break;
+                    case 'paraphe_only':
+                        submitText.textContent = 'Parapher le Document';
+                        break;
+                    case 'cachet_only':
+                        submitText.textContent = 'Cacheter le Document';
+                        break;
+                    case 'both':
+                    case 'sign_paraphe':
+                        submitText.textContent = 'Signer & Parapher le Document';
+                        break;
+                    case 'sign_cachet':
+                        submitText.textContent = 'Signer & Cacheter le Document';
+                        break;
+                    case 'paraphe_cachet':
+                        submitText.textContent = 'Parapher & Cacheter le Document';
+                        break;
+                    case 'all':
+                        submitText.textContent = 'Traiter ComplÃ¨tement le Document';
+                        break;
+                }
+            }
+        }
+    }
+
+    // MÃ©thodes toggleLive supprimÃ©es - plus de signature live
+
+    zoomIn() {
+        this.scale = Math.min(this.scale * 1.2, 3.0);
+        this.renderPage(this.currentPage);
+        this.showStatus(`Zoom: ${Math.round(this.scale * 100)}%`, 'info');
+    }
+
+    zoomOut() {
+        this.scale = Math.max(this.scale / 1.2, 0.5);
+        this.renderPage(this.currentPage);
+        this.showStatus(`Zoom: ${Math.round(this.scale * 100)}%`, 'info');
+    }
+
+    resetZoom() {
+        this.scale = 0.8;
+        this.renderPage(this.currentPage);
+        this.showStatus('Zoom rÃ©initialisÃ©', 'info');
+    }
+
+    async autoFit() {
+        const container = document.getElementById(this.config.containerId);
+        if (!container) return;
+
+        const containerWidth = container.offsetWidth;
+        const containerHeight = container.offsetHeight;
+        
+        try {
+            const page = await this.pdfDoc.getPage(this.currentPage);
+            const viewport = page.getViewport({ scale: 1.0 });
+            
+            // Dimensions A4 standard (210mm x 297mm) en pixels (96 DPI)
+            const a4Width = 794;  // 210mm * 96 DPI / 25.4mm
+            const a4Height = 1123; // 297mm * 96 DPI / 25.4mm
+            
+            // Calculer l'Ã©chelle pour que le document rentre dans le conteneur comme une page A4
+            const scaleWidth = (containerWidth - 40) / a4Width;
+            const scaleHeight = (containerHeight - 40) / a4Height;
+            
+            // Prendre la plus petite Ã©chelle pour que la page A4 rentre dans le conteneur
+            const optimalScale = Math.min(scaleWidth, scaleHeight);
+            
+            // Appliquer des limites pour une page A4 complÃ¨te
+            this.scale = Math.max(0.3, Math.min(optimalScale, 1.2)); // Entre 30% et 120%
+            
+            await this.renderPage(this.currentPage);
+            this.showStatus(`Ajustement A4: ${Math.round(this.scale * 100)}%`, 'info');
+        } catch (error) {
+            console.error('Erreur lors de l\'ajustement automatique:', error);
+            // Fallback Ã  une Ã©chelle raisonnable pour A4
+            this.scale = 0.6;
+            await this.renderPage(this.currentPage);
+        }
+    }
+
+    async forceFit() {
+        const container = document.getElementById(this.config.containerId);
+        if (!container) return;
+
+        const containerWidth = container.offsetWidth;
+        const containerHeight = container.offsetHeight;
+        
+        try {
+            const page = await this.pdfDoc.getPage(this.currentPage);
+            const viewport = page.getViewport({ scale: 1.0 });
+            
+            // Dimensions A4 standard (210mm x 297mm) en pixels (96 DPI)
+            const a4Width = 794;  // 210mm * 96 DPI / 25.4mm
+            const a4Height = 1123; // 297mm * 96 DPI / 25.4mm
+            
+            // Calculer l'Ã©chelle pour que le document rentre dans le conteneur comme une page A4
+            const scaleWidth = (containerWidth - 80) / a4Width;   // 80px de marge
+            const scaleHeight = (containerHeight - 80) / a4Height; // 80px de marge
+            
+            // Prendre la plus petite Ã©chelle pour que la page A4 rentre dans le conteneur
+            const optimalScale = Math.min(scaleWidth, scaleHeight);
+            
+            // Appliquer des limites pour une page A4 complÃ¨te
+            this.scale = Math.max(0.2, Math.min(optimalScale, 1.0)); // Entre 20% et 100%
+            
+            await this.renderPage(this.currentPage);
+            this.showStatus(`Ajustement A4 forcÃ©: ${Math.round(this.scale * 100)}%`, 'info');
+        } catch (error) {
+            console.error('Erreur lors de l\'ajustement forcÃ©:', error);
+            // Fallback Ã  une Ã©chelle raisonnable pour A4
+            this.scale = 0.5;
+            await this.renderPage(this.currentPage);
+        }
+    }
+
+    updatePageInfo() {
+        // Mise Ã  jour de l'indicateur principal
+        const pageInfo = document.getElementById(this.config.pageInfoId);
+        if (pageInfo) {
+            pageInfo.textContent = `Page ${this.currentPage} sur ${this.totalPages}`;
+        }
+        
+        // Mise Ã  jour des indicateurs mobiles
+        const mobileCurrentPage = document.getElementById('mobileCurrentPage');
+        const mobileTotalPages = document.getElementById('mobileTotalPages');
+        const currentPageSpan = document.getElementById('currentPage');
+        const totalPagesSpan = document.getElementById('totalPages');
+        
+        if (mobileCurrentPage) {
+            mobileCurrentPage.textContent = this.currentPage;
+        }
+        if (mobileTotalPages) {
+            mobileTotalPages.textContent = this.totalPages;
+        }
+        if (currentPageSpan) {
+            currentPageSpan.textContent = this.currentPage;
+        }
+        if (totalPagesSpan) {
+            totalPagesSpan.textContent = this.totalPages;
+        }
+        
+        // DÃ©clencher l'Ã©vÃ©nement pageChanged
+        document.dispatchEvent(new CustomEvent('pageChanged', {
+            detail: { 
+                currentPage: this.currentPage,
+                totalPages: this.totalPages 
+            }
+        }));
+    }
+    
+    // MÃ©thode pour naviguer vers une page spÃ©cifique
+    async goToPage(pageNumber) {
+        if (pageNumber >= 1 && pageNumber <= this.totalPages) {
+            this.currentPage = pageNumber;
+            await this.renderPage(this.currentPage);
+            this.updatePageInfo();
+            this.updateNavigationButtons();
+        }
+    }
+    
+    // MÃ©thode pour aller Ã  la page prÃ©cÃ©dente
+    async goToPreviousPage() {
+        if (this.currentPage > 1) {
+            await this.goToPage(this.currentPage - 1);
+        }
+    }
+    
+    // MÃ©thode pour aller Ã  la page suivante
+    async goToNextPage() {
+        if (this.currentPage < this.totalPages) {
+            await this.goToPage(this.currentPage + 1);
+        }
+    }
+    
+    // MÃ©thode pour aller Ã  la premiÃ¨re page
+    async goToFirstPage() {
+        await this.goToPage(1);
+    }
+    
+    // MÃ©thode pour aller Ã  la derniÃ¨re page
+    async goToLastPage() {
+        await this.goToPage(this.totalPages);
+    }
+
+    // MÃ©thode spÃ©cifique pour l'affichage A4
+    async fitToA4() {
+        const container = document.getElementById(this.config.containerId);
+        if (!container) return;
+
+        const containerWidth = container.offsetWidth;
+        const containerHeight = container.offsetHeight;
+        
+        try {
+            // Dimensions A4 standard (210mm x 297mm) en pixels (96 DPI)
+            const a4Width = 794;  // 210mm * 96 DPI / 25.4mm
+            const a4Height = 1123; // 297mm * 96 DPI / 25.4mm
+            
+            // Calculer l'Ã©chelle pour que le document rentre dans le conteneur comme une page A4
+            const scaleWidth = (containerWidth - 60) / a4Width;
+            const scaleHeight = (containerHeight - 60) / a4Height;
+            
+            // Prendre la plus petite Ã©chelle pour que la page A4 rentre dans le conteneur
+            const optimalScale = Math.min(scaleWidth, scaleHeight);
+            
+            // Appliquer des limites pour une page A4 complÃ¨te
+            this.scale = Math.max(0.4, Math.min(optimalScale, 1.5)); // Entre 40% et 150%
+            
+            await this.renderPage(this.currentPage);
+            this.showStatus(`Affichage A4: ${Math.round(this.scale * 100)}%`, 'info');
+        } catch (error) {
+            console.error('Erreur lors de l\'ajustement A4:', error);
+            // Fallback Ã  une Ã©chelle raisonnable pour A4
+            this.scale = 0.7;
+            await this.renderPage(this.currentPage);
+        }
+    }
+
+    handleFormSubmit(e) {
+        console.log('ðŸš€ handleFormSubmit appelÃ© - PrÃ©vention du rechargement de page');
+        e.preventDefault(); // EmpÃªcher la soumission par dÃ©faut
+        
+        console.log('ðŸ“Š Ã‰tat actuel:', {
+            signatures: this.signatures.length,
+            paraphes: this.paraphes.length,
+            actionType: this.actionType
+        });
+        
+        // VÃ©rifier qu'il y a au moins une signature ou un paraphe
+        if (this.signatures.length === 0 && this.paraphes.length === 0) {
+            console.warn('âš ï¸ Aucune signature ou paraphe Ã  traiter');
+            this.showStatus('Veuillez ajouter au moins une signature ou un paraphe', 'error');
+            return;
+        }
+        
+        // Remplir les champs cachÃ©s avant la soumission
+        const actionTypeInput = document.getElementById(this.config.actionTypeInputId);
+        if (actionTypeInput) {
+            actionTypeInput.value = this.actionType;
+        }
+        
+        // Plus de gestion des types live - seulement les signatures prÃ©chargÃ©es
+        
+        // Positions (convertir les coordonnÃ©es HTML vers PDF)
+        if (this.signatures.length > 0) {
+            const firstSignature = this.signatures[0];
+            const signatureXInput = document.getElementById(this.config.signatureXInputId);
+            const signatureYInput = document.getElementById(this.config.signatureYInputId);
+            
+            if (signatureXInput) {
+                // Conversion des coordonnÃ©es HTML vers PDF
+                const pdfX = this.convertHtmlToPdfX(firstSignature.x);
+                signatureXInput.value = pdfX;
+            }
+            if (signatureYInput) {
+                const pdfY = this.convertHtmlToPdfY(firstSignature.y, 'signature');
+                signatureYInput.value = pdfY;
+            }
+        }
+        
+        if (this.paraphes.length > 0) {
+            const firstParaphe = this.paraphes[0];
+            const parapheXInput = document.getElementById(this.config.parapheXInputId);
+            const parapheYInput = document.getElementById(this.config.parapheYInputId);
+            
+            if (parapheXInput) {
+                const pdfX = this.convertHtmlToPdfX(firstParaphe.x);
+                parapheXInput.value = pdfX;
+            }
+            if (parapheYInput) {
+                const pdfY = this.convertHtmlToPdfY(firstParaphe.y, 'paraphe');
+                parapheYInput.value = pdfY;
+            }
+        }
+
+        this.showStatus('GÃ©nÃ©ration du PDF final...', 'info');
+        console.log('ðŸ“„ DÃ©but de la gÃ©nÃ©ration du PDF final...');
+        
+        // GÃ©nÃ©rer le PDF final cÃ´tÃ© client
+        this.generateFinalPdf().then(() => {
+            this.showStatus('PDF gÃ©nÃ©rÃ© avec succÃ¨s !', 'success');
+            
+            // NE PAS soumettre le formulaire pour Ã©viter le rechargement de page
+            // Le PDF est dÃ©jÃ  envoyÃ© au serveur via uploadPdfToServer
+            console.log('âœ… PDF gÃ©nÃ©rÃ© et envoyÃ© au serveur sans rechargement de page');
+            
+        }).catch(error => {
+            console.error('âŒ Erreur lors de la gÃ©nÃ©ration du PDF:', error);
+            this.showStatus('Erreur lors de la gÃ©nÃ©ration du PDF', 'error');
+        });
+    }
+
+    showStatus(message, type = 'info') {
+        // CrÃ©er ou mettre Ã  jour le toast
+        let toast = document.querySelector('.toast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.className = 'toast';
+            document.body.appendChild(toast);
+        }
+
+        toast.className = `toast ${type}`;
+        toast.innerHTML = `
+            <div class="toast-content">
+                <i class="fas fa-${this.getToastIcon(type)}"></i>
+                <span>${message}</span>
+            </div>
+        `;
+
+        // Afficher le toast
+        toast.classList.add('show');
+        
+        // Masquer aprÃ¨s 3 secondes
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 3000);
+    }
+
+    getToastIcon(type) {
+        const icons = {
+            success: 'check-circle',
+            error: 'exclamation-circle',
+            warning: 'exclamation-triangle',
+            info: 'info-circle'
+        };
+        return icons[type] || 'info-circle';
+    }
+
+    // MÃ©thodes pour gÃ©rer les boutons de signature et paraphe
+    async submitForm() {
+        console.log('ðŸ“¤ Soumission du formulaire...');
+        console.log('ðŸ“Š Signatures avant soumission:', this.signatures);
+        console.log('ðŸ“Š Paraphes avant soumission:', this.paraphes);
+        
+        // Mettre Ã  jour les donnÃ©es du formulaire
+        this.updateFormData();
+        
+        // VÃ©rifier que les donnÃ©es sont bien dans le formulaire
+        const signatureX = document.getElementById(this.config.signatureXInputId)?.value;
+        const signatureY = document.getElementById(this.config.signatureYInputId)?.value;
+        const actionType = document.getElementById(this.config.actionTypeInputId)?.value;
+        
+        console.log('ðŸ” VÃ©rification des donnÃ©es du formulaire:');
+        console.log('ðŸ“ Signature X:', signatureX);
+        console.log('ðŸ“ Signature Y:', signatureY);
+        console.log('ðŸŽ¯ Type d\'action:', actionType);
+        
+        // Si des signatures/paraphes sont prÃ©sents, gÃ©nÃ©rer le PDF final
+        if (this.signatures.length > 0 || this.paraphes.length > 0) {
+            console.log('ðŸ“„ GÃ©nÃ©ration du PDF final avec signatures...');
+            this.showStatus('GÃ©nÃ©ration du PDF final...', 'info');
+            
+            try {
+                await this.generateFinalPdf();
+                console.log('âœ… PDF final gÃ©nÃ©rÃ© avec succÃ¨s');
+                this.showStatus('PDF gÃ©nÃ©rÃ© avec succÃ¨s !', 'success');
+                
+                // Le PDF est maintenant envoyÃ© au serveur via uploadPdfToServer
+                // Pas besoin de soumettre le formulaire
+                console.log('âœ… Processus terminÃ© - PDF envoyÃ© au serveur');
+                return;
+            } catch (error) {
+                console.error('âŒ Erreur lors de la gÃ©nÃ©ration du PDF:', error);
+                this.showStatus('Erreur lors de la gÃ©nÃ©ration du PDF', 'error');
+                return;
+            }
+        }
+        
+        // Si pas de signatures/paraphes, soumettre le formulaire normalement
+        const form = document.getElementById(this.config.processFormId);
+        if (form) {
+            console.log('ðŸ“‹ Formulaire trouvÃ©, soumission...');
+            
+            // Ajouter un dÃ©lai pour s'assurer que les donnÃ©es sont bien mises Ã  jour
+            setTimeout(() => {
+                console.log('â° Soumission du formulaire aprÃ¨s dÃ©lai...');
+                form.submit();
+            }, 100);
+        } else {
+            console.error('âŒ Formulaire non trouvÃ©');
+        }
+    }
+    
+    addSignature() {
+        console.log('ðŸŽ¯ MÃ©thode addSignature() appelÃ©e');
+        console.log('ðŸ” Ã‰tat actuel des flags:', {
+            isAddingSignature: this.isAddingSignature,
+            isPositioningActive: this.isPositioningActive,
+            isCreatingSignature: this.isCreatingSignature
+        });
+        
+        // PROTECTION : Ã‰viter les appels multiples
+        if (this.isAddingSignature) {
+            console.log('âš ï¸ addSignature() dÃ©jÃ  en cours, ignorÃ©');
+            return;
+        }
+        
+        // RÃ‰INITIALISER LES FLAGS SI NÃ‰CESSAIRE
+        if (this.isPositioningActive) {
+            console.log('ðŸ”„ Mode de positionnement actif dÃ©tectÃ©, rÃ©initialisation...');
+            this.resetAllFlags();
+        }
+        
+        this.isAddingSignature = true;
+        
+        console.log('ðŸ” Configuration signature:', {
+            signatureUrl: this.config.signatureUrl,
+            hasSignatureUrl: !!this.config.signatureUrl,
+            userSignatureUrl: this.userSignatureUrl
+        });
+        
+        // Utiliser userSignatureUrl (chargÃ© au dÃ©marrage) ou config.signatureUrl
+        const signatureUrl = this.userSignatureUrl || this.config.signatureUrl;
+        
+        if (!signatureUrl) {
+            console.error('âŒ Aucune signature configurÃ©e');
+            this.showStatus('Aucune signature configurÃ©e pour cet utilisateur', 'error');
+            this.isAddingSignature = false;
+            return;
+        }
+
+        // VÃ©rifier si le mode de positionnement est dÃ©jÃ  actif
+        if (this.isPositioningActive) {
+            console.log('âš ï¸ Mode de positionnement dÃ©jÃ  actif aprÃ¨s rÃ©initialisation, ignorÃ©');
+            this.isAddingSignature = false;
+            return;
+        }
+
+        // Position par dÃ©faut au centre
+        let x = 100, y = 100;
+        
+        // Activer le mode de positionnement par clic
+        this.enableClickPositioning('signature');
+
+        // L'Ã©lÃ©ment sera crÃ©Ã© par enableClickPositioning aprÃ¨s le clic
+    }
+
+
+    async addParaphe() {
+        console.log('ðŸŽ¯ MÃ©thode addParaphe() appelÃ©e');
+        console.log('ðŸ” Ã‰tat actuel des flags:', {
+            isAddingParaphe: this.isAddingParaphe,
+            isPositioningActive: this.isPositioningActive,
+            isCreatingParaphe: this.isCreatingParaphe
+        });
+        
+        // PROTECTION : Ã‰viter les appels multiples
+        if (this.isAddingParaphe) {
+            console.log('âš ï¸ addParaphe() dÃ©jÃ  en cours, ignorÃ©');
+            return;
+        }
+        
+        // RÃ‰INITIALISER LES FLAGS SI NÃ‰CESSAIRE
+        if (this.isPositioningActive) {
+            console.log('ðŸ”„ Mode de positionnement actif dÃ©tectÃ©, rÃ©initialisation...');
+            this.resetAllFlags();
+        }
+        
+        this.isAddingParaphe = true;
+        
+        // RÃ©cupÃ©rer l'URL du paraphe si elle n'est pas disponible
+        let parapheUrl = this.config.parapheUrl;
+        
+        if (!parapheUrl) {
+            try {
+                const response = await fetch('/signatures/user-paraphe');
+                const data = await response.json();
+                
+                if (data.success && data.parapheUrl) {
+                    parapheUrl = data.parapheUrl;
+                    this.config.parapheUrl = parapheUrl; // Mettre en cache
+                } else {
+                    this.showStatus('Aucun paraphe configurÃ© pour cet utilisateur', 'error');
+                    this.isAddingParaphe = false;
+                    return;
+                }
+            } catch (error) {
+                this.showStatus('Erreur lors de la rÃ©cupÃ©ration du paraphe', 'error');
+                console.error('Erreur de rÃ©cupÃ©ration du paraphe:', error);
+                this.isAddingParaphe = false;
+                return;
+            }
+        }
+
+        // Tester si l'URL du paraphe est accessible
+        try {
+            const response = await fetch(parapheUrl, { method: 'HEAD' });
+            if (!response.ok) {
+                this.showStatus('Erreur: Le paraphe n\'est pas accessible', 'error');
+                this.isAddingParaphe = false;
+                return;
+            }
+        } catch (error) {
+            this.showStatus('Erreur: Impossible de charger le paraphe', 'error');
+            console.error('Erreur de chargement du paraphe:', error);
+            this.isAddingParaphe = false;
+            return;
+        }
+
+        // VÃ©rifier si le mode de positionnement est dÃ©jÃ  actif
+        if (this.isPositioningActive) {
+            console.log('âš ï¸ Mode de positionnement dÃ©jÃ  actif aprÃ¨s rÃ©initialisation, ignorÃ©');
+            this.isAddingParaphe = false;
+            return;
+        }
+
+        // Position par dÃ©faut au centre
+        let x = 100, y = 200;
+        
+        // Activer le mode de positionnement par clic
+        this.enableClickPositioning('paraphe');
+
+        // L'Ã©lÃ©ment sera crÃ©Ã© par enableClickPositioning aprÃ¨s le clic
+        
+        // Mettre Ã  jour le type d'action si nÃ©cessaire
+        if (this.signatures.length > 0) {
+            this.actionType = 'both';
+        } else {
+            this.actionType = 'paraphe_only';
+        }
+        
+        this.updateInterface();
+        this.showStatus('Paraphe ajoutÃ© - Glissez pour positionner', 'success');
+    }
+
+    /**
+     * Ajouter un cachet au document
+     */
+    addCachet() {
+        console.log('ðŸŽ¯ MÃ©thode addCachet() appelÃ©e');
+        console.log('ðŸ” Ã‰tat actuel des flags:', {
+            isAddingCachet: this.isAddingCachet,
+            isPositioningActive: this.isPositioningActive,
+            isCreatingCachet: this.isCreatingCachet
+        });
+        
+        // PROTECTION : Ã‰viter les appels multiples
+        if (this.isAddingCachet) {
+            console.log('âš ï¸ addCachet() dÃ©jÃ  en cours, ignorÃ©');
+            return;
+        }
+        
+        // RÃ‰INITIALISER LES FLAGS SI NÃ‰CESSAIRE
+        if (this.isPositioningActive) {
+            console.log('ðŸ”„ Mode de positionnement actif dÃ©tectÃ©, rÃ©initialisation...');
+            this.resetAllFlags();
+        }
+        
+        this.isAddingCachet = true;
+        
+        console.log('ðŸ” Configuration cachet:', {
+            cachetUrl: this.config.cachetUrl,
+            hasCachetUrl: !!this.config.cachetUrl,
+            userCachetUrl: this.userCachetUrl
+        });
+        
+        // Utiliser userCachetUrl (chargÃ© au dÃ©marrage) ou config.cachetUrl
+        const cachetUrl = this.userCachetUrl || this.config.cachetUrl;
+        
+        if (!cachetUrl) {
+            console.error('âŒ Aucun cachet configurÃ©');
+            this.showStatus('Aucun cachet configurÃ© pour cet utilisateur', 'error');
+            this.isAddingCachet = false;
+            return;
+        }
+
+        // VÃ©rifier si le mode de positionnement est dÃ©jÃ  actif
+        if (this.isPositioningActive) {
+            console.log('âš ï¸ Mode de positionnement dÃ©jÃ  actif aprÃ¨s rÃ©initialisation, ignorÃ©');
+            this.isAddingCachet = false;
+            return;
+        }
+
+        // Position par dÃ©faut au centre
+        let x = 100, y = 100;
+        
+        // Activer le mode de positionnement par clic
+        this.enableClickPositioning('cachet');
+
+        // L'Ã©lÃ©ment sera crÃ©Ã© par enableClickPositioning aprÃ¨s le clic
+    }
+
+    /**
+     * Ajouter signature ET paraphe combinÃ©s
+     */
+    async addSignAndParaphe() {
+        if (!this.config.signatureUrl) {
+            this.showStatus('Aucune signature configurÃ©e pour cet utilisateur', 'error');
+            return;
+        }
+
+        // VÃ©rifier le paraphe
+        let parapheUrl = this.config.parapheUrl;
+        if (!parapheUrl || parapheUrl === '/signatures/user-paraphe') {
+            try {
+                const response = await fetch('/signatures/user-paraphe');
+                const data = await response.json();
+                
+                if (data.success && data.parapheUrl) {
+                    parapheUrl = data.parapheUrl;
+                    this.config.parapheUrl = parapheUrl;
+                } else {
+                    this.showStatus('Aucun paraphe configurÃ© pour cet utilisateur', 'error');
+                    return;
+                }
+            } catch (error) {
+                this.showStatus('Erreur lors de la rÃ©cupÃ©ration du paraphe', 'error');
+                return;
+            }
+        }
+
+        // Ajouter la signature
+        this.addSignature();
+        
+        // Ajouter le paraphe
+        await this.addParaphe();
+        
+        // DÃ©finir le type d'action comme combinÃ©
+        this.actionType = 'both';
+        
+        this.updateInterface();
+        this.showStatus('Signature et paraphe ajoutÃ©s - Glissez pour positionner', 'success');
+    }
+
+    /**
+     * Afficher les signatures sur le PDF
+     */
+    renderSignatures(container) {
+        // Supprimer les anciennes signatures
+        const existingSignatures = container.querySelectorAll('.signature-overlay');
+        existingSignatures.forEach(el => el.remove());
+
+        // Afficher les signatures de la page courante
+        this.signatures
+            .filter(sig => sig.page === this.currentPage)
+            .forEach(signature => {
+                const signatureElement = this.createSignatureElement(signature);
+                container.appendChild(signatureElement);
+            });
+    }
+
+    /**
+     * Afficher les paraphes sur le PDF
+     */
+    renderParaphes(container) {
+        // Supprimer les anciens paraphes
+        const existingParaphes = container.querySelectorAll('.paraphe-overlay');
+        existingParaphes.forEach(el => el.remove());
+
+        // Afficher les paraphes de la page courante
+        this.paraphes
+            .filter(paraphe => paraphe.page === this.currentPage)
+            .forEach(paraphe => {
+                const parapheElement = this.createParapheElement(paraphe);
+                container.appendChild(parapheElement);
+            });
+    }
+
+    /**
+     * CrÃ©er un Ã©lÃ©ment DOM pour un cachet
+     */
+    createCachetElement(cachet) {
+        const cachetDiv = document.createElement('div');
+        cachetDiv.className = 'cachet-overlay';
+        cachetDiv.style.position = 'absolute';
+        cachetDiv.style.left = cachet.x + 'px';
+        cachetDiv.style.top = cachet.y + 'px';
+        cachetDiv.style.width = cachet.width + 'px';
+        cachetDiv.style.height = cachet.height + 'px';
+        cachetDiv.style.border = '2px solid #8B5CF6';
+        cachetDiv.style.borderRadius = '4px';
+        cachetDiv.style.backgroundColor = 'rgba(139, 92, 246, 0.1)';
+        cachetDiv.style.cursor = 'move';
+        cachetDiv.style.zIndex = '1000';
+        cachetDiv.draggable = true;
+        cachetDiv.dataset.cachetId = cachet.id;
+
+        if (cachet.url) {
+            const img = document.createElement('img');
+            img.src = cachet.url;
+            img.style.width = '100%';
+            img.style.height = '100%';
+            img.style.objectFit = 'contain';
+            img.style.borderRadius = '2px';
+            
+            // Gestion des erreurs d'image
+            img.onerror = function() {
+                console.error('Erreur de chargement de l\'image cachet:', cachet.url);
+                // Remplacer par une icÃ´ne de fallback
+                const fallbackIcon = document.createElement('i');
+                fallbackIcon.className = 'fas fa-exclamation-triangle';
+                fallbackIcon.style.color = '#dc3545';
+                fallbackIcon.style.fontSize = '16px';
+                fallbackIcon.style.position = 'absolute';
+                fallbackIcon.style.top = '50%';
+                fallbackIcon.style.left = '50%';
+                fallbackIcon.style.transform = 'translate(-50%, -50%)';
+                cachetDiv.appendChild(fallbackIcon);
+            };
+            
+            img.onload = function() {
+                console.log('Image cachet chargÃ©e avec succÃ¨s:', cachet.url);
+            };
+            
+            cachetDiv.appendChild(img);
+        } else {
+            const icon = document.createElement('i');
+            icon.className = 'fas fa-stamp';
+            icon.style.color = '#8B5CF6';
+            icon.style.fontSize = '16px';
+            icon.style.position = 'absolute';
+            icon.style.top = '50%';
+            icon.style.left = '50%';
+            icon.style.transform = 'translate(-50%, -50%)';
+            cachetDiv.appendChild(icon);
+        }
+
+        return cachetDiv;
+    }
+
+    /**
+     * Rendre les cachets sur le conteneur
+     */
+    renderCachets(container) {
+        console.log('ðŸŽ¨ renderCachets appelÃ©e:', {
+            containerExists: !!container,
+            cachetsCount: this.cachets.length,
+            currentPage: this.currentPage
+        });
+        
+        // Supprimer les anciens cachets
+        const existingCachets = container.querySelectorAll('.cachet-overlay');
+        console.log('ðŸ—‘ï¸ Suppression de', existingCachets.length, 'cachets existants');
+        existingCachets.forEach(el => el.remove());
+
+        // Afficher les cachets de la page courante
+        const currentPageCachets = this.cachets.filter(cachet => cachet.page === this.currentPage);
+        console.log('ðŸ“„ Cachets pour la page', this.currentPage, ':', currentPageCachets.length);
+        
+        currentPageCachets.forEach(cachet => {
+            const cachetElement = this.createCachetElement(cachet);
+            container.appendChild(cachetElement);
+            console.log('âœ… Cachet ajoutÃ© au DOM:', cachet);
+        });
+    }
+
+    clearAll() {
+        console.log('ðŸ§¹ DÃ©but de la suppression de tous les Ã©lÃ©ments...');
+        
+        // Supprimer tous les Ã©lÃ©ments visuels
+        this.signatures = [];
+        this.paraphes = [];
+        this.cachets = [];
+        this.renderSignatures(document.getElementById(this.config.containerId));
+        this.renderParaphes(document.getElementById(this.config.containerId));
+        this.renderCachets(document.getElementById(this.config.containerId));
+        
+        // RÃ‰INITIALISER TOUS LES FLAGS D'Ã‰TAT
+        this.resetAllFlags();
+        
+        // Plus de donnÃ©es live Ã  nettoyer
+        
+        // Supprimer l'overlay de positionnement s'il existe
+        const existingOverlay = document.getElementById('positioning-overlay');
+        if (existingOverlay) {
+            existingOverlay.remove();
+            console.log('ðŸ—‘ï¸ Overlay de positionnement supprimÃ©');
+        }
+        
+        // DÃ©sactiver le mode signature
+        this.disableSignatureMode();
+        
+        // Mettre Ã  jour les donnÃ©es du formulaire
+        this.updateFormData();
+        
+        // RÃ©initialiser le type d'action
+        this.actionType = this.config.defaultAction || 'sign_only';
+        this.updateInterface();
+        
+        console.log('âœ… Tous les Ã©lÃ©ments supprimÃ©s et flags rÃ©initialisÃ©s');
+        this.showStatus('Toutes les annotations ont Ã©tÃ© supprimÃ©es', 'info');
+    }
+
+    /**
+     * RÃ©initialiser tous les flags d'Ã©tat pour permettre l'ajout de nouveaux Ã©lÃ©ments
+     */
+    resetAllFlags() {
+        console.log('ðŸ”„ RÃ©initialisation de tous les flags d\'Ã©tat...');
+        
+        // Flags de positionnement
+        this.isPositioningActive = false;
+        
+        // Flags d'ajout d'Ã©lÃ©ments
+        this.isAddingSignature = false;
+        this.isAddingParaphe = false;
+        this.isAddingCachet = false;
+        
+        // Flags de crÃ©ation d'Ã©lÃ©ments
+        this.isCreatingSignature = false;
+        this.isCreatingParaphe = false;
+        this.isCreatingCachet = false;
+        
+        // Flags de dessin
+        this.isDrawingSignature = false;
+        this.isDrawingParaphe = false;
+        this.isDrawingCachet = false;
+        
+        // Flags de mise Ã  jour
+        this.isUpdatingForm = false;
+        
+        // Nettoyer les timeouts
+        if (this.updateFormDataTimeout) {
+            clearTimeout(this.updateFormDataTimeout);
+            this.updateFormDataTimeout = null;
+        }
+        
+        console.log('âœ… Tous les flags rÃ©initialisÃ©s');
+    }
+
+    disableAllInteractions() {
+        // DÃ©sactiver tous les boutons d'action
+        const actionButtons = [
+            this.config.addSignatureBtnId,
+            this.config.addParapheBtnId,
+            this.config.addCachetBtnId,
+            this.config.clearAllBtnId,
+            this.config.submitBtnId
+        ];
+
+        actionButtons.forEach(btnId => {
+            const btn = document.getElementById(btnId);
+            if (btn) {
+                btn.disabled = true;
+                btn.style.opacity = '0.5';
+                btn.style.cursor = 'not-allowed';
+            }
+        });
+
+        // Plus de canvas live Ã  dÃ©sactiver
+
+        // DÃ©sactiver le formulaire
+        const form = document.getElementById(this.config.processFormId);
+        if (form) {
+            form.style.display = 'none';
+        }
+
+        this.showStatus('Document en mode lecture seule - Aucune modification possible', 'info');
+    }
+
+    updateFormData() {
+        // Protection contre les appels multiples
+        if (this.isUpdatingForm) {
+            console.log('âš ï¸ updateFormData dÃ©jÃ  en cours, ignorÃ©');
+            return;
+        }
+        this.isUpdatingForm = true;
+        
+        console.log('ðŸ“ Mise Ã  jour des donnÃ©es du formulaire...');
+        console.log('ðŸ“Š Signatures:', this.signatures);
+        console.log('ðŸ“Š Paraphes:', this.paraphes);
+        console.log('ðŸ“Š Cachets:', this.cachets);
+        
+        // Mettre Ã  jour les champs cachÃ©s du formulaire avec conversion des coordonnÃ©es
+        if (this.config.signatureXInputId) {
+            const signatureXInput = document.getElementById(this.config.signatureXInputId);
+            if (signatureXInput) {
+                if (this.signatures.length > 0) {
+                    // Conversion des coordonnÃ©es HTML vers PDF (mÃªme logique que le mode normal)
+                    const pdfX = this.convertHtmlToPdfX(this.signatures[0].x);
+                    signatureXInput.value = pdfX;
+                    console.log('ðŸ“ Signature X (HTML):', this.signatures[0].x, 'â†’ (PDF):', pdfX);
+                } else {
+                    signatureXInput.value = '';
+                }
+            }
+        }
+        if (this.config.signatureYInputId) {
+            const signatureYInput = document.getElementById(this.config.signatureYInputId);
+            if (signatureYInput) {
+                if (this.signatures.length > 0) {
+                    // Conversion des coordonnÃ©es HTML vers PDF (mÃªme logique que le mode normal)
+                    const pdfY = this.convertHtmlToPdfY(this.signatures[0].y, 'signature');
+                    signatureYInput.value = pdfY;
+                    console.log('ðŸ“ Signature Y (HTML):', this.signatures[0].y, 'â†’ (PDF):', pdfY);
+                } else {
+                    signatureYInput.value = '';
+                }
+            }
+        }
+        if (this.config.parapheXInputId) {
+            const parapheXInput = document.getElementById(this.config.parapheXInputId);
+            if (parapheXInput) {
+                if (this.paraphes.length > 0) {
+                    // Conversion des coordonnÃ©es HTML vers PDF (mÃªme logique que le mode normal)
+                    const pdfX = this.convertHtmlToPdfX(this.paraphes[0].x);
+                    parapheXInput.value = pdfX;
+                    console.log('ðŸ“ Paraphe X (HTML):', this.paraphes[0].x, 'â†’ (PDF):', pdfX);
+                } else {
+                    parapheXInput.value = '';
+                }
+            }
+        }
+        if (this.config.parapheYInputId) {
+            const parapheYInput = document.getElementById(this.config.parapheYInputId);
+            if (parapheYInput) {
+                if (this.paraphes.length > 0) {
+                    // Conversion des coordonnÃ©es HTML vers PDF (mÃªme logique que le mode normal)
+                    const pdfY = this.convertHtmlToPdfY(this.paraphes[0].y, 'paraphe');
+                    parapheYInput.value = pdfY;
+                    console.log('ðŸ“ Paraphe Y (HTML):', this.paraphes[0].y, 'â†’ (PDF):', pdfY);
+                } else {
+                    parapheYInput.value = '';
+                }
+            }
+        }
+        
+        // Mettre Ã  jour les coordonnÃ©es des cachets
+        if (this.config.cachetXInputId) {
+            const cachetXInput = document.getElementById(this.config.cachetXInputId);
+            if (cachetXInput) {
+                if (this.cachets.length > 0) {
+                    // Conversion des coordonnÃ©es HTML vers PDF (mÃªme logique que le mode normal)
+                    const pdfX = this.convertHtmlToPdfX(this.cachets[0].x);
+                    cachetXInput.value = pdfX;
+                    console.log('ðŸ“ Cachet X (HTML):', this.cachets[0].x, 'â†’ (PDF):', pdfX);
+                } else {
+                    cachetXInput.value = '';
+                }
+            }
+        }
+        if (this.config.cachetYInputId) {
+            const cachetYInput = document.getElementById(this.config.cachetYInputId);
+            if (cachetYInput) {
+                if (this.cachets.length > 0) {
+                    // Conversion des coordonnÃ©es HTML vers PDF (mÃªme logique que le mode normal)
+                    const pdfY = this.convertHtmlToPdfY(this.cachets[0].y, 'cachet');
+                    cachetYInput.value = pdfY;
+                    console.log('ðŸ“ Cachet Y (HTML):', this.cachets[0].y, 'â†’ (PDF):', pdfY);
+                } else {
+                    cachetYInput.value = '';
+                }
+            }
+        }
+        
+        // Mettre Ã  jour le type d'action
+        if (this.config.actionTypeInputId) {
+            const actionTypeInput = document.getElementById(this.config.actionTypeInputId);
+            if (actionTypeInput) {
+                if (this.signatures.length > 0 && this.paraphes.length > 0 && this.cachets.length > 0) {
+                    actionTypeInput.value = 'all';
+                } else if (this.signatures.length > 0 && this.paraphes.length > 0) {
+                    actionTypeInput.value = 'both';
+                } else if (this.signatures.length > 0 && this.cachets.length > 0) {
+                    actionTypeInput.value = 'sign_cachet';
+                } else if (this.paraphes.length > 0 && this.cachets.length > 0) {
+                    actionTypeInput.value = 'paraphe_cachet';
+                } else if (this.signatures.length > 0) {
+                    actionTypeInput.value = 'sign_only';
+                } else if (this.paraphes.length > 0) {
+                    actionTypeInput.value = 'paraphe_only';
+                } else if (this.cachets.length > 0) {
+                    actionTypeInput.value = 'cachet_only';
+                }
+                console.log('ðŸŽ¯ Type d\'action:', actionTypeInput.value);
+            }
+        }
+        
+        // Plus de donnÃ©es live Ã  gÃ©rer - seulement les signatures prÃ©chargÃ©es
+        
+        console.log('âœ… DonnÃ©es du formulaire mises Ã  jour');
+        
+        // RÃ©initialiser le flag aprÃ¨s un dÃ©lai
+        setTimeout(() => {
+            this.isUpdatingForm = false;
+        }, 100);
+    }
+
+    // Navigation entre les pages
+    previousPage() {
+        if (this.currentPage > 1) {
+            this.currentPage--;
+            this.renderPage(this.currentPage);
+            this.updatePageInfo();
+            this.updateNavigationButtons();
+            this.showStatus(`Page ${this.currentPage}`, 'info');
+        }
+    }
+
+    nextPage() {
+        if (this.currentPage < this.totalPages) {
+            this.currentPage++;
+            this.renderPage(this.currentPage);
+            this.updatePageInfo();
+            this.updateNavigationButtons();
+            this.showStatus(`Page ${this.currentPage}`, 'info');
+        }
+    }
+
+    updateNavigationButtons() {
+        // Boutons principaux
+        const prevBtn = document.getElementById(this.config.prevPageBtnId);
+        const nextBtn = document.getElementById(this.config.nextPageBtnId);
+        const firstBtn = document.getElementById('firstPageBtn');
+        const lastBtn = document.getElementById('lastPageBtn');
+        
+        // Boutons mobiles
+        const mobilePrevBtn = document.getElementById('mobilePrevPageBtn');
+        const mobileNextBtn = document.getElementById('mobileNextPageBtn');
+        const mobileFirstBtn = document.getElementById('mobileFirstPageBtn');
+        const mobileLastBtn = document.getElementById('mobileLastPageBtn');
+        
+        // Ã‰tat des boutons (premiÃ¨re page)
+        const isFirstPage = this.currentPage <= 1;
+        const isLastPage = this.currentPage >= this.totalPages;
+        
+        // Mise Ã  jour des boutons prÃ©cÃ©dent
+        [prevBtn, mobilePrevBtn].forEach(btn => {
+            if (btn) {
+                btn.disabled = isFirstPage;
+                btn.style.opacity = isFirstPage ? '0.5' : '1';
+                btn.style.cursor = isFirstPage ? 'not-allowed' : 'pointer';
+            }
+        });
+        
+        // Mise Ã  jour des boutons suivant
+        [nextBtn, mobileNextBtn].forEach(btn => {
+            if (btn) {
+                btn.disabled = isLastPage;
+                btn.style.opacity = isLastPage ? '0.5' : '1';
+                btn.style.cursor = isLastPage ? 'not-allowed' : 'pointer';
+            }
+        });
+        
+        // Mise Ã  jour des boutons premiÃ¨re page
+        [firstBtn, mobileFirstBtn].forEach(btn => {
+            if (btn) {
+                btn.disabled = isFirstPage;
+                btn.style.opacity = isFirstPage ? '0.5' : '1';
+                btn.style.cursor = isFirstPage ? 'not-allowed' : 'pointer';
+            }
+        });
+        
+        // Mise Ã  jour des boutons derniÃ¨re page
+        [lastBtn, mobileLastBtn].forEach(btn => {
+            if (btn) {
+                btn.disabled = isLastPage;
+                btn.style.opacity = isLastPage ? '0.5' : '1';
+                btn.style.cursor = isLastPage ? 'not-allowed' : 'pointer';
+            }
+        });
+    }
+
+    /**
+     * Convertir les coordonnÃ©es HTML vers PDF
+     */
+    convertHtmlToPdfX(htmlX) {
+        const pdfContainer = document.getElementById(this.config.pdfContainerId);
+        if (!pdfContainer) {
+            return htmlX;
+        }
+        
+        const pdfCanvas = pdfContainer.querySelector('canvas');
+        if (!pdfCanvas) {
+            return htmlX;
+        }
+        
+        // SOLUTION DÃ‰FINITIVE : Calculer les dimensions PDF Ã  partir du canvas
+        let pdfPageWidth = 595; // A4 par dÃ©faut
+        
+        // Calculer les dimensions PDF Ã  partir du canvas affichÃ©
+        const canvasDisplayWidth = pdfCanvas.offsetWidth;
+        const canvasDisplayHeight = pdfCanvas.offsetHeight;
+        
+        // SOLUTION DÃ‰FINITIVE : Utiliser la MÃŠME Ã©chelle que le rendu
+        if (this.pdfDoc && this.currentPage) {
+            try {
+                const page = this.pdfDoc.getPage(this.currentPage);
+                
+                // Calculer l'Ã©chelle responsive IDENTIQUE au rendu
+                let responsiveScale = this.scale;
+                const container = document.getElementById(this.config.containerId);
+                if (container) {
+                    const containerWidth = container.clientWidth;
+                    const pageWidth = page.getViewport({ scale: 1.0 }).width;
+                    
+                    if (containerWidth < 768) {
+                        responsiveScale = Math.min(this.scale, containerWidth / pageWidth * 0.9);
+                    } else if (containerWidth < 1200) {
+                        responsiveScale = Math.min(this.scale, containerWidth / pageWidth * 0.8);
+                    }
+                }
+                
+                // Utiliser la MÃŠME Ã©chelle que le rendu
+                const viewport = page.getViewport({ scale: responsiveScale });
+                pdfPageWidth = viewport.width;
+            } catch (error) {
+                // Calculer Ã  partir du ratio d'affichage
+                pdfPageWidth = canvasDisplayWidth / this.scale;
+            }
+        } else {
+            // Calculer Ã  partir du ratio d'affichage
+            pdfPageWidth = canvasDisplayWidth / this.scale;
+        }
+        
+        // SOLUTION CORRECTE : Conversion HTML vers PDF
+        // pdfX = htmlX / scale
+        let pdfX = htmlX / this.scale;
+        
+        console.log('ðŸ” SOLUTION CORRECTE - Conversion X:', {
+            htmlX: htmlX,
+            scale: this.scale,
+            formula: 'htmlX / scale',
+            pdfX: Math.round(pdfX)
+        });
+        
+        // SYSTÃˆME DE COPIE AUTOMATIQUE DES COORDONNÃ‰ES
+        this.copyCoordinatesToClipboard('X', {
+            htmlX: htmlX,
+            scale: this.scale,
+            formula: 'htmlX / scale',
+            finalPdfX: Math.round(pdfX),
+            adjustment: 'formule_correcte'
+        });
+        
+        return Math.round(pdfX);
+    }
+
+    convertHtmlToPdfY(htmlY, elementType = 'signature') {
+        const pdfContainer = document.getElementById(this.config.pdfContainerId);
+        if (!pdfContainer) {
+            return htmlY;
+        }
+        
+        const pdfCanvas = pdfContainer.querySelector('canvas');
+        if (!pdfCanvas) {
+            return htmlY;
+        }
+        
+        // SOLUTION DÃ‰FINITIVE : Calculer les dimensions PDF Ã  partir du canvas
+        let pdfPageHeight = 842; // A4 par dÃ©faut
+        
+        // Calculer les dimensions PDF Ã  partir du canvas affichÃ©
+        const canvasDisplayHeight = pdfCanvas.offsetHeight;
+        
+        // SOLUTION DÃ‰FINITIVE : Utiliser la MÃŠME Ã©chelle que le rendu
+        if (this.pdfDoc && this.currentPage) {
+            try {
+                const page = this.pdfDoc.getPage(this.currentPage);
+                
+                // Calculer l'Ã©chelle responsive IDENTIQUE au rendu
+                let responsiveScale = this.scale;
+                const container = document.getElementById(this.config.containerId);
+                if (container) {
+                    const containerWidth = container.clientWidth;
+                    const pageWidth = page.getViewport({ scale: 1.0 }).width;
+                    
+                    if (containerWidth < 768) {
+                        responsiveScale = Math.min(this.scale, containerWidth / pageWidth * 0.9);
+                    } else if (containerWidth < 1200) {
+                        responsiveScale = Math.min(this.scale, containerWidth / pageWidth * 0.8);
+                    }
+                }
+                
+                // Utiliser la MÃŠME Ã©chelle que le rendu
+                const viewport = page.getViewport({ scale: responsiveScale });
+                pdfPageHeight = viewport.height;
+            } catch (error) {
+                // Calculer Ã  partir du ratio d'affichage
+                pdfPageHeight = canvasDisplayHeight / this.scale;
+            }
+        } else {
+            // Calculer Ã  partir du ratio d'affichage
+            pdfPageHeight = canvasDisplayHeight / this.scale;
+        }
+        
+        // SOLUTION CORRECTE : Conversion HTML vers PDF avec origine bas-gauche
+        // pdfY = page.getHeight() - (htmlY / scale)
+        let pdfY = pdfPageHeight - (htmlY / this.scale);
+        
+        console.log('ðŸ” SOLUTION CORRECTE - Conversion Y:', {
+            htmlY: htmlY,
+            pdfPageHeight: pdfPageHeight,
+            scale: this.scale,
+            elementType: elementType,
+            formula: 'pdfPageHeight - (htmlY / scale)',
+            pdfY: Math.round(pdfY)
+        });
+        
+        // SYSTÃˆME DE COPIE AUTOMATIQUE DES COORDONNÃ‰ES
+        this.copyCoordinatesToClipboard('Y', {
+            htmlY: htmlY,
+            pdfPageHeight: pdfPageHeight,
+            scale: this.scale,
+            elementType: elementType,
+            formula: 'pdfPageHeight - (htmlY / scale)',
+            finalPdfY: Math.round(pdfY),
+            adjustment: 'formule_correcte'
+        });
+        
+        return Math.round(Math.max(0, pdfY));
+    }
+
+
+    /**
+     * SOLUTION PRÃ‰CISE ET ROBUSTE - MÃ©thode 1 AmÃ©liorÃ©e
+     * Conversion HTML vers PDF avec prÃ©cision optimisÃ©e
+     */
+    async convertHtmlToPdfCoordinates(htmlX, htmlY, pageNumber) {
+        console.log('\nðŸ” === DÃ‰BUT CONVERSION COORDONNÃ‰ES PRÃ‰CISE ===');
+        console.log('Input:', { htmlX, htmlY, pageNumber });
+        
+        // OPTION : DÃ©sactiver les ajustements cross-platform pour maximiser la prÃ©cision
+        const DISABLE_CROSS_PLATFORM_ADJUSTMENTS = true; // Mettre Ã  false pour activer les ajustements
+        
+        // DÃ‰TECTION PLATEFORME : Desktop vs Mobile
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+                        ('ontouchstart' in window) || 
+                        (navigator.maxTouchPoints > 0);
+        const isTablet = /iPad|Android/i.test(navigator.userAgent);
+        const devicePixelRatio = window.devicePixelRatio || 1;
+        
+        console.log('ðŸ“± DÃ©tection plateforme:', {
+            isMobile,
+            isTablet,
+            userAgent: navigator.userAgent.substring(0, 50) + '...',
+            devicePixelRatio,
+            screenSize: { width: window.screen.width, height: window.screen.height },
+            viewportSize: { width: window.innerWidth, height: window.innerHeight },
+            crossPlatformAdjustments: DISABLE_CROSS_PLATFORM_ADJUSTMENTS ? 'DÃ‰SACTIVÃ‰S (prÃ©cision maximale)' : 'ACTIVÃ‰S'
+        });
+        
+        // DIAGNOSTIC : Quelle bibliothÃ¨que PDF utilisez-vous ?
+        console.log('ðŸ“š BibliothÃ¨que PDF dÃ©tectÃ©e:', {
+            pdfDoc: !!this.pdfDoc,
+            pdfLibDoc: !!this.pdfLibDoc,
+            pdfDocType: this.pdfDoc ? 'PDF.js' : 'Non dÃ©tectÃ©',
+            pdfLibDocType: this.pdfLibDoc ? 'pdf-lib' : 'Non dÃ©tectÃ©'
+        });
+
+        // 1. RÃ©cupÃ©rer le canvas de la page avec sÃ©lection optimisÃ©e
+        const canvas = document.querySelector(`canvas[data-page-number="${pageNumber}"]`) 
+                    || document.querySelector('.pdf-page-canvas')
+                    || document.querySelector('canvas');
+        
+        if (!canvas) {
+            console.error('âŒ Canvas introuvable !');
+            return null;
+        }
+
+        // 2. Dimensions rÃ©elles du canvas avec prÃ©cision maximale
+        const rect = canvas.getBoundingClientRect();
+        let canvasWidth = Math.round(rect.width * 100) / 100;
+        let canvasHeight = Math.round(rect.height * 100) / 100;
+        
+        // AJUSTEMENTS MOBILE : Compensation minimale pour les Ã©crans haute densitÃ©
+        if (!DISABLE_CROSS_PLATFORM_ADJUSTMENTS && isMobile && devicePixelRatio > 1.5) {
+            // Compensation lÃ©gÃ¨re uniquement pour les Ã©crans trÃ¨s haute densitÃ© (Retina)
+            const mobileScaleFactor = Math.min(1 / devicePixelRatio, 0.9);
+            canvasWidth = Math.round(canvasWidth * mobileScaleFactor * 100) / 100;
+            canvasHeight = Math.round(canvasHeight * mobileScaleFactor * 100) / 100;
+            console.log('ðŸ“± Ajustement mobile haute densitÃ© (minimal):', { 
+                devicePixelRatio, 
+                mobileScaleFactor,
+                original: { width: rect.width, height: rect.height },
+                adjusted: { width: canvasWidth, height: canvasHeight }
+            });
+        }
+        
+        console.log('ðŸ“ Canvas affichÃ© (prÃ©cision):', {
+            width: canvasWidth,
+            height: canvasHeight,
+            left: Math.round(rect.left * 100) / 100,
+            top: Math.round(rect.top * 100) / 100,
+            devicePixelRatio: devicePixelRatio,
+            platform: isMobile ? 'Mobile' : 'Desktop',
+            isTablet: isTablet
+        });
+
+        // 3. RÃ©cupÃ©rer les dimensions de la page PDF avec prÃ©cision
+        if (!this.pdfDoc) {
+            console.error('âŒ Document PDF non chargÃ© !');
+            return null;
+        }
+        
+        let pdfWidth, pdfHeight;
+        
+        try {
+            const page = await this.pdfDoc.getPage(pageNumber);
+            const viewport = page.getViewport({ scale: 1.0 });
+            pdfWidth = Math.round(viewport.width * 100) / 100; // Arrondi Ã  2 dÃ©cimales
+            pdfHeight = Math.round(viewport.height * 100) / 100;
+            console.log('ðŸ“„ Page PDF (prÃ©cision):', { pdfWidth, pdfHeight });
+        } catch (error) {
+            console.error('âŒ Erreur rÃ©cupÃ©ration page PDF:', error);
+            return null;
+        }
+
+        // 4. Calculer le ratio de conversion avec prÃ©cision maximale
+        const scaleX = Math.round((pdfWidth / canvasWidth) * 10000) / 10000; // 4 dÃ©cimales
+        const scaleY = Math.round((pdfHeight / canvasHeight) * 10000) / 10000;
+        console.log('âš–ï¸ Ratios (prÃ©cision):', { scaleX, scaleY });
+
+        // 5. Convertir les coordonnÃ©es avec prÃ©cision optimisÃ©e
+        // X: multiplication par le ratio avec arrondi prÃ©cis
+        let pdfX = Math.round(htmlX * scaleX * 100) / 100;
+        
+        // Y: inverser + multiplier avec arrondi prÃ©cis
+        let pdfY = Math.round((pdfHeight - (htmlY * scaleY)) * 100) / 100;
+        
+        // AJUSTEMENTS SPÃ‰CIFIQUES MOBILE : Compensation minimale pour les Ã©vÃ©nements tactiles
+        if (!DISABLE_CROSS_PLATFORM_ADJUSTMENTS && isMobile && isTablet) {
+            // Compensation trÃ¨s lÃ©gÃ¨re uniquement pour les tablettes
+            const touchPrecisionOffset = 0.5; // Compensation minimale
+            pdfX = Math.round((pdfX + touchPrecisionOffset) * 100) / 100;
+            pdfY = Math.round((pdfY + touchPrecisionOffset) * 100) / 100;
+            
+            console.log('ðŸ“± Ajustement prÃ©cision tactile (minimal):', {
+                isTablet,
+                touchPrecisionOffset,
+                original: { x: htmlX * scaleX, y: pdfHeight - (htmlY * scaleY) },
+                adjusted: { x: pdfX, y: pdfY }
+            });
+        }
+
+        // 6. Validation des coordonnÃ©es
+        const isValidX = pdfX >= 0 && pdfX <= pdfWidth;
+        const isValidY = pdfY >= 0 && pdfY <= pdfHeight;
+        
+        console.log('âœ… CoordonnÃ©es PDF (prÃ©cision):', { 
+            pdfX, 
+            pdfY,
+            validX: isValidX,
+            validY: isValidY,
+            pageBounds: { width: pdfWidth, height: pdfHeight }
+        });
+        
+        if (!isValidX || !isValidY) {
+            console.warn('âš ï¸ CoordonnÃ©es en dehors des limites de la page !');
+        }
+
+        console.log('=== FIN CONVERSION PRÃ‰CISE ===\n');
+
+        return { x: pdfX, y: pdfY };
+    }
+
+    /**
+     * MÃ©thode de compensation pour amÃ©liorer la prÃ©cision visuelle
+     */
+    applyVisualCompensation(pdfX, pdfY, elementType = 'signature') {
+        // DÃ©tection de la plateforme pour ajustements spÃ©cifiques
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+                        ('ontouchstart' in window) || 
+                        (navigator.maxTouchPoints > 0);
+        const isTablet = /iPad|Android/i.test(navigator.userAgent);
+        
+        // Compensations basÃ©es sur le type d'Ã©lÃ©ment ET la plateforme
+        let compensations = {
+            signature: { x: 0, y: 0 },      // Aucune compensation pour les signatures
+            paraphe: { x: -1, y: -1 },      // LÃ©gÃ¨re compensation pour les paraphes
+            cachet: { x: -2, y: -2 }         // Compensation lÃ©gÃ¨re pour les cachets
+        };
+        
+        // AJUSTEMENTS MOBILE : Compensations minimales pour les Ã©crans tactiles
+        if (!DISABLE_CROSS_PLATFORM_ADJUSTMENTS && isMobile && isTablet) {
+            const mobileAdjustment = 0.3; // Ajustement trÃ¨s lÃ©ger pour tablettes uniquement
+            compensations = {
+                signature: { x: mobileAdjustment, y: mobileAdjustment },
+                paraphe: { x: -1 + mobileAdjustment, y: -1 + mobileAdjustment },
+                cachet: { x: -2 + mobileAdjustment, y: -2 + mobileAdjustment }
+            };
+        }
+
+        const comp = compensations[elementType] || { x: 0, y: 0 };
+        const finalX = Math.round((pdfX + comp.x) * 100) / 100;
+        const finalY = Math.round((pdfY + comp.y) * 100) / 100;
+
+        console.log('ðŸŽ¯ Compensation visuelle (cross-platform):', {
+            elementType,
+            platform: isMobile ? (isTablet ? 'Tablet' : 'Mobile') : 'Desktop',
+            original: { x: pdfX, y: pdfY },
+            compensation: comp,
+            final: { x: finalX, y: finalY }
+        });
+
+        return { x: finalX, y: finalY };
+    }
+
+    /**
+     * Version simplifiÃ©e de conversion (fallback)
+     */
+    convertHtmlToPdfSimple(htmlX, htmlY, pageNumber) {
+        console.log('ðŸ”„ Fallback - Conversion simple avec prÃ©cision');
+        
+        // RÃ©cupÃ©rer le canvas avec sÃ©lection optimisÃ©e
+        const canvas = document.querySelector(`canvas[data-page-number="${pageNumber}"]`)
+                    || document.querySelector('canvas');
+        
+        if (!canvas) {
+            console.error('âŒ Canvas non trouvÃ©');
+            return null;
+        }
+
+        // Dimensions du canvas affichÃ© avec prÃ©cision
+        const rect = canvas.getBoundingClientRect();
+        const canvasWidth = Math.round(rect.width * 100) / 100;
+        const canvasHeight = Math.round(rect.height * 100) / 100;
+        
+        // RÃ©cupÃ©rer la page PDF avec gestion d'erreur
+        let page, viewport;
+        try {
+            page = this.pdfDoc.getPage(pageNumber);
+            viewport = page.getViewport({ scale: 1.0 });
+        } catch (error) {
+            console.error('âŒ Erreur rÃ©cupÃ©ration page PDF (fallback):', error);
+            return null;
+        }
+        
+        // Calculer le scale rÃ©el avec prÃ©cision
+        const scale = Math.round((canvasWidth / viewport.width) * 10000) / 10000;
+        const scaledViewport = page.getViewport({ scale });
+
+        // Conversion directe avec prÃ©cision
+        const pdfX = Math.round(((htmlX / canvasWidth) * scaledViewport.width) * 100) / 100;
+        const pdfY = Math.round((scaledViewport.height - ((htmlY / canvasHeight) * scaledViewport.height)) * 100) / 100;
+
+        console.log('ðŸ“ Conversion simple (prÃ©cision):', {
+            html: { x: htmlX, y: htmlY },
+            pdf: { x: pdfX, y: pdfY },
+            scale: scale,
+            canvas: { width: canvasWidth, height: canvasHeight },
+            viewport: { width: scaledViewport.width, height: scaledViewport.height }
+        });
+
+        return { x: pdfX, y: pdfY };
+    }
+
+    /**
+     * TEST DE COMPATIBILITÃ‰ CROSS-PLATFORM
+     */
+    async testCrossPlatformCompatibility() {
+        console.log('\nðŸ§ª === TEST COMPATIBILITÃ‰ CROSS-PLATFORM ===');
+        
+        // DÃ©tection de la plateforme
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+                        ('ontouchstart' in window) || 
+                        (navigator.maxTouchPoints > 0);
+        const isTablet = /iPad|Android/i.test(navigator.userAgent);
+        const devicePixelRatio = window.devicePixelRatio || 1;
+        
+        console.log('ðŸ“± Informations plateforme:', {
+            isMobile,
+            isTablet,
+            devicePixelRatio,
+            userAgent: navigator.userAgent.substring(0, 50) + '...',
+            screenSize: { width: window.screen.width, height: window.screen.height },
+            viewportSize: { width: window.innerWidth, height: window.innerHeight },
+            touchSupport: 'ontouchstart' in window,
+            maxTouchPoints: navigator.maxTouchPoints
+        });
+        
+        // Test avec coordonnÃ©es de rÃ©fÃ©rence
+        const testCoords = { x: 242, y: 808.40, pageNumber: 2 };
+        
+        console.log('ðŸ“ Test coordonnÃ©es de rÃ©fÃ©rence:', testCoords);
+        
+        // Test de conversion
+        const result = await this.convertHtmlToPdfCoordinates(
+            testCoords.x, 
+            testCoords.y, 
+            testCoords.pageNumber
+        );
+        
+        console.log('âœ… RÃ©sultat conversion cross-platform:', {
+            platform: isMobile ? (isTablet ? 'Tablet' : 'Mobile') : 'Desktop',
+            input: testCoords,
+            output: result,
+            precision: result ? 'OK' : 'ERREUR'
+        });
+        
+        console.log('=== FIN TEST CROSS-PLATFORM ===\n');
+        
+        return result;
+    }
+
+    /**
+     * FONCTION DE TEST CRITIQUE - MÃ©thode 1
+     */
+    async testCoordinates() {
+        console.log('\nðŸ§ª === TEST DES COORDONNÃ‰ES ===\n');
+        
+        // Test avec vos coordonnÃ©es rÃ©elles
+        const testCase = {
+            htmlX: 242,
+            htmlY: 808.40,
+            pageNumber: 2
+        };
+
+        console.log('ðŸ“ Test:', testCase);
+        
+        // Tester la mÃ©thode simple
+        console.log('\n--- MÃ©thode Simple ---');
+        const result = await this.convertHtmlToPdfCoordinates(
+            testCase.htmlX, 
+            testCase.htmlY, 
+            testCase.pageNumber
+        );
+
+        console.log('\n--- Comparaison ---');
+        console.log('RÃ©sultat nouveau:', result);
+        console.log('Actuel (incorrect):', { x: 291, y: 331 });
+        
+        // RÃ©cupÃ©rer les dimensions de la page pour contexte
+        if (this.pdfDoc) {
+            try {
+                const page = await this.pdfDoc.getPage(testCase.pageNumber);
+                const viewport = page.getViewport({ scale: 1.0 });
+                console.log('\nDimensions page PDF:', { 
+                    width: viewport.width, 
+                    height: viewport.height 
+                });
+            } catch (error) {
+                console.error('âŒ Erreur rÃ©cupÃ©ration dimensions:', error);
+            }
+        }
+        
+        console.log('\n=== FIN TEST ===\n');
+    }
+
+    /**
+     * Fonction de test des coordonnÃ©es (ancienne)
+     */
+    async testCoordinateConversion() {
+        console.log('ðŸ§ª TEST DE CONVERSION DES COORDONNÃ‰ES');
+        
+        const testPoints = [
+            { x: 314.11, y: 1079.73, page: 2, label: 'Prepared By' },
+            { x: 100, y: 100, page: 1, label: 'Coin supÃ©rieur gauche' },
+            { x: 500, y: 500, page: 1, label: 'Centre' }
+        ];
+
+        for (const point of testPoints) {
+            console.log(`\nðŸ“ Test: ${point.label}`);
+            const result = this.convertHtmlToPdfCoordinates(
+                point.x, 
+                point.y, 
+                point.page
+            );
+            console.log('RÃ©sultat:', result);
+        }
+    }
+
+    /**
+     * Copier les coordonnÃ©es de conversion dans le presse-papiers
+     */
+    copyCoordinatesToClipboard(axis, data) {
+        try {
+            const timestamp = new Date().toLocaleTimeString();
+            const text = `[${timestamp}] COORDONNÃ‰ES ${axis}:
+HTML: ${data.htmlX || data.htmlY}
+Canvas: ${data.canvasDisplayWidth || data.canvasDisplayHeight}
+PDF: ${data.pdfPageWidth || data.pdfPageHeight}
+Scale: ${data.scale}
+Final: ${data.finalPdfX || data.finalPdfY}
+Ajustement: ${data.adjustment}
+Type: ${data.elementType || 'N/A'}`;
+
+            navigator.clipboard.writeText(text).then(() => {
+                console.log('ðŸ“‹ CoordonnÃ©es copiÃ©es dans le presse-papiers:', text);
+            }).catch(err => {
+                console.log('ðŸ“‹ CoordonnÃ©es (copie manuelle):', text);
+            });
+        } catch (error) {
+            console.log('ðŸ“‹ CoordonnÃ©es (erreur copie):', data);
+        }
+    }
+
+    /**
+     * Copier les coordonnÃ©es finales dans le presse-papiers
+     */
+    copyFinalCoordinatesToClipboard(elementType, data) {
+        try {
+            const timestamp = new Date().toLocaleTimeString();
+            const text = `[${timestamp}] COORDONNÃ‰ES FINALES ${elementType}:
+Original PDF: (${data.originalPdfX}, ${data.originalPdfY})
+Final PDF: (${data.finalPdfX}, ${data.finalPdfY})
+Ajustements: (${data.adjustmentX}, ${data.adjustmentY})
+Type: ${data.elementType}`;
+
+            navigator.clipboard.writeText(text).then(() => {
+                console.log('ðŸ“‹ CoordonnÃ©es finales copiÃ©es dans le presse-papiers:', text);
+            }).catch(err => {
+                console.log('ðŸ“‹ CoordonnÃ©es finales (copie manuelle):', text);
+            });
+        } catch (error) {
+            console.log('ðŸ“‹ CoordonnÃ©es finales (erreur copie):', data);
+        }
+    }
+
+    /**
+     * Afficher un bouton de dÃ©bogage des coordonnÃ©es
+     */
+    showDebugButton() {
+        // CrÃ©er le bouton de dÃ©bogage
+        const debugBtn = document.createElement('button');
+        debugBtn.id = 'debug-coordinates-btn';
+        debugBtn.innerHTML = 'ðŸ› Debug CoordonnÃ©es';
+        debugBtn.style.cssText = `
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 10000;
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        `;
+        
+        debugBtn.addEventListener('click', () => {
+            this.exportAllCoordinates();
+        });
+        
+        // Ajouter un bouton de test de conversion
+        const testBtn = document.createElement('button');
+        testBtn.id = 'test-conversion-btn';
+        testBtn.innerHTML = 'ðŸ§ª Test Conversion';
+        testBtn.style.cssText = `
+            position: fixed;
+            top: 50px;
+            right: 10px;
+            z-index: 10000;
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        `;
+        
+        testBtn.addEventListener('click', async () => {
+            await this.testCoordinateConversion();
+        });
+        
+        // Ajouter un bouton pour tester la nouvelle mÃ©thode
+        const testNewBtn = document.createElement('button');
+        testNewBtn.id = 'test-new-method-btn';
+        testNewBtn.innerHTML = 'ðŸ§ª Test Nouvelle MÃ©thode';
+        testNewBtn.style.cssText = `
+            position: fixed;
+            top: 90px;
+            right: 10px;
+            z-index: 10000;
+            background: #17a2b8;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        `;
+        
+        testNewBtn.addEventListener('click', async () => {
+            await this.testCoordinates();
+        });
+        
+        // Ajouter un bouton pour tester la compatibilitÃ© cross-platform
+        const crossPlatformBtn = document.createElement('button');
+        crossPlatformBtn.id = 'test-cross-platform-btn';
+        crossPlatformBtn.innerHTML = 'ðŸ“± Test Cross-Platform';
+        crossPlatformBtn.style.cssText = `
+            position: fixed;
+            top: 130px;
+            right: 10px;
+            z-index: 10000;
+            background: #6f42c1;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        `;
+        
+        crossPlatformBtn.addEventListener('click', async () => {
+            await this.testCrossPlatformCompatibility();
+        });
+        
+        document.body.appendChild(testNewBtn);
+        document.body.appendChild(crossPlatformBtn);
+        document.body.appendChild(testBtn);
+        
+        document.body.appendChild(debugBtn);
+        console.log('ðŸ› Bouton de dÃ©bogage des coordonnÃ©es ajoutÃ©');
+    }
+
+    /**
+     * Exporter toutes les coordonnÃ©es pour analyse
+     */
+    exportAllCoordinates() {
+        const timestamp = new Date().toLocaleString();
+        const text = `[${timestamp}] EXPORT COMPLET DES COORDONNÃ‰ES
+========================================
+
+SIGNATURES: ${this.signatures.length}
+${this.signatures.map((sig, i) => `
+Signature ${i + 1}:
+  HTML: (${sig.x}, ${sig.y})
+  PDF: (${sig.pdfX || 'N/A'}, ${sig.pdfY || 'N/A'})
+  Page: ${sig.page}
+`).join('')}
+
+PARAPHES: ${this.paraphes.length}
+${this.paraphes.map((par, i) => `
+Paraphe ${i + 1}:
+  HTML: (${par.x}, ${par.y})
+  PDF: (${par.pdfX || 'N/A'}, ${par.pdfY || 'N/A'})
+  Page: ${par.page}
+`).join('')}
+
+CACHETS: ${this.cachets.length}
+${this.cachets.map((cachet, i) => `
+Cachet ${i + 1}:
+  HTML: (${cachet.x}, ${cachet.y})
+  PDF: (${cachet.pdfX || 'N/A'}, ${cachet.pdfY || 'N/A'})
+  Page: ${cachet.page}
+`).join('')}
+
+CONFIGURATION:
+  Scale: ${this.scale}
+  Current Page: ${this.currentPage}
+  Total Pages: ${this.totalPages}
+  Container ID: ${this.config.containerId}
+  PDF Container ID: ${this.config.pdfContainerId}`;
+
+        navigator.clipboard.writeText(text).then(() => {
+            console.log('ðŸ“‹ Export complet copiÃ© dans le presse-papiers');
+            alert('ðŸ“‹ Export complet des coordonnÃ©es copiÃ© dans le presse-papiers !');
+        }).catch(err => {
+            console.log('ðŸ“‹ Export complet (copie manuelle):', text);
+            alert('ðŸ“‹ Export complet affichÃ© dans la console !');
+        });
+    }
+
+    /**
+     * Activer le positionnement par clic
+     */
+    enableClickPositioning(type) {
+        console.log('ðŸŽ¯ Activation du mode de positionnement pour:', type);
+        console.log('ðŸ” Ã‰tat avant activation:', {
+            isPositioningActive: this.isPositioningActive,
+            isAddingSignature: this.isAddingSignature,
+            isAddingParaphe: this.isAddingParaphe,
+            isAddingCachet: this.isAddingCachet
+        });
+        
+        // VÃ©rifier si le mode de positionnement est dÃ©jÃ  actif
+        if (this.isPositioningActive) {
+            console.log('âš ï¸ Mode de positionnement dÃ©jÃ  actif, rÃ©initialisation forcÃ©e...');
+            this.resetAllFlags();
+        }
+        
+        // SOLUTION MOBILE : DÃ©tecter si on est sur mobile et Ã©viter le mode signature
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+                        ('ontouchstart' in window) || 
+                        (navigator.maxTouchPoints > 0);
+        
+        if (isMobile) {
+            console.log('ðŸ“± Mode mobile dÃ©tectÃ© - positionnement par clic/touch sur canvas');
+            this.isPositioningActive = false;
+            
+            // Ã‰couter les clics/touches sur le canvas PDF directement
+            const pdfContainer = document.getElementById(this.config.pdfContainerId);
+            if (pdfContainer) {
+                const canvas = pdfContainer.querySelector('canvas');
+                if (canvas) {
+                    console.log('ðŸŽ¯ Mode mobile - Ã©coute des clics/touches sur le canvas');
+                    
+                    // Fonction pour gÃ©rer le positionnement
+                    const handlePositioning = (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        // Obtenir les coordonnÃ©es du clic/touch
+                        let clientX, clientY;
+                        if (e.touches && e.touches.length > 0) {
+                            clientX = e.touches[0].clientX;
+                            clientY = e.touches[0].clientY;
+                        } else {
+                            clientX = e.clientX;
+                            clientY = e.clientY;
+                        }
+                        
+                        // Calculer les coordonnÃ©es relatives au conteneur
+                        const containerRect = pdfContainer.getBoundingClientRect();
+                        const x = clientX - containerRect.left;
+                        const y = clientY - containerRect.top;
+                        
+                        // Calculer les coordonnÃ©es PDF
+                        const pdfX = this.convertHtmlToPdfX(x);
+                        const pdfY = this.convertHtmlToPdfY(y, type);
+                        
+                        console.log('ðŸ“ DEBUG Positionnement mobile (clic/touch):', { 
+                            x, y, pdfX, pdfY,
+                            clientX, clientY,
+                            containerRect: containerRect,
+                            type: type,
+                            ratioX: (x / containerRect.width) * 100 + '%',
+                            ratioY: (y / containerRect.height) * 100 + '%',
+                            finalPdfX: Math.round(pdfX),
+                            finalPdfY: Math.round(pdfY)
+                        });
+                        
+                        // CrÃ©er l'Ã©lÃ©ment Ã  la position cliquÃ©e
+                        if (type === 'signature') {
+                            this.createSignatureAtPosition(x, y, pdfX, pdfY);
+                        } else if (type === 'paraphe') {
+                            this.createParapheAtPosition(x, y, pdfX, pdfY);
+                        } else if (type === 'cachet') {
+                            this.createCachetAtPosition(x, y, pdfX, pdfY);
+                        }
+                        
+                        // Supprimer les Ã©couteurs aprÃ¨s utilisation
+                        canvas.removeEventListener('click', handlePositioning);
+                        canvas.removeEventListener('touchstart', handlePositioning);
+                    };
+                    
+                    // Ajouter les Ã©couteurs
+                    canvas.addEventListener('click', handlePositioning);
+                    canvas.addEventListener('touchstart', handlePositioning);
+                    
+                    // Afficher un message Ã  l'utilisateur
+                    this.showStatus('Cliquez/touchez sur le PDF pour positionner l\'Ã©lÃ©ment', 'info');
+                } else {
+                    console.warn('âš ï¸ Canvas PDF non trouvÃ©, utilisation du centre du conteneur');
+                    const rect = pdfContainer.getBoundingClientRect();
+                    const x = rect.width / 2;
+                    const y = rect.height / 2;
+                    
+                    // Calculer les coordonnÃ©es PDF pour le fallback
+                    const pdfX = this.convertHtmlToPdfX(x);
+                    const pdfY = this.convertHtmlToPdfY(y, type);
+                    
+                    // CrÃ©er l'Ã©lÃ©ment directement avec les coordonnÃ©es PDF
+                    if (type === 'signature') {
+                        this.createSignatureAtPosition(x, y, pdfX, pdfY);
+                    } else if (type === 'paraphe') {
+                        this.createParapheAtPosition(x, y, pdfX, pdfY);
+                    } else if (type === 'cachet') {
+                        this.createCachetAtPosition(x, y, pdfX, pdfY);
+                    }
+                }
+            }
+            return;
+        }
+        
+        // Mode desktop : utiliser l'overlay normal
+        this.isPositioningActive = true;
+        console.log('ðŸ–¥ï¸ Mode desktop - overlay activÃ©');
+        
+        const pdfContainer = document.getElementById(this.config.pdfContainerId);
+        if (!pdfContainer) {
+            console.error('âŒ Conteneur PDF non trouvÃ©:', this.config.pdfContainerId);
+            this.isPositioningActive = false;
+            return;
+        }
+
+        console.log('âœ… Conteneur PDF trouvÃ©, ajout de l\'overlay...');
+        
+        // Ajouter un overlay pour capturer les clics
+        const overlay = document.createElement('div');
+        overlay.id = 'positioning-overlay';
+        overlay.style.cssText = `
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 123, 255, 0.1);
+            cursor: crosshair;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #007bff;
+        `;
+        const typeLabels = {
+            'signature': 'signature',
+            'paraphe': 'paraphe',
+            'cachet': 'cachet'
+        };
+        overlay.textContent = `Cliquez pour positionner le ${typeLabels[type] || type}`;
+        
+        pdfContainer.style.position = 'relative';
+        pdfContainer.appendChild(overlay);
+        
+        console.log('âœ… Overlay ajoutÃ©, attente du clic...');
+
+        // Fonction unifiÃ©e pour obtenir les coordonnÃ©es prÃ©cises
+        const getPreciseCoordinates = (e) => {
+            let clientX, clientY;
+            
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else if (e.changedTouches && e.changedTouches.length > 0) {
+                // Fallback pour touchend
+                clientX = e.changedTouches[0].clientX;
+                clientY = e.changedTouches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            
+            // VÃ©rifier que les coordonnÃ©es sont valides
+            if (isNaN(clientX) || isNaN(clientY) || clientX === undefined || clientY === undefined) {
+                console.warn('CoordonnÃ©es invalides dÃ©tectÃ©es:', { clientX, clientY, event: e, touches: e.touches, changedTouches: e.changedTouches });
+                return { x: 0, y: 0 };
+            }
+            
+            return {
+                x: clientX,
+                y: clientY
+            };
+        };
+
+        // Fonction pour positionner l'Ã©lÃ©ment avec prÃ©cision (mÃªme logique que le mode normal)
+        const positionElement = (e) => {
+            console.log('ðŸ–±ï¸ Clic dÃ©tectÃ© sur l\'overlay');
+            const coords = getPreciseCoordinates(e);
+            const rect = pdfContainer.getBoundingClientRect();
+            
+            // Calculer les coordonnÃ©es relatives au conteneur
+            let x = coords.x - rect.left;
+            let y = coords.y - rect.top;
+            
+            // VÃ©rifier et corriger les coordonnÃ©es invalides
+            if (isNaN(x) || isNaN(y) || x === 0 || y === 0) {
+                console.warn('CoordonnÃ©es calculÃ©es invalides, utilisation des coordonnÃ©es par dÃ©faut');
+                x = rect.width / 2; // Centre horizontal
+                y = rect.height / 2; // Centre vertical
+                console.log('ðŸ“ CoordonnÃ©es par dÃ©faut appliquÃ©es:', { x, y, rect: rect });
+            }
+            
+            // S'assurer que les coordonnÃ©es sont dans les limites du conteneur
+            x = Math.max(0, Math.min(x, rect.width));
+            y = Math.max(0, Math.min(y, rect.height));
+            
+            // Utiliser exactement la mÃªme logique que le mode normal
+            console.log('ðŸ“ DEBUG CoordonnÃ©es du clic (HTML) - Mode Desktop:', { 
+                x, y, rect: rect,
+                coords: coords,
+                clientX: coords.x,
+                clientY: coords.y,
+                containerLeft: rect.left,
+                containerTop: rect.top
+            });
+            
+            // Convertir les coordonnÃ©es exactement comme dans le mode normal
+            let pdfX, pdfY;
+            
+            pdfX = this.convertHtmlToPdfX(x);
+            pdfY = this.convertHtmlToPdfY(y, type);
+            
+            console.log('ðŸ“ DEBUG CoordonnÃ©es converties (PDF) - Mode Desktop:', { 
+                pdfX, pdfY,
+                originalX: x,
+                originalY: y,
+                type: type
+            });
+            console.log('ðŸ“ DEBUG Mode desktop - conversion identique au mode normal:', {
+                htmlX: x, htmlY: y,
+                pdfX: pdfX, pdfY: pdfY,
+                type: type
+            });
+            
+            // Supprimer l'overlay
+            overlay.remove();
+            console.log('ðŸ—‘ï¸ Overlay supprimÃ©');
+            
+            // RÃ©initialiser le flag de positionnement
+            this.isPositioningActive = false;
+            
+            // RÃ©initialiser le flag de protection contre les appels multiples
+            setTimeout(() => {
+                isProcessing = false;
+            }, 1000);
+            
+            // RÃ©initialiser les flags d'ajout
+            setTimeout(() => {
+                if (type === 'signature') {
+                    this.isAddingSignature = false;
+                } else if (type === 'paraphe') {
+                    this.isAddingParaphe = false;
+                } else if (type === 'cachet') {
+                    this.isAddingCachet = false;
+                }
+            }, 1000);
+            
+            // CrÃ©er l'Ã©lÃ©ment Ã  la position cliquÃ©e/touchÃ©e
+            if (type === 'signature') {
+                console.log('âœï¸ DEBUG CrÃ©ation de la signature Ã  la position:', { 
+                    x, y, pdfX, pdfY,
+                    hasPdfX: pdfX !== null,
+                    hasPdfY: pdfY !== null,
+                    finalPdfX: pdfX ? Math.round(pdfX) : 'null',
+                    finalPdfY: pdfY ? Math.round(pdfY) : 'null'
+                });
+                // CrÃ©er la signature avec les coordonnÃ©es HTML pour l'affichage
+                this.createSignatureAtPosition(x, y);
+                // Mettre Ã  jour les coordonnÃ©es PDF pour la gÃ©nÃ©ration finale
+                if (this.signatures.length > 0) {
+                    this.signatures[this.signatures.length - 1].pdfX = pdfX;
+                    this.signatures[this.signatures.length - 1].pdfY = pdfY;
+                }
+                
+                // DÃ©clencher l'Ã©vÃ©nement de fin de signature
+                setTimeout(() => {
+                    document.dispatchEvent(new CustomEvent('signatureCompleted', {
+                        detail: { type: 'signature', x: x, y: y, pdfX: pdfX, pdfY: pdfY }
+                    }));
+                    console.log('ðŸŽ‰ Ã‰vÃ©nement signatureCompleted dÃ©clenchÃ©');
+                }, 100);
+                
+            } else if (type === 'paraphe') {
+                console.log('âœï¸ CrÃ©ation du paraphe Ã  la position:', { x, y, pdfX, pdfY });
+                // CrÃ©er le paraphe avec les coordonnÃ©es HTML pour l'affichage
+                this.createParapheAtPosition(x, y).then(() => {
+                    // Mettre Ã  jour les coordonnÃ©es PDF pour la gÃ©nÃ©ration finale
+                    if (this.paraphes.length > 0) {
+                        this.paraphes[this.paraphes.length - 1].pdfX = pdfX;
+                        this.paraphes[this.paraphes.length - 1].pdfY = pdfY;
+                    }
+                    
+                    // DÃ©clencher l'Ã©vÃ©nement de fin de paraphe
+                    setTimeout(() => {
+                        document.dispatchEvent(new CustomEvent('parapheCompleted', {
+                            detail: { type: 'paraphe', x: x, y: y, pdfX: pdfX, pdfY: pdfY }
+                        }));
+                        console.log('ðŸŽ‰ Ã‰vÃ©nement parapheCompleted dÃ©clenchÃ©');
+                    }, 100);
+                });
+            } else if (type === 'cachet') {
+                console.log('ðŸ·ï¸ DEBUG CrÃ©ation du cachet Ã  la position:', { 
+                    x, y, pdfX, pdfY,
+                    hasPdfX: pdfX !== null,
+                    hasPdfY: pdfY !== null,
+                    finalPdfX: pdfX ? Math.round(pdfX) : 'null',
+                    finalPdfY: pdfY ? Math.round(pdfY) : 'null'
+                });
+                // CrÃ©er le cachet avec les coordonnÃ©es HTML pour l'affichage
+                this.createCachetAtPosition(x, y).then(() => {
+                    // Mettre Ã  jour les coordonnÃ©es PDF pour la gÃ©nÃ©ration finale
+                    if (this.cachets.length > 0) {
+                        this.cachets[this.cachets.length - 1].pdfX = pdfX;
+                        this.cachets[this.cachets.length - 1].pdfY = pdfY;
+                    }
+                    
+                    // DÃ©clencher l'Ã©vÃ©nement de fin de cachet
+                    setTimeout(() => {
+                        document.dispatchEvent(new CustomEvent('cachetCompleted', {
+                            detail: { type: 'cachet', x: x, y: y, pdfX: pdfX, pdfY: pdfY }
+                        }));
+                        console.log('ðŸŽ‰ Ã‰vÃ©nement cachetCompleted dÃ©clenchÃ©');
+                    }, 100);
+                });
+            }
+        };
+
+        // SOLUTION PRATIQUE : DÃ©sactiver le mode signature en cliquant en dehors
+        const handleOutsideClick = (e) => {
+            // VÃ©rifier si le clic est en dehors de l'overlay
+            if (!overlay.contains(e.target)) {
+                console.log('ðŸ‘† Clic en dehors de l\'overlay - dÃ©sactivation du mode signature');
+                overlay.remove();
+                this.isPositioningActive = false;
+                this.disableSignatureMode();
+            }
+        };
+
+        // Capturer le clic
+        // PROTECTION : Ã‰viter les appels multiples
+        let isProcessing = false;
+        
+        overlay.addEventListener('click', (e) => {
+            if (isProcessing) {
+                console.log('âš ï¸ Ã‰vÃ©nement click ignorÃ© - traitement en cours');
+                return;
+            }
+            e.preventDefault();
+            e.stopPropagation();
+            isProcessing = true;
+            positionElement(e);
+        });
+        
+        // Capturer le touchstart pour une meilleure prÃ©cision
+        overlay.addEventListener('touchstart', (e) => {
+            if (isProcessing) {
+                console.log('âš ï¸ Ã‰vÃ©nement touchstart ignorÃ© - traitement en cours');
+                return;
+            }
+            e.preventDefault();
+            e.stopPropagation();
+            isProcessing = true;
+            positionElement(e);
+        }, { passive: false });
+        
+        // Ajouter l'Ã©vÃ©nement de clic en dehors
+        document.addEventListener('click', handleOutsideClick);
+        
+        // Nettoyer l'Ã©vÃ©nement quand l'overlay est supprimÃ©
+        const originalRemove = overlay.remove;
+        overlay.remove = function() {
+            document.removeEventListener('click', handleOutsideClick);
+            return originalRemove.call(this);
+        };
+        
+        // Capturer le touchend comme fallback
+        overlay.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            // Ne pas appeler positionElement ici pour Ã©viter les doubles appels
+        }, { passive: false });
+    }
+
+    /**
+     * CrÃ©er une signature Ã  la position spÃ©cifiÃ©e
+     */
+    createSignatureAtPosition(x, y, pdfX = null, pdfY = null) {
+        // PROTECTION : Ã‰viter les appels multiples
+        if (this.isCreatingSignature) {
+            console.log('âš ï¸ Signature dÃ©jÃ  en cours de crÃ©ation, ignorÃ©');
+            return;
+        }
+        this.isCreatingSignature = true;
+        
+        console.log('âœï¸ DEBUG CrÃ©ation de la signature Ã  la position:', { 
+            x, y, pdfX, pdfY,
+            hasPdfX: pdfX !== null,
+            hasPdfY: pdfY !== null,
+            finalPdfX: pdfX ? Math.round(pdfX) : 'null',
+            finalPdfY: pdfY ? Math.round(pdfY) : 'null'
+        });
+        
+        // Calculer les dimensions proportionnelles pour l'affichage (rÃ©duites)
+        const container = document.getElementById(this.config.pdfContainerId);
+        const containerWidth = container ? container.getBoundingClientRect().width : 600;
+        const displayWidth = Math.min(80, containerWidth * 0.15);
+        const displayHeight = displayWidth * 0.4;
+        
+        const signature = {
+            id: Date.now(),
+            page: this.currentPage,
+            x: x,
+            y: y,
+            width: displayWidth,
+            height: displayHeight,
+            url: this.userSignatureUrl || this.config.signatureUrl,
+            // Stocker les coordonnÃ©es PDF si fournies (mode mobile)
+            pdfX: pdfX,
+            pdfY: pdfY
+        };
+
+        this.signatures.push(signature);
+        console.log('âœ… Signature ajoutÃ©e:', signature);
+        console.log('ðŸ“Š Total signatures:', this.signatures.length);
+        this.renderSignatures(document.getElementById(this.config.containerId));
+        this.updateFormData();
+        this.showStatus('Signature ajoutÃ©e - Glissez pour ajuster la position', 'success');
+        
+        // Activer le glisser-dÃ©poser pour cette signature
+        this.enableDragAndDrop(signature.id, 'signature');
+        
+        // DÃ‰SACTIVER AUTOMATIQUEMENT le mode signature aprÃ¨s placement
+        // Pour permettre le dÃ©filement immÃ©diatement
+        this.disableSignatureMode();
+        
+        // EMPÃŠCHER la rÃ©activation du mode signature
+        this.preventSignatureModeReactivation();
+        
+        console.log('ðŸŽ¯ Signature placÃ©e - Mode signature dÃ©sactivÃ© automatiquement');
+        
+        // RÃ©initialiser le flag de protection
+        setTimeout(() => {
+            this.isCreatingSignature = false;
+        }, 1000);
+    }
+
+    /**
+     * CrÃ©er un paraphe Ã  la position spÃ©cifiÃ©e
+     */
+    async createParapheAtPosition(x, y, pdfX = null, pdfY = null) {
+        // PROTECTION : Ã‰viter les appels multiples
+        if (this.isCreatingParaphe) {
+            console.log('âš ï¸ Paraphe dÃ©jÃ  en cours de crÃ©ation, ignorÃ©');
+            return;
+        }
+        this.isCreatingParaphe = true;
+        
+        console.log('âœï¸ CrÃ©ation du paraphe Ã  la position:', { x, y, pdfX, pdfY });
+        
+        // RÃ©cupÃ©rer l'URL du paraphe si elle n'est pas disponible
+        let parapheUrl = this.config.parapheUrl;
+        
+        if (!parapheUrl || parapheUrl === '/signatures/user-paraphe') {
+            try {
+                const response = await fetch('/signatures/user-paraphe');
+                const data = await response.json();
+                
+                if (data.success && data.parapheUrl) {
+                    parapheUrl = data.parapheUrl;
+                    this.config.parapheUrl = parapheUrl; // Mettre en cache
+                } else {
+                    this.showStatus('Aucun paraphe configurÃ© pour cet utilisateur', 'error');
+                    return;
+                }
+            } catch (error) {
+                this.showStatus('Erreur lors de la rÃ©cupÃ©ration du paraphe', 'error');
+                console.error('Erreur de rÃ©cupÃ©ration du paraphe:', error);
+                return;
+            }
+        }
+
+        // Calculer les dimensions proportionnelles pour l'affichage (rÃ©duites)
+        const container = document.getElementById(this.config.pdfContainerId);
+        const containerWidth = container ? container.getBoundingClientRect().width : 600;
+        const displayWidth = Math.min(60, containerWidth * 0.12);
+        const displayHeight = displayWidth * 0.4;
+        
+        const paraphe = {
+            id: Date.now(),
+            page: this.currentPage,
+            x: x,
+            y: y,
+            width: displayWidth,
+            height: displayHeight,
+            url: parapheUrl,
+            // Stocker les coordonnÃ©es PDF si fournies (mode mobile)
+            pdfX: pdfX,
+            pdfY: pdfY
+        };
+
+        this.paraphes.push(paraphe);
+        this.renderParaphes(document.getElementById(this.config.containerId));
+        this.updateFormData();
+        this.showStatus('Paraphe ajoutÃ© - Glissez pour ajuster la position', 'success');
+        
+        // Activer le glisser-dÃ©poser pour ce paraphe
+        this.enableDragAndDrop(paraphe.id, 'paraphe');
+        
+        // DÃ‰SACTIVER AUTOMATIQUEMENT le mode signature aprÃ¨s placement
+        // Pour permettre le dÃ©filement immÃ©diatement
+        this.disableSignatureMode();
+        
+        // EMPÃŠCHER la rÃ©activation du mode signature
+        this.preventSignatureModeReactivation();
+        
+        console.log('ðŸŽ¯ Paraphe placÃ© - Mode signature dÃ©sactivÃ© automatiquement');
+        
+        // RÃ©initialiser le flag de protection
+        setTimeout(() => {
+            this.isCreatingParaphe = false;
+        }, 1000);
+    }
+
+    /**
+     * CrÃ©er un cachet Ã  la position spÃ©cifiÃ©e
+     */
+    async createCachetAtPosition(x, y, pdfX = null, pdfY = null) {
+        // PROTECTION : Ã‰viter les appels multiples
+        if (this.isCreatingCachet) {
+            console.log('âš ï¸ Cachet dÃ©jÃ  en cours de crÃ©ation, ignorÃ©');
+            return;
+        }
+        this.isCreatingCachet = true;
+        
+        console.log('ðŸ·ï¸ DEBUG createCachetAtPosition appelÃ©e:', { 
+            x, y, pdfX, pdfY,
+            hasPdfX: pdfX !== null,
+            hasPdfY: pdfY !== null,
+            finalPdfX: pdfX ? Math.round(pdfX) : 'null',
+            finalPdfY: pdfY ? Math.round(pdfY) : 'null'
+        });
+        
+        // Utiliser userCachetUrl (chargÃ© au dÃ©marrage) ou config.cachetUrl
+        const cachetUrl = this.userCachetUrl || this.config.cachetUrl;
+        
+        if (!cachetUrl) {
+            console.error('âŒ Aucun cachet configurÃ©');
+            this.showStatus('Vous devez d\'abord ajouter un cachet dans votre profil', 'error');
+            return;
+        }
+
+        // Calculer les dimensions proportionnelles pour l'affichage
+        const container = document.getElementById(this.config.pdfContainerId);
+        const containerWidth = container ? container.getBoundingClientRect().width : 600;
+        const displayWidth = Math.min(80, containerWidth * 0.15);
+        const displayHeight = displayWidth * 0.8; // Les cachets sont gÃ©nÃ©ralement carrÃ©s ou un peu plus hauts
+        
+        const cachet = {
+            id: Date.now(),
+            page: this.currentPage,
+            x: x,
+            y: y,
+            width: displayWidth,
+            height: displayHeight,
+            url: cachetUrl,
+            // Stocker les coordonnÃ©es PDF si fournies (mode mobile)
+            pdfX: pdfX,
+            pdfY: pdfY
+        };
+
+        this.cachets.push(cachet);
+        console.log('âœ… Cachet ajoutÃ©:', cachet);
+        console.log('ðŸ“Š Total cachets:', this.cachets.length);
+        
+        this.renderCachets(document.getElementById(this.config.containerId));
+        this.updateFormData();
+        this.showStatus('Cachet ajoutÃ© - Glissez pour ajuster la position', 'success');
+        
+        // Activer le glisser-dÃ©poser pour ce cachet
+        this.enableDragAndDrop(cachet.id, 'cachet');
+        
+        // DÃ‰SACTIVER AUTOMATIQUEMENT le mode signature aprÃ¨s placement
+        // Pour permettre le dÃ©filement immÃ©diatement
+        this.disableSignatureMode();
+        
+        // EMPÃŠCHER la rÃ©activation du mode signature
+        this.preventSignatureModeReactivation();
+        
+        console.log('ðŸŽ¯ Cachet placÃ© - Mode signature dÃ©sactivÃ© automatiquement');
+        
+        // RÃ©initialiser le flag de protection
+        setTimeout(() => {
+            this.isCreatingCachet = false;
+        }, 1000);
+    }
+
+    /**
+     * DÃ©sactiver le mode signature pour permettre le dÃ©filement
+     */
+    disableSignatureMode() {
+        console.log('ðŸ”„ DÃ©sactivation du mode signature...');
+        
+        // DÃ©sactiver le flag de positionnement
+        this.isPositioningActive = false;
+        
+        // SOLUTION RADICALE : Forcer la dÃ©sactivation immÃ©diate
+        const pdfContainer = document.getElementById(this.config.pdfContainerId);
+        if (pdfContainer) {
+            pdfContainer.classList.remove('signature-mode', 'scroll-mode');
+            pdfContainer.style.overflow = 'auto';
+            pdfContainer.style.touchAction = 'pan-x pan-y pinch-zoom';
+            pdfContainer.style.webkitOverflowScrolling = 'touch';
+            pdfContainer.style.overscrollBehavior = 'auto';
+            
+            // Forcer les propriÃ©tÃ©s sur le canvas
+            const canvas = pdfContainer.querySelector('canvas');
+            if (canvas) {
+                canvas.style.touchAction = 'pan-x pan-y pinch-zoom';
+                canvas.style.pointerEvents = 'auto';
+                canvas.style.overflow = 'auto';
+                canvas.style.webkitOverflowScrolling = 'touch';
+                canvas.style.overscrollBehavior = 'auto';
+            }
+            
+            // S'assurer que le body permet le dÃ©filement
+            document.body.style.overflow = '';
+            document.body.style.touchAction = 'pan-x pan-y pinch-zoom';
+            
+            // DIAGNOSTIC : VÃ©rifier l'Ã©tat aprÃ¨s dÃ©sactivation
+            setTimeout(() => {
+                const hasSignatureMode = pdfContainer.classList.contains('signature-mode');
+                console.log('ðŸ” DIAGNOSTIC - Mode signature aprÃ¨s dÃ©sactivation:', hasSignatureMode);
+                if (hasSignatureMode) {
+                    console.log('âš ï¸ PROBLÃˆME: Mode signature rÃ©activÃ© par un autre mÃ©canisme!');
+                }
+            }, 200);
+        }
+        
+        // DÃ©clencher l'Ã©vÃ©nement de dÃ©sactivation du mode signature
+        document.dispatchEvent(new CustomEvent('signatureModeDisabled', {
+            detail: { timestamp: Date.now() }
+        }));
+        
+        console.log('âœ… Mode signature dÃ©sactivÃ© - dÃ©filement autorisÃ©');
+    }
+
+    /**
+     * EmpÃªcher la rÃ©activation du mode signature
+     */
+    preventSignatureModeReactivation() {
+        console.log('ðŸ›¡ï¸ Protection contre la rÃ©activation du mode signature...');
+        
+        const pdfContainer = document.getElementById(this.config.pdfContainerId);
+        if (!pdfContainer) return;
+        
+        // Surveiller les changements de classe et les empÃªcher
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                    if (pdfContainer.classList.contains('signature-mode')) {
+                        console.log('ðŸš« TENTATIVE DE RÃ‰ACTIVATION BLOQUÃ‰E');
+                        pdfContainer.classList.remove('signature-mode');
+                        
+                        // Forcer les propriÃ©tÃ©s de dÃ©filement
+                        pdfContainer.style.overflow = 'auto';
+                        pdfContainer.style.touchAction = 'pan-x pan-y pinch-zoom';
+                        pdfContainer.style.webkitOverflowScrolling = 'touch';
+                        pdfContainer.style.overscrollBehavior = 'auto';
+                    }
+                }
+            });
+        });
+        
+        observer.observe(pdfContainer, { 
+            attributes: true, 
+            attributeFilter: ['class'] 
+        });
+        
+        // Nettoyer l'observer aprÃ¨s 10 secondes
+        setTimeout(() => {
+            observer.disconnect();
+            console.log('ðŸ›¡ï¸ Protection contre la rÃ©activation dÃ©sactivÃ©e');
+        }, 10000);
+    }
+
+    /**
+     * Activer le glisser-dÃ©poser pour un Ã©lÃ©ment
+     */
+    enableDragAndDrop(elementId, type) {
+        const pdfContainer = document.getElementById(this.config.pdfContainerId);
+        if (!pdfContainer) return;
+
+        // Trouver l'Ã©lÃ©ment dans le DOM
+        const element = pdfContainer.querySelector(`[data-${type}-id="${elementId}"]`);
+        if (!element) return;
+
+        let isDragging = false;
+        let startX = 0;
+        let startY = 0;
+        let initialX = 0;
+        let initialY = 0;
+
+        // Styles pour indiquer que l'Ã©lÃ©ment est glissable
+        element.style.cursor = 'move';
+        element.style.border = '2px solid #007bff';
+        element.style.boxShadow = '0 4px 8px rgba(0, 123, 255, 0.3)';
+        element.style.transition = 'all 0.2s ease';
+        element.style.userSelect = 'none';
+        
+        // Ajouter un titre pour indiquer que l'Ã©lÃ©ment est glissable
+        element.title = 'Glissez pour repositionner';
+
+        // Fonction unifiÃ©e pour obtenir les coordonnÃ©es prÃ©cises
+        const getPreciseCoordinates = (e) => {
+            let clientX, clientY;
+            
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else if (e.changedTouches && e.changedTouches.length > 0) {
+                // Fallback pour touchend
+                clientX = e.changedTouches[0].clientX;
+                clientY = e.changedTouches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            
+            // VÃ©rifier que les coordonnÃ©es sont valides
+            if (isNaN(clientX) || isNaN(clientY) || clientX === undefined || clientY === undefined) {
+                console.warn('CoordonnÃ©es invalides dÃ©tectÃ©es:', { clientX, clientY, event: e, touches: e.touches, changedTouches: e.changedTouches });
+                return { x: 0, y: 0 };
+            }
+            
+            return {
+                x: clientX,
+                y: clientY
+            };
+        };
+
+        // Fonction unifiÃ©e pour dÃ©marrer le drag
+        const startDrag = (e) => {
+            // Ã‰viter les conflits entre souris et tactile
+            if (e.type === 'mousedown' && e.touches) return;
+            if (e.type === 'touchstart' && !e.touches) return;
+            
+            isDragging = true;
+            const coords = getPreciseCoordinates(e);
+            startX = coords.x;
+            startY = coords.y;
+            
+            // Obtenir la position actuelle avec prÃ©cision
+            const rect = element.getBoundingClientRect();
+            const containerRect = pdfContainer.getBoundingClientRect();
+            initialX = rect.left - containerRect.left;
+            initialY = rect.top - containerRect.top;
+            
+            element.style.zIndex = '1001';
+            element.style.opacity = '0.8';
+            element.style.transform = 'scale(1.05)';
+            element.style.boxShadow = '0 8px 16px rgba(0, 123, 255, 0.5)';
+            element.style.border = '2px solid #0056b3';
+            
+            e.preventDefault();
+        };
+
+        // Support des Ã©vÃ©nements tactiles pour mobile/tablette
+        element.addEventListener('touchstart', startDrag, { passive: false });
+
+        // Fonction unifiÃ©e pour le mouvement
+        const moveDrag = (e) => {
+            if (!isDragging) return;
+            
+            // Ã‰viter les conflits entre souris et tactile
+            if (e.type === 'mousemove' && e.touches) return;
+            if (e.type === 'touchmove' && !e.touches) return;
+            
+            const coords = getPreciseCoordinates(e);
+            const deltaX = coords.x - startX;
+            const deltaY = coords.y - startY;
+            
+            const newX = initialX + deltaX;
+            const newY = initialY + deltaY;
+            
+            // Limiter aux limites du conteneur avec prÃ©cision
+            const containerRect = pdfContainer.getBoundingClientRect();
+            const maxX = containerRect.width - element.offsetWidth;
+            const maxY = containerRect.height - element.offsetHeight;
+            
+            const constrainedX = Math.max(0, Math.min(newX, maxX));
+            const constrainedY = Math.max(0, Math.min(newY, maxY));
+            
+            element.style.left = constrainedX + 'px';
+            element.style.top = constrainedY + 'px';
+            
+            // Mettre Ã  jour les donnÃ©es avec prÃ©cision
+            if (type === 'signature') {
+                const signature = this.signatures.find(s => s.id == elementId);
+                if (signature) {
+                    signature.x = constrainedX;
+                    signature.y = constrainedY;
+                    // Recalculer les dimensions si nÃ©cessaire (rÃ©duites)
+                    const container = document.getElementById(this.config.pdfContainerId);
+                    if (container) {
+                        const containerWidth = container.getBoundingClientRect().width;
+                        const displayWidth = Math.min(80, containerWidth * 0.15);
+                        const displayHeight = displayWidth * 0.4;
+                        signature.width = displayWidth;
+                        signature.height = displayHeight;
+                    }
+                }
+            } else if (type === 'paraphe') {
+                const paraphe = this.paraphes.find(p => p.id == elementId);
+                if (paraphe) {
+                    paraphe.x = constrainedX;
+                    paraphe.y = constrainedY;
+                    // Recalculer les dimensions si nÃ©cessaire (rÃ©duites)
+                    const container = document.getElementById(this.config.pdfContainerId);
+                    if (container) {
+                        const containerWidth = container.getBoundingClientRect().width;
+                        const displayWidth = Math.min(60, containerWidth * 0.12);
+                        const displayHeight = displayWidth * 0.4;
+                        paraphe.width = displayWidth;
+                        paraphe.height = displayHeight;
+                    }
+                }
+            }
+            
+            // Debounce pour Ã©viter les appels trop frÃ©quents pendant le drag
+            if (this.updateFormDataTimeout) {
+                clearTimeout(this.updateFormDataTimeout);
+            }
+            this.updateFormDataTimeout = setTimeout(() => {
+            this.updateFormData();
+            }, 100); // DÃ©lai de 100ms
+        };
+
+        document.addEventListener('touchmove', (e) => {
+            // Seulement bloquer le scrolling si on est en train de faire du drag
+            if (isDragging) {
+            e.preventDefault();
+            moveDrag(e);
+            }
+        }, { passive: false });
+
+        // Fonction unifiÃ©e pour arrÃªter le drag
+        const stopDrag = (e) => {
+            if (!isDragging) return;
+            
+            // Ã‰viter les conflits entre souris et tactile
+            if (e && e.type === 'mouseup' && e.touches) return;
+            if (e && e.type === 'touchend' && !e.touches) return;
+            
+            isDragging = false;
+            element.style.zIndex = '1000';
+            element.style.opacity = '1';
+            element.style.transform = 'scale(1)';
+            element.style.boxShadow = '0 4px 8px rgba(0, 123, 255, 0.3)';
+            element.style.border = '2px solid #007bff';
+            element.style.transition = 'all 0.2s ease';
+            
+            this.showStatus(`${type === 'signature' ? 'Signature' : 'Paraphe'} repositionnÃ©`, 'info');
+            
+            // Nettoyer le timeout de debounce
+            if (this.updateFormDataTimeout) {
+                clearTimeout(this.updateFormDataTimeout);
+                this.updateFormDataTimeout = null;
+            }
+            
+            // Mise Ã  jour finale des coordonnÃ©es aprÃ¨s le drag
+            this.updateFormData();
+        };
+
+        document.addEventListener('touchend', (e) => {
+            // Seulement bloquer le scrolling si on est en train de faire du drag
+            if (isDragging) {
+            e.preventDefault();
+            }
+            stopDrag(e);
+        }, { passive: false });
+
+        // Ã‰vÃ©nements de souris (utilisant les fonctions unifiÃ©es)
+        element.addEventListener('mousedown', startDrag);
+        document.addEventListener('mousemove', moveDrag);
+        document.addEventListener('mouseup', stopDrag);
+
+        // EmpÃªcher la sÃ©lection de texte pendant le glissement
+        element.addEventListener('selectstart', (e) => {
+            e.preventDefault();
+        });
+        
+        // Le mode signature est maintenant dÃ©sactivÃ© automatiquement aprÃ¨s placement
+        // Plus besoin de gestionnaire pour clic hors de l'Ã©lÃ©ment
+        console.log('ðŸŽ¯ Glissement activÃ© - Mode signature dÃ©jÃ  dÃ©sactivÃ©');
+    }
+
+
+    /**
+     * GÃ©nÃ©rer le PDF final cÃ´tÃ© client
+     */
+    async generateFinalPdf() {
+        try {
+            
+            // Charger pdf-lib depuis CDN si pas dÃ©jÃ  chargÃ©
+            if (typeof window.PDFLib === 'undefined') {
+                const script = document.createElement('script');
+                script.src = 'https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js';
+                document.head.appendChild(script);
+                
+                await new Promise((resolve, reject) => {
+                    script.onload = resolve;
+                    script.onerror = reject;
+                });
+            }
+
+            const { PDFDocument } = window.PDFLib;
+            
+            // Charger le PDF original
+            const existingPdfBytes = await fetch(this.config.pdfUrl).then(res => res.arrayBuffer());
+            const pdfDoc = await PDFDocument.load(existingPdfBytes);
+            
+            // Obtenir toutes les pages
+            const pages = pdfDoc.getPages();
+            
+            // Ajouter les signatures sur leurs pages respectives
+            console.log('ðŸ” Signatures Ã  traiter:', this.signatures);
+            console.log('ðŸ” Nombre de signatures:', this.signatures.length);
+            console.log('ðŸ” Nombre de pages PDF:', pages.length);
+            
+            if (this.signatures.length > 0) {
+                for (const signature of this.signatures) {
+                    console.log('ðŸ” Traitement signature:', {
+                        id: signature.id,
+                        url: signature.url,
+                        page: signature.page,
+                        x: signature.x,
+                        y: signature.y,
+                        totalPages: pages.length
+                    });
+                    
+                    if (signature.url && signature.page <= pages.length) {
+                        try {
+                            console.log('ðŸ“¥ Chargement de l\'image de signature...');
+                            console.log('ðŸ”— URL de signature:', signature.url);
+                            
+                            // VÃ©rifier que l'URL est accessible
+                            const response = await fetch(signature.url);
+                            if (!response.ok) {
+                                throw new Error(`Erreur HTTP: ${response.status} - ${response.statusText}`);
+                            }
+                            
+                            // Charger l'image de signature
+                            const signatureImageBytes = await response.arrayBuffer();
+                            console.log('ðŸ“Š Taille de l\'image:', signatureImageBytes.byteLength, 'bytes');
+                            
+                            const signatureImage = await pdfDoc.embedPng(signatureImageBytes);
+                            console.log('âœ… Image de signature chargÃ©e avec succÃ¨s');
+                            
+                            // Obtenir la page correspondante (index 0-based)
+                            const targetPage = pages[signature.page - 1];
+                            
+                            // Obtenir les dimensions de la page PDF
+                            const pageSize = targetPage.getSize();
+                            const pdfPageWidth = pageSize.width;
+                            const pdfPageHeight = pageSize.height;
+                            
+                            // Utiliser les coordonnÃ©es PDF stockÃ©es si disponibles (mode responsive prÃ©cis)
+                            // Sinon, convertir les coordonnÃ©es HTML (mode normal)
+                            let pdfX, pdfY;
+                            
+        // NOUVELLE MÃ‰THODE SIMPLE ET PRÃ‰CISE - MÃ©thode 1
+        try {
+            const pdfCoords = await this.convertHtmlToPdfCoordinates(
+                signature.x,
+                signature.y,
+                signature.page
+            );
+
+            if (!pdfCoords) {
+                console.error('âŒ Impossible de convertir les coordonnÃ©es pour la signature');
+                continue;
+            }
+
+                                // Appliquer la compensation visuelle pour les signatures
+                                const compensatedCoords = this.applyVisualCompensation(pdfCoords.x, pdfCoords.y, 'signature');
+                                pdfX = compensatedCoords.x;
+                                pdfY = compensatedCoords.y;
+
+                                console.log('ðŸ“ NOUVELLE MÃ‰THODE - Conversion prÃ©cise:', {
+                                    html: { x: signature.x, y: signature.y },
+                                    pdf: { x: pdfX, y: pdfY },
+                                    page: signature.page,
+                                    method: 'MÃ©thode 1 - Ratios directs + Compensation'
+                                });
+
+            // SYSTÃˆME DE COPIE AUTOMATIQUE DES COORDONNÃ‰ES FINALES
+            this.copyFinalCoordinatesToClipboard('SIGNATURE', {
+                originalPdfX: signature.x,
+                originalPdfY: signature.y,
+                finalPdfX: Math.round(pdfX),
+                finalPdfY: Math.round(pdfY),
+                adjustmentX: 'methode1_precise',
+                adjustmentY: 'methode1_precise',
+                elementType: 'signature'
+            });
+        } catch (error) {
+            console.error('âŒ Erreur nouvelle mÃ©thode, utilisation du fallback:', error);
+            // Fallback vers la mÃ©thode simple
+            const fallbackCoords = this.convertHtmlToPdfSimple(signature.x, signature.y, signature.page);
+            if (fallbackCoords) {
+                pdfX = fallbackCoords.x;
+                pdfY = fallbackCoords.y;
+                console.log('ðŸ“ Fallback utilisÃ©:', { pdfX, pdfY });
+            } else {
+                console.error('âŒ Ã‰chec du fallback, utilisation des coordonnÃ©es par dÃ©faut');
+                pdfX = signature.x;
+                pdfY = signature.y;
+            }
+        }
+                            
+                            // Calculer les dimensions proportionnelles basÃ©es sur la page rÃ©elle (rÃ©duites)
+                            const signatureWidth = Math.min(80, pdfPageWidth * 0.12); // Max 12% de la largeur de page
+                            const signatureHeight = signatureWidth * 0.4; // Ratio 2.5:1 pour une signature plus rÃ©aliste
+                            
+                            console.log('ðŸ“ Ajout de la signature au PDF (approche module signature):', {
+                                originalX: signature.x,
+                                originalY: signature.y,
+                                pdfX: pdfX,
+                                pdfY: pdfY,
+                                width: signatureWidth,
+                                height: signatureHeight,
+                                pageSize: { width: pdfPageWidth, height: pdfPageHeight }
+                            });
+                            
+                            console.log('ðŸŽ¨ Ajout de la signature Ã  la page:', {
+                                pageIndex: signature.page - 1,
+                                pdfX: pdfX,
+                                pdfY: pdfY,
+                                width: signatureWidth,
+                                height: signatureHeight
+                            });
+                            
+                            targetPage.drawImage(signatureImage, {
+                                x: pdfX,
+                                y: pdfY - signatureHeight, // NOUVELLE MÃ‰THODE : Compensation hauteur
+                                width: signatureWidth,
+                                height: signatureHeight,
+                                opacity: 0.8
+                            });
+                            
+                            console.log('ðŸ” NOUVELLE MÃ‰THODE - drawImage signature:', {
+                                pdfX: pdfX,
+                                pdfY: pdfY,
+                                signatureHeight: signatureHeight,
+                                finalY: pdfY - signatureHeight,
+                                adjustment: 'pdfY - signatureHeight',
+                                method: 'MÃ©thode 1 - Compensation hauteur'
+                            });
+                            
+                            console.log('âœ… Signature ajoutÃ©e avec succÃ¨s Ã  la page', signature.page);
+                        } catch (error) {
+                            console.error('âŒ Erreur signature:', error);
+                        }
+                    } else {
+                        console.warn('âš ï¸ Signature ignorÃ©e:', {
+                            hasUrl: !!signature.url,
+                            pageValid: signature.page <= pages.length,
+                            signature: signature
+                        });
+                    }
+                }
+            } else {
+                console.warn('âš ï¸ Aucune signature Ã  traiter');
+            }
+            
+            // Ajouter les paraphes sur leurs pages respectives
+            if (this.paraphes.length > 0) {
+                for (const paraphe of this.paraphes) {
+                    if (paraphe.url && paraphe.page <= pages.length) {
+                        try {
+                            // Charger l'image de paraphe
+                            const parapheImageBytes = await fetch(paraphe.url).then(res => res.arrayBuffer());
+                            const parapheImage = await pdfDoc.embedPng(parapheImageBytes);
+                            
+                            // Obtenir la page correspondante (index 0-based)
+                            const targetPage = pages[paraphe.page - 1];
+                            
+                            // Obtenir les dimensions de la page PDF
+                            const pageSize = targetPage.getSize();
+                            const pdfPageWidth = pageSize.width;
+                            const pdfPageHeight = pageSize.height;
+                            
+                            // NOUVELLE MÃ‰THODE SIMPLE ET PRÃ‰CISE - MÃ©thode 1 (PARAPHE)
+                            let pdfX, pdfY;
+                            
+                            try {
+                                const pdfCoords = await this.convertHtmlToPdfCoordinates(
+                                    paraphe.x,
+                                    paraphe.y,
+                                    paraphe.page
+                                );
+
+                                if (!pdfCoords) {
+                                    console.error('âŒ Impossible de convertir les coordonnÃ©es pour le paraphe');
+                                    continue;
+                                }
+
+                                // Appliquer la compensation visuelle pour les paraphes
+                                const compensatedCoords = this.applyVisualCompensation(pdfCoords.x, pdfCoords.y, 'paraphe');
+                                pdfX = compensatedCoords.x;
+                                pdfY = compensatedCoords.y;
+
+                                console.log('ðŸ“ NOUVELLE MÃ‰THODE - Paraphe conversion prÃ©cise:', {
+                                    html: { x: paraphe.x, y: paraphe.y },
+                                    pdf: { x: pdfX, y: pdfY },
+                                    page: paraphe.page,
+                                    method: 'MÃ©thode 1 - Ratios directs + Compensation (Paraphe)'
+                                });
+                            } catch (error) {
+                                console.error('âŒ Erreur nouvelle mÃ©thode paraphe, utilisation du fallback:', error);
+                                // Fallback vers la mÃ©thode simple
+                                const fallbackCoords = this.convertHtmlToPdfSimple(paraphe.x, paraphe.y, paraphe.page);
+                                if (fallbackCoords) {
+                                    pdfX = fallbackCoords.x;
+                                    pdfY = fallbackCoords.y;
+                                    console.log('ðŸ“ Fallback paraphe utilisÃ©:', { pdfX, pdfY });
+                                } else {
+                                    console.error('âŒ Ã‰chec du fallback paraphe, utilisation des coordonnÃ©es par dÃ©faut');
+                                    pdfX = paraphe.x;
+                                    pdfY = paraphe.y;
+                                }
+                            }
+                            
+                            // Calculer les dimensions proportionnelles basÃ©es sur la page rÃ©elle (COHÃ‰RENTES avec l'affichage)
+                            const parapheWidth = Math.min(60, pdfPageWidth * 0.10); // Max 10% de la largeur de page (plus petit que signature)
+                            const parapheHeight = parapheWidth * 0.4; // Ratio 2.5:1 pour un paraphe plus rÃ©aliste
+                            
+                            console.log('ðŸ“ Ajout du paraphe au PDF (approche module signature):', {
+                                originalX: paraphe.x,
+                                originalY: paraphe.y,
+                                pdfX: pdfX,
+                                pdfY: pdfY,
+                                width: parapheWidth,
+                                height: parapheHeight,
+                                pageSize: { width: pdfPageWidth, height: pdfPageHeight }
+                            });
+                            
+                            targetPage.drawImage(parapheImage, {
+                                x: pdfX,
+                                y: pdfY - parapheHeight, // NOUVELLE MÃ‰THODE : Compensation hauteur
+                                width: parapheWidth,
+                                height: parapheHeight,
+                                opacity: 0.8
+                            });
+                            
+                            console.log('ðŸ” NOUVELLE MÃ‰THODE - drawImage paraphe:', {
+                                pdfX: pdfX,
+                                pdfY: pdfY,
+                                parapheHeight: parapheHeight,
+                                finalY: pdfY - parapheHeight,
+                                adjustment: 'pdfY - parapheHeight',
+                                method: 'MÃ©thode 1 - Compensation hauteur (Paraphe)'
+                            });
+                        } catch (error) {
+                            console.error('âŒ Erreur paraphe:', error);
+                        }
+                    }
+                }
+            }
+            
+            // Ajouter les cachets sur leurs pages respectives
+            console.log('ðŸ” Cachets Ã  traiter:', this.cachets);
+            console.log('ðŸ” Nombre de cachets:', this.cachets.length);
+            
+            if (this.cachets.length > 0) {
+                for (const cachet of this.cachets) {
+                    console.log('ðŸ” Traitement cachet:', {
+                        id: cachet.id,
+                        url: cachet.url,
+                        page: cachet.page,
+                        x: cachet.x,
+                        y: cachet.y,
+                        totalPages: pages.length
+                    });
+                    
+                    if (cachet.url && cachet.page <= pages.length) {
+                        try {
+                            console.log('ðŸ“¥ Chargement de l\'image de cachet...');
+                            console.log('ðŸ”— URL de cachet:', cachet.url);
+                            
+                            // VÃ©rifier que l'URL est accessible
+                            const response = await fetch(cachet.url);
+                            if (!response.ok) {
+                                throw new Error(`Erreur HTTP: ${response.status} - ${response.statusText}`);
+                            }
+                            
+                            // Charger l'image de cachet
+                            const cachetImageBytes = await response.arrayBuffer();
+                            console.log('ðŸ“Š Taille de l\'image cachet:', cachetImageBytes.byteLength, 'bytes');
+                            
+                            const cachetImage = await pdfDoc.embedPng(cachetImageBytes);
+                            console.log('âœ… Image de cachet chargÃ©e avec succÃ¨s');
+                            
+                            // Obtenir la page correspondante (index 0-based)
+                            const targetPage = pages[cachet.page - 1];
+                            
+                            // Obtenir les dimensions de la page PDF
+                            const pageSize = targetPage.getSize();
+                            const pdfPageWidth = pageSize.width;
+                            const pdfPageHeight = pageSize.height;
+                            
+                            // NOUVELLE MÃ‰THODE SIMPLE ET PRÃ‰CISE - MÃ©thode 1 (CACHET)
+                            let pdfX, pdfY;
+                            
+                            try {
+                                const pdfCoords = await this.convertHtmlToPdfCoordinates(
+                                    cachet.x,
+                                    cachet.y,
+                                    cachet.page
+                                );
+
+                                if (!pdfCoords) {
+                                    console.error('âŒ Impossible de convertir les coordonnÃ©es pour le cachet');
+                                    continue;
+                                }
+
+                                // Appliquer la compensation visuelle pour les cachets
+                                const compensatedCoords = this.applyVisualCompensation(pdfCoords.x, pdfCoords.y, 'cachet');
+                                pdfX = compensatedCoords.x;
+                                pdfY = compensatedCoords.y;
+
+                                console.log('ðŸ“ NOUVELLE MÃ‰THODE - Cachet conversion prÃ©cise:', {
+                                    html: { x: cachet.x, y: cachet.y },
+                                    pdf: { x: pdfX, y: pdfY },
+                                    page: cachet.page,
+                                    method: 'MÃ©thode 1 - Ratios directs + Compensation (Cachet)'
+                                });
+                            } catch (error) {
+                                console.error('âŒ Erreur nouvelle mÃ©thode cachet, utilisation du fallback:', error);
+                                // Fallback vers la mÃ©thode simple
+                                const fallbackCoords = this.convertHtmlToPdfSimple(cachet.x, cachet.y, cachet.page);
+                                if (fallbackCoords) {
+                                    pdfX = fallbackCoords.x;
+                                    pdfY = fallbackCoords.y;
+                                    console.log('ðŸ“ Fallback cachet utilisÃ©:', { pdfX, pdfY });
+                                } else {
+                                    console.error('âŒ Ã‰chec du fallback cachet, utilisation des coordonnÃ©es par dÃ©faut');
+                                    pdfX = cachet.x;
+                                    pdfY = cachet.y;
+                                }
+                            }
+                            
+                            // Calculer les dimensions proportionnelles basÃ©es sur la page rÃ©elle (rÃ©duites)
+                            const cachetWidth = Math.min(80, pdfPageWidth * 0.12); // Max 12% de la largeur de page
+                            const cachetHeight = cachetWidth * 0.8; // Ratio 1.25:1 pour un cachet plus carrÃ©
+                            
+                            console.log('ðŸ“ Ajout du cachet au PDF (approche module signature):', {
+                                originalX: cachet.x,
+                                originalY: cachet.y,
+                                pdfX: pdfX,
+                                pdfY: pdfY,
+                                width: cachetWidth,
+                                height: cachetHeight,
+                                pageSize: { width: pdfPageWidth, height: pdfPageHeight }
+                            });
+                            
+                            console.log('ðŸŽ¨ Ajout du cachet Ã  la page:', {
+                                pageIndex: cachet.page - 1,
+                                pdfX: pdfX,
+                                pdfY: pdfY,
+                                width: cachetWidth,
+                                height: cachetHeight
+                            });
+                            
+                            targetPage.drawImage(cachetImage, {
+                                x: pdfX,
+                                y: pdfY - cachetHeight, // NOUVELLE MÃ‰THODE : Compensation hauteur
+                                width: cachetWidth,
+                                height: cachetHeight,
+                                opacity: 0.8
+                            });
+                            
+                            console.log('ðŸ” NOUVELLE MÃ‰THODE - drawImage cachet:', {
+                                pdfX: pdfX,
+                                pdfY: pdfY,
+                                cachetHeight: cachetHeight,
+                                finalY: pdfY - cachetHeight,
+                                adjustment: 'pdfY - cachetHeight',
+                                method: 'MÃ©thode 1 - Compensation hauteur (Cachet)'
+                            });
+                            
+                            console.log('âœ… Cachet ajoutÃ© avec succÃ¨s Ã  la page', cachet.page);
+                        } catch (error) {
+                            console.error('âŒ Erreur cachet:', error);
+                        }
+                    } else {
+                        console.warn('âš ï¸ Cachet ignorÃ©:', {
+                            hasUrl: !!cachet.url,
+                            pageValid: cachet.page <= pages.length,
+                            cachet: cachet
+                        });
+                    }
+                }
+            } else {
+                console.warn('âš ï¸ Aucun cachet Ã  traiter');
+            }
+            
+            // GÃ©nÃ©rer le PDF final
+            console.log('ðŸ“„ GÃ©nÃ©ration du PDF final...');
+            const pdfBytes = await pdfDoc.save();
+            console.log('âœ… PDF gÃ©nÃ©rÃ© avec succÃ¨s, taille:', pdfBytes.byteLength, 'bytes');
+            
+            // Envoyer le PDF au serveur pour stockage (sans tÃ©lÃ©chargement automatique)
+            await this.uploadPdfToServer(pdfBytes, `document_signe_${Date.now()}.pdf`);
+            
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    /**
+     * Envoyer le PDF gÃ©nÃ©rÃ© au serveur pour stockage
+     */
+    async uploadPdfToServer(pdfBytes, filename) {
+        try {
+            // VÃ©rifier que documentId est disponible
+            if (!this.config.documentId) {
+                throw new Error('ID du document non disponible');
+            }
+
+            // CrÃ©er un FormData pour envoyer le fichier
+            const formData = new FormData();
+            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            formData.append('signed_pdf', blob, filename);
+            formData.append('document_id', this.config.documentId);
+            
+            // RÃ©cupÃ©rer le token CSRF
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            if (csrfToken) {
+                formData.append('_token', csrfToken);
+            }
+
+            // Envoyer au serveur - utiliser l'URL de configuration ou l'URL par dÃ©faut
+            const uploadUrl = this.config.uploadUrl || '/documents/upload-signed-pdf';
+            const response = await fetch(uploadUrl, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Erreur serveur ${response.status}: ${errorText}`);
+            }
+
+            const result = await response.json();
+            console.log('ðŸ“¡ RÃ©ponse du serveur:', result);
+            
+            if (result.success) {
+                this.showStatus('PDF signÃ© stockÃ© avec succÃ¨s !', 'success');
+                
+                // Utiliser la redirection de la rÃ©ponse ou la configuration
+                const redirectUrl = result.redirect || this.config.redirectUrl || `/documents/${this.config.documentId}/process/view`;
+                
+                console.log('ðŸ”„ Redirection vers:', redirectUrl);
+                console.log('ðŸ“‹ Configuration redirectUrl:', this.config.redirectUrl);
+                console.log('ðŸ“‹ RÃ©ponse redirect:', result.redirect);
+                
+                // Rediriger vers la page appropriÃ©e aprÃ¨s un court dÃ©lai
+                setTimeout(() => {
+                    console.log('ðŸš€ ExÃ©cution de la redirection vers:', redirectUrl);
+                    window.location.href = redirectUrl;
+                }, 1500);
+            } else {
+                this.showStatus('Erreur lors du stockage: ' + result.message, 'error');
+            }
+        } catch (error) {
+            this.showStatus('Erreur lors de l\'envoi au serveur: ' + error.message, 'error');
+        }
+    }
+}
+
+// Ajouter les styles CSS
+const style = document.createElement('style');
+style.textContent = `
+    .signature-element, .paraphe-element {
+        position: absolute;
+        border: 2px solid #007bff;
+        background: rgba(0, 123, 255, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: bold;
+        color: #007bff;
+        cursor: move;
+        user-select: none;
+        z-index: 1000;
+        min-width: 80px;
+        min-height: 40px;
+    }
+    
+    .paraphe-element {
+        border-color: #28a745;
+        background: rgba(40, 167, 69, 0.1);
+        color: #28a745;
+        min-width: 40px;
+        min-height: 20px;
+    }
+    
+    .toast {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        max-width: 300px;
+    }
+    
+    .toast-content {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 16px;
+        border-radius: 6px;
+        font-weight: 500;
+    }
+    
+    .toast.success .toast-content {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+    
+    .toast.error .toast-content {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+    
+    .toast.warning .toast-content {
+        background: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeaa7;
+    }
+    
+    .toast.info .toast-content {
+        background: #d1ecf1;
+        color: #0c5460;
+        border: 1px solid #bee5eb;
+    }
+    
+    .toast.success .toast-content i {
+        color: #28a745;
+    }
+
+    .toast.error .toast-content i {
+        color: #dc3545;
+    }
+
+    .toast.warning .toast-content i {
+        color: #ffc107;
+    }
+
+    .toast.info .toast-content i {
+        color: #17a2b8;
+    }
+`;
+document.head.appendChild(style);
