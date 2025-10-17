@@ -693,8 +693,10 @@
             
             // Fonction pour ouvrir le menu
             function openMenu() {
+                console.log('📱 Ouverture du menu mobile');
                 navbarNavMobile.classList.remove('hidden');
-                
+                navbarNavMobile.style.display = 'block';
+
                 // Délai pour permettre la transition
                 setTimeout(() => {
                     mobileMenuOverlay.classList.remove('opacity-0');
@@ -702,9 +704,10 @@
                     mobileMenuPanel.classList.remove('-translate-x-full');
                     mobileMenuPanel.classList.add('translate-x-0');
                 }, 10);
-                
+
                 // Empêcher le scroll du body
                 document.body.style.overflow = 'hidden';
+                console.log('✅ Menu mobile ouvert');
             }
             
             // Fonction pour fermer le menu
