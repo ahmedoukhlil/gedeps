@@ -21,7 +21,9 @@ class PDFOverlayUnifiedModule {
             isPositioning: false,
             positioningType: null,
             activeElement: null,
-            isProcessing: false
+            isProcessing: false,
+            isResizing: false,
+            isRendering: false
         };
         
         // Collections d'éléments
@@ -826,63 +828,95 @@ class PDFOverlayUnifiedModule {
     // RENDU
     // ========================================
     async renderPage(pageNum) {
-        const container = document.getElementById(this.config.containerId);
-        if (!container) return;
-
-        // Vérifier le cache
-        const quality = this.getQuality();
-        const cacheKey = `${pageNum}_${this.state.scale}_${quality}`;
-        
-        if (this.cache.pages.has(cacheKey)) {
-            const cached = this.cache.pages.get(cacheKey);
-            container.innerHTML = '';
-            container.appendChild(cached.cloneNode(true));
-            this.renderElements();
+        // Protection contre les rendus simultanés
+        if (this.state.isRendering) {
+            this.log('⏳ Rendu déjà en cours, ignoré');
             return;
         }
 
-        // Rendu normal
-        container.innerHTML = '';
-        const page = await this.pdfDoc.getPage(pageNum);
-        const viewport = page.getViewport({ scale: this.state.scale });
-        
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d', {
-            alpha: false,
-            desynchronized: this.device.isMobile
-        });
-        
-        // Pixel ratio adapté
-        const pixelRatio = this.device.isMobile ? 
-            Math.min(this.device.pixelRatio, 2) : 
-            this.device.pixelRatio;
-        
-        canvas.width = viewport.width * pixelRatio;
-        canvas.height = viewport.height * pixelRatio;
-        canvas.style.width = '100%';
-        canvas.style.height = 'auto';
-        canvas.style.maxWidth = '100%';
-        canvas.style.display = 'block';
-        canvas.style.margin = '0 auto';
-        
-        ctx.scale(pixelRatio, pixelRatio);
-
-        await page.render({
-            canvasContext: ctx,
-            viewport,
-            intent: this.device.isMobile ? 'print' : 'display'
-        }).promise;
-
-        container.appendChild(canvas);
-        
-        // Mettre en cache (limité)
-        if (this.cache.pages.size >= 3) {
-            const firstKey = this.cache.pages.keys().next().value;
-            this.cache.pages.delete(firstKey);
+        const container = document.getElementById(this.config.containerId);
+        if (!container) {
+            console.error('❌ Container PDF introuvable');
+            return;
         }
-        this.cache.pages.set(cacheKey, canvas);
-        
-        this.renderElements();
+
+        this.state.isRendering = true;
+
+        try {
+            // Vérifier le cache
+            const quality = this.getQuality();
+            const cacheKey = `${pageNum}_${this.state.scale}_${quality}`;
+
+            if (this.cache.pages.has(cacheKey)) {
+                const cached = this.cache.pages.get(cacheKey);
+
+                // Vider uniquement le canvas, pas les overlays
+                const existingCanvas = container.querySelector('canvas');
+                if (existingCanvas) {
+                    existingCanvas.remove();
+                }
+
+                container.insertBefore(cached.cloneNode(true), container.firstChild);
+                this.renderElements();
+                this.log('✅ Page chargée depuis le cache');
+                return;
+            }
+
+            // Rendu normal - Supprimer uniquement le canvas existant
+            const existingCanvas = container.querySelector('canvas');
+            if (existingCanvas) {
+                existingCanvas.remove();
+            }
+
+            const page = await this.pdfDoc.getPage(pageNum);
+            const viewport = page.getViewport({ scale: this.state.scale });
+
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d', {
+                alpha: false,
+                desynchronized: this.device.isMobile
+            });
+
+            // Pixel ratio adapté
+            const pixelRatio = this.device.isMobile ?
+                Math.min(this.device.pixelRatio, 2) :
+                this.device.pixelRatio;
+
+            canvas.width = viewport.width * pixelRatio;
+            canvas.height = viewport.height * pixelRatio;
+            canvas.style.width = '100%';
+            canvas.style.height = 'auto';
+            canvas.style.maxWidth = '100%';
+            canvas.style.display = 'block';
+            canvas.style.margin = '0 auto';
+
+            ctx.scale(pixelRatio, pixelRatio);
+
+            await page.render({
+                canvasContext: ctx,
+                viewport,
+                intent: this.device.isMobile ? 'print' : 'display'
+            }).promise;
+
+            // Insérer le canvas au début du container (avant les overlays)
+            container.insertBefore(canvas, container.firstChild);
+
+            // Mettre en cache (limité)
+            if (this.cache.pages.size >= 3) {
+                const firstKey = this.cache.pages.keys().next().value;
+                this.cache.pages.delete(firstKey);
+            }
+            this.cache.pages.set(cacheKey, canvas);
+
+            this.renderElements();
+            this.log('✅ Page rendue avec succès');
+
+        } catch (error) {
+            console.error('❌ Erreur lors du rendu de la page:', error);
+            this.showToast('Erreur lors du rendu de la page', 'error');
+        } finally {
+            this.state.isRendering = false;
+        }
     }
 
     getQuality() {
@@ -1042,18 +1076,39 @@ class PDFOverlayUnifiedModule {
     // RESPONSIVE
     // ========================================
     handleResize() {
+        // Éviter les rendus multiples
+        if (this.state.isResizing) {
+            this.log('⏳ Resize déjà en cours, ignoré');
+            return;
+        }
+
+        this.state.isResizing = true;
+
         // Re-détecter le device
         const oldSize = this.device.viewport.size;
+        const oldOrientation = this.device.orientation;
         this.device = this.detectDevice();
-        
-        // Si changement de taille, invalider les caches
-        if (oldSize !== this.device.viewport.size) {
+
+        // Si changement significatif de taille ou orientation
+        const sizeChanged = oldSize !== this.device.viewport.size;
+        const orientationChanged = oldOrientation !== this.device.orientation;
+
+        if (sizeChanged || orientationChanged) {
+            this.log('📐 Resize détecté:', { oldSize, newSize: this.device.viewport.size, oldOrientation, newOrientation: this.device.orientation });
+
+            // Invalider les caches
             this.cache.pages.clear();
             this.invalidateConversionCache();
             this.state.scale = this.getInitialScale();
+
+            // Re-rendre la page
+            this.renderPage(this.state.currentPage).finally(() => {
+                this.state.isResizing = false;
+            });
+        } else {
+            // Juste un petit resize, pas besoin de tout recharger
+            this.state.isResizing = false;
         }
-        
-        this.renderPage(this.state.currentPage);
     }
 
     handleOrientationChange() {
