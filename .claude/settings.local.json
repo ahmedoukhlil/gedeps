@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(if exist \"debug-document-126.php\" del \"debug-document-126.php\")",
+      "Bash(if exist \".env.backup\" del \".env.backup\")",
+      "Bash(if exist \"public\\debug-sequential-list.php\" del \"public\\debug-sequential-list.php\")",
+      "Bash(if exist \"public\\debug-simple.php\" del \"public\\debug-simple.php\")",
+      "Bash(if exist \"public\\debug-db.php\" del \"public\\debug-db.php\")",
+      "Bash(if exist \"public\\debug-signed-documents.php\" del \"public\\debug-signed-documents.php\")",
+      "Bash(if exist \"public\\debug-sequential-flow-issue.php\" del \"public\\debug-sequential-flow-issue.php\")",
+      "Bash(if exist \"public\\debug-sequential-history.php\" del \"public\\debug-sequential-history.php\")",
+      "Bash(del \"debug-document-126.php\")",
+      "Bash(del \".env.backup\")",
+      "Bash(del \"public\\debug-sequential-list.php\")",
+      "Bash(del \"public\\debug-simple.php\")",
+      "Bash(del \"public\\debug-db.php\")",
+      "Bash(del \"public\\debug-signed-documents.php\")",
+      "Bash(del \"public\\debug-sequential-flow-issue.php\")",
+      "Bash(del \"public\\debug-sequential-history.php\")",
+      "Bash(rm:*)",
+      "Bash(find:*)",
+      "Bash(xargs:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

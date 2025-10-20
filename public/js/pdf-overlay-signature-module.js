@@ -590,6 +590,22 @@ class PDFOverlaySignatureModule {
     
     // Nouvelles fonctionnalités UX
     showToast(message, type = 'info', duration = 3000) {
+        // Utiliser le système de notifications Tailwind natif si disponible
+        if (window.notifications) {
+            window.notifications.show({
+                type: type,
+                title: this.getToastTitle(type),
+                message: message,
+                duration: duration
+            });
+        } else {
+            // Fallback sur l'ancien système
+            console.warn('Système de notifications Tailwind non disponible, utilisation du fallback');
+            this.showToastFallback(message, type, duration);
+        }
+    }
+
+    showToastFallback(message, type = 'info', duration = 3000) {
         // Créer le conteneur de toast s'il n'existe pas
         let toastContainer = document.querySelector('.toast-container');
         if (!toastContainer) {
@@ -597,18 +613,18 @@ class PDFOverlaySignatureModule {
             toastContainer.className = 'toast-container';
             document.body.appendChild(toastContainer);
         }
-        
+
         // Créer le toast
         const toast = document.createElement('div');
         toast.className = `toast ${type}`;
-        
+
         const iconMap = {
             'success': 'fas fa-check-circle',
             'error': 'fas fa-exclamation-circle',
             'warning': 'fas fa-exclamation-triangle',
             'info': 'fas fa-info-circle'
         };
-        
+
         toast.innerHTML = `
             <div style="display: flex; align-items: center; gap: 12px;">
                 <i class="${iconMap[type] || iconMap['info']}" style="font-size: 1.2rem;"></i>
@@ -618,12 +634,12 @@ class PDFOverlaySignatureModule {
                 </div>
             </div>
         `;
-        
+
         toastContainer.appendChild(toast);
-        
+
         // Animation d'apparition
         setTimeout(() => toast.classList.add('show'), 100);
-        
+
         // Suppression automatique
         setTimeout(() => {
             toast.classList.remove('show');

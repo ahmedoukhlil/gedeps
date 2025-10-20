@@ -115,18 +115,20 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 // Route pour uploader le PDF signé généré côté client
 Route::post('/documents/upload-signed-pdf', [DocumentProcessController::class, 'uploadSignedPdf'])->name('documents.upload-signed-pdf');
 
-// Route de debug pour vérifier les signatures
-Route::get('/debug/signature', function () {
-    $user = auth()->user();
-    return response()->json([
-        'hasSignature' => $user->hasSignature(),
-        'signatureUrl' => $user->getSignatureUrl(),
-        'hasParaphe' => $user->hasParaphe(),
-        'parapheUrl' => $user->getParapheUrl(),
-        'hasCachet' => $user->hasCachet(),
-        'cachetUrl' => $user->getCachetUrl(),
-    ]);
-})->middleware('auth');
+// Routes de debug - À DÉSACTIVER EN PRODUCTION
+if (config('app.debug')) {
+    Route::get('/debug/signature', function () {
+        $user = auth()->user();
+        return response()->json([
+            'hasSignature' => $user->hasSignature(),
+            'signatureUrl' => $user->getSignatureUrl(),
+            'hasParaphe' => $user->hasParaphe(),
+            'parapheUrl' => $user->getParapheUrl(),
+            'hasCachet' => $user->hasCachet(),
+            'cachetUrl' => $user->getCachetUrl(),
+        ]);
+    })->middleware('auth');
+}
 
 
 // Routes pour la gestion des documents
@@ -192,30 +194,31 @@ Route::middleware(['auth'])->group(function () {
 Route::get('/api/user-signature', [App\Http\Controllers\SignatureController::class, 'getUserSignature'])
     ->name('api.user-signature');
 
-// Route de test pour les signatures
-Route::get('/test-signature', function() {
-    return response()->json([
-        'success' => true,
-        'message' => 'Route de test fonctionnelle',
-        'user_authenticated' => auth()->check(),
-        'user_id' => auth()->id(),
-        'app_url' => config('app.url')
-    ]);
-});
+// Routes de test - À DÉSACTIVER EN PRODUCTION
+if (config('app.debug')) {
+    Route::get('/test-signature', function() {
+        return response()->json([
+            'success' => true,
+            'message' => 'Route de test fonctionnelle',
+            'user_authenticated' => auth()->check(),
+            'user_id' => auth()->id(),
+            'app_url' => config('app.url')
+        ]);
+    });
 
-// Routes publiques pour les tests (AVANT tout middleware)
-Route::get('/test-signature-simple', function() {
-    return response()->json(['success' => true, 'message' => 'Route simple fonctionnelle']);
-});
+    Route::get('/test-signature-simple', function() {
+        return response()->json(['success' => true, 'message' => 'Route simple fonctionnelle']);
+    });
 
-Route::get('/public/user-signature', function() {
-    return response()->json([
-        'success' => true,
-        'message' => 'Route publique fonctionnelle',
-        'authenticated' => auth()->check(),
-        'user_id' => auth()->id()
-    ]);
-});
+    Route::get('/public/user-signature', function() {
+        return response()->json([
+            'success' => true,
+            'message' => 'Route publique fonctionnelle',
+            'authenticated' => auth()->check(),
+            'user_id' => auth()->id()
+        ]);
+    });
+}
 
 // Route pour sauvegarder le PDF signé
 Route::post('/signatures/save-signed-pdf', [App\Http\Controllers\SignatureController::class, 'saveSignedPdf'])
@@ -237,11 +240,13 @@ Route::post('/signatures/save-signed-pdf', [App\Http\Controllers\SignatureContro
     Route::get('/signatures/{document}/certificate', [App\Http\Controllers\SignatureController::class, 'generateCertificate'])
          ->name('signatures.certificate');
     
-    // Routes de diagnostic
-    Route::get('/api/debug-signed-documents', [App\Http\Controllers\SignatureController::class, 'debugSignedDocuments']);
-    Route::get('/api/debug-signatures', [App\Http\Controllers\SignatureController::class, 'debugSignatures']);
-    Route::get('/api/check-signed-files', [App\Http\Controllers\SignatureController::class, 'checkSignedFiles']);
-    Route::get('/api/debug-document/{id}', [App\Http\Controllers\SignatureController::class, 'debugDocument']);
+    // Routes de diagnostic - À DÉSACTIVER EN PRODUCTION
+    if (config('app.debug')) {
+        Route::get('/api/debug-signed-documents', [App\Http\Controllers\SignatureController::class, 'debugSignedDocuments']);
+        Route::get('/api/debug-signatures', [App\Http\Controllers\SignatureController::class, 'debugSignatures']);
+        Route::get('/api/check-signed-files', [App\Http\Controllers\SignatureController::class, 'checkSignedFiles']);
+        Route::get('/api/debug-document/{id}', [App\Http\Controllers\SignatureController::class, 'debugDocument']);
+    }
     
     // Routes unifiées pour le traitement des documents
     // Les routes /signatures, /paraphes, /cachets et /combined sont gérées par /documents/{id}/process/{action}
@@ -334,7 +339,11 @@ Route::get('/api/signers', function () {
 
 // Routes pour les signatures séquentielles
 Route::get('/signatures-simple', [App\Http\Controllers\SimpleSequentialController::class, 'index'])->name('signatures.simple.index');
-Route::get('/signatures-simple/debug', [App\Http\Controllers\SimpleSequentialController::class, 'debugSequentialSignatures'])->name('signatures.simple.debug');
+
+// Route de debug - À DÉSACTIVER EN PRODUCTION
+if (config('app.debug')) {
+    Route::get('/signatures-simple/debug', [App\Http\Controllers\SimpleSequentialController::class, 'debugSequentialSignatures'])->name('signatures.simple.debug');
+}
 
 Route::get('/signatures-simple/{document}', [App\Http\Controllers\SimpleSequentialController::class, 'show'])->name('signatures.simple.show');
 Route::get('/signatures-simple/{document}/view', [App\Http\Controllers\SimpleSequentialController::class, 'show'])->name('signatures.simple.view');

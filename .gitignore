@@ -3,6 +3,9 @@
 .env
 .env.backup
 .env.production
+debug-*.php
+public/debug-*.php
+SECURITY_AUDIT_REPORT.md
 .phpactor.json
 .phpunit.result.cache
 /.fleet

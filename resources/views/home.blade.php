@@ -97,209 +97,6 @@
             </div>
         </div>
 
-        <!-- Statistiques essentielles - Grid responsive avec cartes élégantes -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 lg:gap-6 mb-6 sm:mb-8">
-            @if(auth()->user()->isAdmin())
-                <!-- Utilisateurs -->
-                <div class="group relative card card-hover p-6 overflow-hidden">
-                    <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary-400 to-primary-600 rounded-full blur-3xl opacity-20 -mr-16 -mt-16 group-hover:opacity-30 transition-opacity duration-300"></div>
-                    <div class="relative flex items-center gap-4">
-                        <div class="flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center shadow-elegant group-hover:shadow-glow group-hover:scale-110 transition-all duration-300">
-                            <i class="fas fa-users text-white text-xl"></i>
-                        </div>
-                        <div class="flex-1">
-                            <h3 class="text-3xl font-bold text-gray-900 mb-1">{{ $stats['total_users'] ?? 0 }}</h3>
-                            <p class="text-sm text-gray-600 font-medium">Utilisateurs</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Documents -->
-                <div class="group relative card card-hover p-6 overflow-hidden">
-                    <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-success-400 to-success-600 rounded-full blur-3xl opacity-20 -mr-16 -mt-16 group-hover:opacity-30 transition-opacity duration-300"></div>
-                    <div class="relative flex items-center gap-4">
-                        <div class="flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-success-400 to-success-600 flex items-center justify-center shadow-elegant group-hover:shadow-glow group-hover:scale-110 transition-all duration-300">
-                            <i class="fas fa-file-alt text-white text-xl"></i>
-                        </div>
-                        <div class="flex-1">
-                            <h3 class="text-3xl font-bold text-gray-900 mb-1">{{ $stats['total_documents'] ?? 0 }}</h3>
-                            <p class="text-sm text-gray-600 font-medium">Documents</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- En Attente -->
-                <div class="group relative card card-hover p-6 overflow-hidden">
-                    <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-warning-400 to-warning-600 rounded-full blur-3xl opacity-20 -mr-16 -mt-16 group-hover:opacity-30 transition-opacity duration-300"></div>
-                    <div class="relative flex items-center gap-4">
-                        <div class="flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-warning-400 to-warning-600 flex items-center justify-center shadow-elegant group-hover:shadow-glow group-hover:scale-110 transition-all duration-300">
-                            <i class="fas fa-clock text-white text-xl"></i>
-                        </div>
-                        <div class="flex-1">
-                            <h3 class="text-3xl font-bold text-gray-900 mb-1">{{ $stats['pending_documents'] ?? 0 }}</h3>
-                            <p class="text-sm text-gray-600 font-medium">En Attente</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Signés -->
-                <div class="group relative card card-hover p-6 overflow-hidden">
-                    <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-success-400 to-success-600 rounded-full blur-3xl opacity-20 -mr-16 -mt-16 group-hover:opacity-30 transition-opacity duration-300"></div>
-                    <div class="relative flex items-center gap-4">
-                        <div class="flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-success-400 to-success-600 flex items-center justify-center shadow-elegant group-hover:shadow-glow group-hover:scale-110 transition-all duration-300">
-                            <i class="fas fa-check-circle text-white text-xl"></i>
-                        </div>
-                        <div class="flex-1">
-                            <h3 class="text-3xl font-bold text-gray-900 mb-1">{{ $stats['signed_documents'] ?? 0 }}</h3>
-                            <p class="text-sm text-gray-600 font-medium">Signés</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Séquentielles -->
-                <div class="group relative card card-hover p-6 overflow-hidden">
-                    <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-info-400 to-info-600 rounded-full blur-3xl opacity-20 -mr-16 -mt-16 group-hover:opacity-30 transition-opacity duration-300"></div>
-                    <div class="relative flex items-center gap-4">
-                        <div class="flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-info-400 to-info-600 flex items-center justify-center shadow-elegant group-hover:shadow-glow group-hover:scale-110 transition-all duration-300">
-                            <i class="fas fa-list-ol text-white text-xl"></i>
-                        </div>
-                        <div class="flex-1">
-                            <h3 class="text-3xl font-bold text-gray-900 mb-1">{{ $stats['sequential_documents'] ?? 0 }}</h3>
-                            <p class="text-sm text-gray-600 font-medium">Séquentielles</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- En Cours -->
-                <div class="group relative card card-hover p-6 overflow-hidden">
-                    <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-warning-400 to-warning-600 rounded-full blur-3xl opacity-20 -mr-16 -mt-16 group-hover:opacity-30 transition-opacity duration-300"></div>
-                    <div class="relative flex items-center gap-4">
-                        <div class="flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-warning-400 to-warning-600 flex items-center justify-center shadow-elegant group-hover:shadow-glow group-hover:scale-110 transition-all duration-300">
-                            <i class="fas fa-clock text-white text-xl"></i>
-                        </div>
-                        <div class="flex-1">
-                            <h3 class="text-3xl font-bold text-gray-900 mb-1">{{ $stats['sequential_pending'] ?? 0 }}</h3>
-                            <p class="text-sm text-gray-600 font-medium">En Cours</p>
-                        </div>
-                    </div>
-                </div>
-
-            @elseif(auth()->user()->isAgent())
-                <!-- Mes Documents -->
-                <div class="group relative card card-hover p-6 overflow-hidden">
-                    <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary-400 to-primary-600 rounded-full blur-3xl opacity-20 -mr-16 -mt-16 group-hover:opacity-30 transition-opacity duration-300"></div>
-                    <div class="relative flex items-center gap-4">
-                        <div class="flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center shadow-elegant group-hover:shadow-glow group-hover:scale-110 transition-all duration-300">
-                            <i class="fas fa-file-alt text-white text-xl"></i>
-                        </div>
-                        <div class="flex-1">
-                            <h3 class="text-3xl font-bold text-gray-900 mb-1">{{ $stats['my_documents'] ?? 0 }}</h3>
-                            <p class="text-sm text-gray-600 font-medium">Mes Documents</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- En Attente -->
-                <div class="group relative card card-hover p-6 overflow-hidden">
-                    <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-warning-400 to-warning-600 rounded-full blur-3xl opacity-20 -mr-16 -mt-16 group-hover:opacity-30 transition-opacity duration-300"></div>
-                    <div class="relative flex items-center gap-4">
-                        <div class="flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-warning-400 to-warning-600 flex items-center justify-center shadow-elegant group-hover:shadow-glow group-hover:scale-110 transition-all duration-300">
-                            <i class="fas fa-clock text-white text-xl"></i>
-                        </div>
-                        <div class="flex-1">
-                            <h3 class="text-3xl font-bold text-gray-900 mb-1">{{ $stats['pending_approval'] ?? 0 }}</h3>
-                            <p class="text-sm text-gray-600 font-medium">En Attente</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Signés -->
-                <div class="group relative card card-hover p-6 overflow-hidden">
-                    <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-success-400 to-success-600 rounded-full blur-3xl opacity-20 -mr-16 -mt-16 group-hover:opacity-30 transition-opacity duration-300"></div>
-                    <div class="relative flex items-center gap-4">
-                        <div class="flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-success-400 to-success-600 flex items-center justify-center shadow-elegant group-hover:shadow-glow group-hover:scale-110 transition-all duration-300">
-                            <i class="fas fa-check-circle text-white text-xl"></i>
-                        </div>
-                        <div class="flex-1">
-                            <h3 class="text-3xl font-bold text-gray-900 mb-1">{{ $stats['signed_documents'] ?? 0 }}</h3>
-                            <p class="text-sm text-gray-600 font-medium">Signés</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Séquentielles Créées -->
-                <div class="group relative card card-hover p-6 overflow-hidden">
-                    <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-info-400 to-info-600 rounded-full blur-3xl opacity-20 -mr-16 -mt-16 group-hover:opacity-30 transition-opacity duration-300"></div>
-                    <div class="relative flex items-center gap-4">
-                        <div class="flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-info-400 to-info-600 flex items-center justify-center shadow-elegant group-hover:shadow-glow group-hover:scale-110 transition-all duration-300">
-                            <i class="fas fa-list-ol text-white text-xl"></i>
-                        </div>
-                        <div class="flex-1">
-                            <h3 class="text-3xl font-bold text-gray-900 mb-1">{{ $stats['sequential_created'] ?? 0 }}</h3>
-                            <p class="text-sm text-gray-600 font-medium">Séquentielles Créées</p>
-                        </div>
-                    </div>
-                </div>
-
-            @elseif(auth()->user()->isSignataire())
-                <!-- À Signer (Simples) -->
-                <div class="group relative card card-hover p-6 overflow-hidden">
-                    <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary-400 to-primary-600 rounded-full blur-3xl opacity-20 -mr-16 -mt-16 group-hover:opacity-30 transition-opacity duration-300"></div>
-                    <div class="relative flex items-center gap-4">
-                        <div class="flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center shadow-elegant group-hover:shadow-glow group-hover:scale-110 transition-all duration-300">
-                            <i class="fas fa-pen-fancy text-white text-xl"></i>
-                        </div>
-                        <div class="flex-1">
-                            <h3 class="text-3xl font-bold text-gray-900 mb-1">{{ $stats['pending_documents'] ?? 0 }}</h3>
-                            <p class="text-sm text-gray-600 font-medium">À Signer (Simples)</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Séquentielles -->
-                <div class="group relative card card-hover p-6 overflow-hidden">
-                    <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-info-400 to-info-600 rounded-full blur-3xl opacity-20 -mr-16 -mt-16 group-hover:opacity-30 transition-opacity duration-300"></div>
-                    <div class="relative flex items-center gap-4">
-                        <div class="flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-info-400 to-info-600 flex items-center justify-center shadow-elegant group-hover:shadow-glow group-hover:scale-110 transition-all duration-300">
-                            <i class="fas fa-list-ol text-white text-xl"></i>
-                        </div>
-                        <div class="flex-1">
-                            <h3 class="text-3xl font-bold text-gray-900 mb-1">{{ $stats['sequential_pending'] ?? 0 }}</h3>
-                            <p class="text-sm text-gray-600 font-medium">Séquentielles</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Signés (Simples) -->
-                <div class="group relative card card-hover p-6 overflow-hidden">
-                    <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-success-400 to-success-600 rounded-full blur-3xl opacity-20 -mr-16 -mt-16 group-hover:opacity-30 transition-opacity duration-300"></div>
-                    <div class="relative flex items-center gap-4">
-                        <div class="flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-success-400 to-success-600 flex items-center justify-center shadow-elegant group-hover:shadow-glow group-hover:scale-110 transition-all duration-300">
-                            <i class="fas fa-check-circle text-white text-xl"></i>
-                        </div>
-                        <div class="flex-1">
-                            <h3 class="text-3xl font-bold text-gray-900 mb-1">{{ $stats['signed_documents'] ?? 0 }}</h3>
-                            <p class="text-sm text-gray-600 font-medium">Signés (Simples)</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Signés (Séquentielles) -->
-                <div class="group relative card card-hover p-6 overflow-hidden">
-                    <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-success-400 to-success-600 rounded-full blur-3xl opacity-20 -mr-16 -mt-16 group-hover:opacity-30 transition-opacity duration-300"></div>
-                    <div class="relative flex items-center gap-4">
-                        <div class="flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-success-400 to-success-600 flex items-center justify-center shadow-elegant group-hover:shadow-glow group-hover:scale-110 transition-all duration-300">
-                            <i class="fas fa-check-double text-white text-xl"></i>
-                        </div>
-                        <div class="flex-1">
-                            <h3 class="text-3xl font-bold text-gray-900 mb-1">{{ $stats['sequential_signed'] ?? 0 }}</h3>
-                            <p class="text-sm text-gray-600 font-medium">Signés (Séquentielles)</p>
-                        </div>
-                    </div>
-                </div>
-            @endif
-        </div>
-
         <!-- Actions rapides - Tailwind CSS uniquement - Responsive -->
         <div class="bg-white rounded-xl sm:rounded-2xl shadow-soft sm:shadow-lg p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8">
             <h3 class="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">Actions Rapides</h3>
@@ -337,8 +134,11 @@
                 @if(auth()->user()->isSignataire())
                     <a href="{{ route('signatures.index') }}" class="group flex items-center gap-3 sm:gap-4 lg:gap-5 p-4 sm:p-5 lg:p-6 bg-gradient-to-br from-white to-blue-50 border-2 sm:border-3 border-transparent rounded-lg sm:rounded-xl shadow-md hover:shadow-xl sm:hover:shadow-2xl hover:-translate-y-1 sm:hover:-translate-y-2 hover:scale-102 sm:hover:scale-105 hover:border-primary transition-all duration-300 relative overflow-hidden">
                         <div class="absolute top-0 left-0 w-1 sm:w-2 h-full bg-gradient-to-b from-primary-400 via-primary to-primary-600 group-hover:w-2 sm:group-hover:w-4 transition-all duration-300"></div>
-                        <div class="flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-xl sm:rounded-2xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white text-lg sm:text-xl lg:text-2xl shadow-md sm:shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+                        <div class="flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-xl sm:rounded-2xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white text-lg sm:text-xl lg:text-2xl shadow-md sm:shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 relative">
                             <i class="fas fa-pen-fancy"></i>
+                            @if(isset($counts['simple_signatures']) && $counts['simple_signatures'] > 0)
+                                <span class="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 w-5 h-5 sm:w-6 sm:h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-lg border-2 border-white">{{ $counts['simple_signatures'] }}</span>
+                            @endif
                         </div>
                         <div class="flex-1 min-w-0">
                             <h4 class="text-base sm:text-lg font-bold text-gray-900 mb-0.5 sm:mb-1 group-hover:text-primary-600 transition-colors duration-300 truncate">Signatures<span class="hidden sm:inline"> Simples</span></h4>
@@ -351,8 +151,11 @@
                     
                     <a href="{{ route('signatures.simple.index') }}" class="group flex items-center gap-3 sm:gap-4 lg:gap-5 p-4 sm:p-5 lg:p-6 bg-gradient-to-br from-white to-blue-50 border-2 sm:border-3 border-transparent rounded-lg sm:rounded-xl shadow-md hover:shadow-xl sm:hover:shadow-2xl hover:-translate-y-1 sm:hover:-translate-y-2 hover:scale-102 sm:hover:scale-105 hover:border-primary transition-all duration-300 relative overflow-hidden">
                         <div class="absolute top-0 left-0 w-1 sm:w-2 h-full bg-gradient-to-b from-primary-400 via-primary to-primary-600 group-hover:w-2 sm:group-hover:w-4 transition-all duration-300"></div>
-                        <div class="flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-xl sm:rounded-2xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white text-lg sm:text-xl lg:text-2xl shadow-md sm:shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+                        <div class="flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-xl sm:rounded-2xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white text-lg sm:text-xl lg:text-2xl shadow-md sm:shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 relative">
                             <i class="fas fa-list-ol"></i>
+                            @if(isset($counts['sequential_signatures']) && $counts['sequential_signatures'] > 0)
+                                <span class="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 w-5 h-5 sm:w-6 sm:h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-lg border-2 border-white">{{ $counts['sequential_signatures'] }}</span>
+                            @endif
                         </div>
                         <div class="flex-1 min-w-0">
                             <h4 class="text-base sm:text-lg font-bold text-gray-900 mb-0.5 sm:mb-1 group-hover:text-primary-600 transition-colors duration-300 truncate">Séquentielles</h4>
@@ -382,8 +185,11 @@
 
                 <a href="{{ route('documents.pending') }}" class="group flex items-center gap-3 sm:gap-4 lg:gap-5 p-4 sm:p-5 lg:p-6 bg-gradient-to-br from-white to-blue-50 border-2 sm:border-3 border-transparent rounded-lg sm:rounded-xl shadow-md hover:shadow-xl sm:hover:shadow-2xl hover:-translate-y-1 sm:hover:-translate-y-2 hover:scale-102 sm:hover:scale-105 hover:border-primary transition-all duration-300 relative overflow-hidden">
                     <div class="absolute top-0 left-0 w-1 sm:w-2 h-full bg-gradient-to-b from-primary-400 via-primary to-primary-600 group-hover:w-2 sm:group-hover:w-4 transition-all duration-300"></div>
-                    <div class="flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-xl sm:rounded-2xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white text-lg sm:text-xl lg:text-2xl shadow-md sm:shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+                    <div class="flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-xl sm:rounded-2xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white text-lg sm:text-xl lg:text-2xl shadow-md sm:shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 relative">
                         <i class="fas fa-clock"></i>
+                        @if(isset($counts['pending']) && $counts['pending'] > 0)
+                            <span class="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 w-5 h-5 sm:w-6 sm:h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-lg border-2 border-white">{{ $counts['pending'] }}</span>
+                        @endif
                     </div>
                     <div class="flex-1 min-w-0">
                         <h4 class="text-base sm:text-lg font-bold text-gray-900 mb-0.5 sm:mb-1 group-hover:text-primary-600 transition-colors duration-300 truncate">En Attente</h4>

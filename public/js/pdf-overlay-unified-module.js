@@ -1824,8 +1824,24 @@ class PDFOverlayUnifiedModule {
     // NOTIFICATIONS
     // ========================================
     showToast(message, type = 'info') {
+        // Utiliser le système de notifications Tailwind natif si disponible
+        if (window.notifications) {
+            window.notifications.show({
+                type: type,
+                title: message,
+                message: '',
+                duration: 3000
+            });
+        } else {
+            // Fallback sur l'ancien système si le nouveau n'est pas chargé
+            console.warn('Système de notifications Tailwind non disponible, utilisation du fallback');
+            this.showToastFallback(message, type);
+        }
+    }
+
+    showToastFallback(message, type = 'info') {
         let toast = document.querySelector('.pdf-toast');
-        
+
         if (!toast) {
             toast = document.createElement('div');
             toast.className = 'pdf-toast';

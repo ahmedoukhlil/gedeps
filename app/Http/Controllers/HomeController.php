@@ -9,60 +9,51 @@ use Illuminate\Http\Request;
 class HomeController extends Controller
 {
     /**
-     * Afficher la page d'accueil avec les statistiques
+     * Afficher la page d'accueil
      */
     public function index()
     {
         if (!auth()->check()) {
             return redirect()->route('login');
         }
-        
-        $stats = $this->getDashboardStats();
-        
-        return view('home', compact('stats'));
+
+        $counts = $this->getCounts();
+
+        return view('home', compact('counts'));
     }
 
     /**
-     * Obtenir les statistiques du dashboard
+     * Obtenir les compteurs pour les badges de notification
      */
-    protected function getDashboardStats()
+    protected function getCounts()
     {
         $user = auth()->user();
-        $stats = [];
+        $counts = [
+            'pending' => 0,
+            'simple_signatures' => 0,
+            'sequential_signatures' => 0,
+        ];
 
         if ($user->isAdmin()) {
-            $stats = [
-                'total_users' => \App\Models\User::count(),
-                'total_documents' => Document::count(),
-                'pending_documents' => Document::where('status', 'pending')->count(),
-                'signed_documents' => Document::where('status', 'signed')->count(),
-                'sequential_documents' => Document::where('sequential_signatures', true)->count(),
-                'sequential_pending' => Document::where('sequential_signatures', true)
-                    ->where('status', 'in_progress')->count(),
-            ];
+            $counts['pending'] = Document::whereIn('status', ['pending', 'in_progress'])->count();
         } elseif ($user->isAgent()) {
-            $stats = [
-                'my_documents' => Document::where('uploaded_by', $user->id)->count(),
-                'pending_approval' => Document::where('uploaded_by', $user->id)
-                    ->whereIn('status', ['pending', 'in_progress'])->count(),
-                'signed_documents' => Document::where('uploaded_by', $user->id)
-                    ->where('status', 'signed')->count(),
-                'sequential_created' => Document::where('uploaded_by', $user->id)
-                    ->where('sequential_signatures', true)->count(),
-            ];
+            $counts['pending'] = Document::where('uploaded_by', $user->id)
+                ->whereIn('status', ['pending', 'in_progress'])->count();
         } elseif ($user->isSignataire()) {
-            $stats = [
-                'pending_documents' => Document::where('signer_id', $user->id)
-                    ->where('status', 'pending')->count(),
-                'signed_documents' => Document::where('signer_id', $user->id)
-                    ->where('status', 'signed')->count(),
-                'sequential_pending' => SequentialSignature::where('user_id', $user->id)
-                    ->where('status', 'pending')->count(),
-                'sequential_signed' => SequentialSignature::where('user_id', $user->id)
-                    ->where('status', 'signed')->count(),
-            ];
+            // Documents simples à signer
+            $counts['simple_signatures'] = Document::where('signer_id', $user->id)
+                ->where('status', 'pending')
+                ->where('sequential_signatures', false)
+                ->count();
+
+            // Signatures séquentielles en attente
+            $counts['sequential_signatures'] = SequentialSignature::where('user_id', $user->id)
+                ->where('status', 'pending')
+                ->count();
+
+            $counts['pending'] = $counts['simple_signatures'] + $counts['sequential_signatures'];
         }
 
-        return $stats;
+        return $counts;
     }
 }

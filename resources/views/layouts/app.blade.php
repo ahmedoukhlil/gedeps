@@ -377,33 +377,21 @@
             </div>
         </div>
 
-        <!-- Flash Messages -->
+        <!-- Flash Messages - Hidden elements for Tailwind notifications -->
         @if(session('success'))
-            <div class="fixed top-4 right-4 sophisticated-primary px-6 py-3 rounded-lg shadow-lg z-50 flex items-center space-x-2 sophisticated-animate" id="flash-message">
-                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                </svg>
-                <span class="text-white">{{ session('success') }}</span>
-                <button onclick="document.getElementById('flash-message').remove()" class="ml-2 text-white hover:text-gray-200">
-                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                    </svg>
-                </button>
-            </div>
+            <div data-session-message data-session-type="success" data-session-title="Succès" class="hidden">{{ session('success') }}</div>
         @endif
 
         @if(session('error'))
-            <div class="fixed top-4 right-4 sophisticated-alert-error px-6 py-3 rounded-lg shadow-lg z-50 flex items-center space-x-2 sophisticated-animate" id="flash-message">
-                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
-                </svg>
-                <span class="text-white">{{ session('error') }}</span>
-                <button onclick="document.getElementById('flash-message').remove()" class="ml-2 text-white hover:text-gray-200">
-                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                    </svg>
-                </button>
-            </div>
+            <div data-session-message data-session-type="error" data-session-title="Erreur" class="hidden">{{ session('error') }}</div>
+        @endif
+
+        @if(session('warning'))
+            <div data-session-message data-session-type="warning" data-session-title="Attention" class="hidden">{{ session('warning') }}</div>
+        @endif
+
+        @if(session('info'))
+            <div data-session-message data-session-type="info" data-session-title="Information" class="hidden">{{ session('info') }}</div>
         @endif
 
         <!-- Page Content -->
@@ -416,19 +404,9 @@
 
     @livewireScripts
     <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-    
-    <!-- Auto-hide flash messages -->
-    <script>
-        // Auto-hide flash messages after 5 seconds
-        setTimeout(function() {
-            const flashMessage = document.getElementById('flash-message');
-            if (flashMessage) {
-                flashMessage.style.transition = 'opacity 0.5s ease-out';
-                flashMessage.style.opacity = '0';
-                setTimeout(() => flashMessage.remove(), 500);
-            }
-        }, 5000);
 
+    <!-- Form handlers -->
+    <script>
         // Loading indicator for forms - Éviter les conflits
         document.addEventListener('DOMContentLoaded', function() {
             // Vérifier si le module n'est pas déjà initialisé
@@ -794,7 +772,7 @@
         });
     </script>
     
-    <!-- Toast Notifications System -->
-    <script src="{{ asset('js/toast-notifications.js') }}"></script>
+    <!-- Tailwind Notifications System -->
+    <script src="{{ asset('js/tailwind-notifications.js') }}"></script>
 </body>
 </html>
