@@ -397,4 +397,69 @@ class DocumentController extends Controller
             'Content-Disposition' => 'inline; filename="signed_' . $document->filename_original . '"'
         ]);
     }
+
+    /**
+     * Supprimer un document
+     */
+    public function destroy(Document $document)
+    {
+        try {
+            // Vérifier les permissions
+            $canDelete = false;
+
+            if (auth()->user()->isAdmin()) {
+                // Les admins peuvent tout supprimer
+                $canDelete = true;
+            } elseif (auth()->user()->isAgent() && $document->uploaded_by === auth()->id()) {
+                // Les agents peuvent supprimer leurs propres documents
+                $canDelete = true;
+            } elseif (auth()->user()->isSignataire()) {
+                // Les signataires peuvent supprimer les documents qui leur sont assignés
+                if ($document->sequential_signatures) {
+                    // Pour les signatures séquentielles, vérifier si le signataire est dans la liste
+                    $canDelete = $document->sequentialSignatures()
+                        ->where('user_id', auth()->id())
+                        ->exists();
+                } else {
+                    // Pour les signatures simples, vérifier si c'est le signataire assigné
+                    $canDelete = ($document->signer_id === auth()->id());
+                }
+            }
+
+            if (!$canDelete) {
+                return redirect()->back()->with('error', 'Vous n\'avez pas la permission de supprimer ce document.');
+            }
+
+            // Supprimer le fichier original
+            if ($document->path_original && Storage::disk('public')->exists($document->path_original)) {
+                Storage::disk('public')->delete($document->path_original);
+            }
+
+            // Supprimer les fichiers signés s'ils existent
+            if ($document->signatures()->exists()) {
+                foreach ($document->signatures as $signature) {
+                    if ($signature->path_signed_pdf && Storage::disk('public')->exists($signature->path_signed_pdf)) {
+                        Storage::disk('public')->delete($signature->path_signed_pdf);
+                    }
+                }
+            }
+
+            // Supprimer les signatures séquentielles associées
+            if ($document->sequentialSignatures()->exists()) {
+                $document->sequentialSignatures()->delete();
+            }
+
+            // Supprimer les signatures associées
+            $document->signatures()->delete();
+
+            // Supprimer le document de la base de données
+            $document->delete();
+
+            return redirect()->route('documents.history')->with('success', 'Document supprimé avec succès.');
+
+        } catch (\Exception $e) {
+            \Log::error('Erreur lors de la suppression du document: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Erreur lors de la suppression du document: ' . $e->getMessage());
+        }
+    }
 }

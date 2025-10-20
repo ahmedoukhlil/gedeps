@@ -212,6 +212,18 @@
                 <span class="hidden sm:inline">Télécharger</span>
                 <span class="sm:hidden">DL</span>
             </a>
+
+            <!-- Bouton de suppression -->
+            <form action="{{ route('documents.destroy', $document) }}" method="POST" class="inline-block" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce document ? Cette action est irréversible.');">
+                @csrf
+                @method('DELETE')
+                <button type="submit"
+                        class="inline-flex items-center justify-center px-4 py-2.5 sm:px-6 sm:py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold text-sm sm:text-base w-full sm:w-auto">
+                    <i class="fas fa-trash mr-2 text-white"></i>
+                    <span class="hidden sm:inline">Supprimer</span>
+                    <span class="sm:hidden">Del</span>
+                </button>
+            </form>
         </div>
     </div>
 </div>

@@ -149,7 +149,11 @@ Route::middleware(['auth'])->group(function () {
     // Historique des documents
     Route::get('/documents/history', [DocumentController::class, 'history'])
          ->name('documents.history');
-    
+
+    // Suppression de document
+    Route::delete('/documents/{document}', [DocumentController::class, 'destroy'])
+         ->name('documents.destroy');
+
     // Profil utilisateur
     Route::get('/profile', [App\Http\Controllers\ProfileController::class, 'index'])
          ->name('profile.index');
