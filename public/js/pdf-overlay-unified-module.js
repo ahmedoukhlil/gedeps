@@ -218,7 +218,7 @@ class PDFOverlayUnifiedModule {
                     'Accept': 'application/json'
                 }
             });
-            
+
             if (response.ok) {
                 const data = await response.json();
                 if (data.success && (data.cachet_url || data.cachetUrl)) {
@@ -228,6 +228,52 @@ class PDFOverlayUnifiedModule {
             }
         } catch (error) {
             this.log('⚠️ Cachet non disponible');
+        }
+
+        // Charger Cachet Prestataire (P)
+        if (this.config.hasCachetP) {
+            try {
+                const urlP = this.config.cachetPUrl || '/signatures/user-cachet-p';
+                const responseP = await fetch(urlP, {
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (responseP.ok) {
+                    const dataP = await responseP.json();
+                    if (dataP.success && (dataP.cachet_url || dataP.cachetUrl)) {
+                        this.userCachetPUrl = dataP.cachet_url || dataP.cachetUrl;
+                        await this.preloadImage(this.userCachetPUrl, 'cachet-p');
+                    }
+                }
+            } catch (error) {
+                this.log('⚠️ Cachet Prestataire non disponible');
+            }
+        }
+
+        // Charger Cachet Fournisseur (F)
+        if (this.config.hasCachetF) {
+            try {
+                const urlF = this.config.cachetFUrl || '/signatures/user-cachet-f';
+                const responseF = await fetch(urlF, {
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (responseF.ok) {
+                    const dataF = await responseF.json();
+                    if (dataF.success && (dataF.cachet_url || dataF.cachetUrl)) {
+                        this.userCachetFUrl = dataF.cachet_url || dataF.cachetUrl;
+                        await this.preloadImage(this.userCachetFUrl, 'cachet-f');
+                    }
+                }
+            } catch (error) {
+                this.log('⚠️ Cachet Fournisseur non disponible');
+            }
         }
     }
 
@@ -263,7 +309,9 @@ class PDFOverlayUnifiedModule {
         // Boutons d'action - TOUCH PRIORITY
         this.attachMobileButton(this.config.addSignatureBtnId, () => this.startPositioning('signature'));
         this.attachMobileButton(this.config.addParapheBtnId, () => this.startPositioning('paraphe'));
-        this.attachMobileButton(this.config.addCachetBtnId, () => this.startPositioning('cachet'));
+        this.attachMobileButton(this.config.addCachetBtnId, () => this.startPositioning('cachet')); // Rétrocompatibilité
+        this.attachMobileButton(this.config.addCachetPBtnId, () => this.startPositioning('cachet-p'));
+        this.attachMobileButton(this.config.addCachetFBtnId, () => this.startPositioning('cachet-f'));
         this.attachMobileButton(this.config.clearAllBtnId, () => this.clearAll());
         this.attachMobileButton(this.config.submitBtnId, () => this.submitForm());
 
@@ -445,7 +493,9 @@ class PDFOverlayUnifiedModule {
         // Boutons - Click simple
         this.attachDesktopButton(this.config.addSignatureBtnId, () => this.startPositioningOverlay('signature'));
         this.attachDesktopButton(this.config.addParapheBtnId, () => this.startPositioningOverlay('paraphe'));
-        this.attachDesktopButton(this.config.addCachetBtnId, () => this.startPositioningOverlay('cachet'));
+        this.attachDesktopButton(this.config.addCachetBtnId, () => this.startPositioningOverlay('cachet')); // Rétrocompatibilité
+        this.attachDesktopButton(this.config.addCachetPBtnId, () => this.startPositioningOverlay('cachet-p'));
+        this.attachDesktopButton(this.config.addCachetFBtnId, () => this.startPositioningOverlay('cachet-f'));
         this.attachDesktopButton(this.config.clearAllBtnId, () => this.clearAll());
         this.attachDesktopButton(this.config.submitBtnId, () => this.submitForm());
 
@@ -752,7 +802,11 @@ class PDFOverlayUnifiedModule {
         // Ajouter à la collection appropriée
         if (type === 'signature') this.signatures.push(element);
         else if (type === 'paraphe') this.paraphes.push(element);
-        else if (type === 'cachet') this.cachets.push(element);
+        else if (type === 'cachet' || type === 'cachet-p' || type === 'cachet-f') {
+            // Stocker le type exact dans l'élément
+            element.cachetType = type;
+            this.cachets.push(element);
+        }
 
         this.renderElements();
         this.updateFormData();
@@ -760,8 +814,12 @@ class PDFOverlayUnifiedModule {
     }
 
     getElementSize(type) {
-        const baseWidth = type === 'signature' ? 120 : type === 'cachet' ? 100 : 80;
-        
+        // Déterminer la largeur de base selon le type
+        let baseWidth;
+        if (type === 'signature') baseWidth = 120;
+        else if (type === 'cachet' || type === 'cachet-p' || type === 'cachet-f') baseWidth = 100;
+        else baseWidth = 80; // paraphe
+
         // Adapter à la taille d'écran
         let scale = 1;
         if (this.device.isMobile) {
@@ -771,10 +829,11 @@ class PDFOverlayUnifiedModule {
                 case 'md': scale = 0.85; break;
             }
         }
-        
+
         const width = baseWidth * scale;
-        const ratio = type === 'cachet' ? 0.8 : 0.4;
-        
+        // Ratio hauteur/largeur: cachets plus carrés (0.8) que signatures/paraphes (0.4)
+        const ratio = (type === 'cachet' || type === 'cachet-p' || type === 'cachet-f') ? 0.8 : 0.4;
+
         return {
             width,
             height: width * ratio
@@ -785,7 +844,9 @@ class PDFOverlayUnifiedModule {
         switch (type) {
             case 'signature': return this.userSignatureUrl || this.config.signatureUrl;
             case 'paraphe': return this.userParapheUrl || this.config.parapheUrl;
-            case 'cachet': return this.userCachetUrl || this.config.cachetUrl;
+            case 'cachet': return this.userCachetUrl || this.config.cachetUrl; // Rétrocompatibilité
+            case 'cachet-p': return this.userCachetPUrl || this.config.cachetPUrl;
+            case 'cachet-f': return this.userCachetFUrl || this.config.cachetFUrl;
             default: return null;
         }
     }
@@ -1025,7 +1086,13 @@ class PDFOverlayUnifiedModule {
         const all = [
             ...this.signatures.map(s => ({ ...s, type: 'signature', color: '#28a745' })),
             ...this.paraphes.map(p => ({ ...p, type: 'paraphe', color: '#667eea' })),
-            ...this.cachets.map(c => ({ ...c, type: 'cachet', color: '#8B5CF6' }))
+            ...this.cachets.map(c => ({
+                ...c,
+                type: c.cachetType || 'cachet',
+                color: c.cachetType === 'cachet-p' ? '#9333EA' : // Violet pour Prestataire
+                       c.cachetType === 'cachet-f' ? '#4F46E5' : // Indigo pour Fournisseur
+                       '#8B5CF6' // Violet par défaut
+            }))
         ].filter(el => el.page === this.state.currentPage);
 
         all.forEach(element => {

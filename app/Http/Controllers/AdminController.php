@@ -276,9 +276,9 @@ class AdminController extends Controller
     }
 
     /**
-     * Uploader un cachet pour un utilisateur
+     * Uploader un cachet Prestataire pour un utilisateur
      */
-    public function uploadCachet(Request $request, User $user)
+    public function uploadCachetP(Request $request, User $user)
     {
         // Vérifier que l'utilisateur est admin
         if (!auth()->user()->isAdmin()) {
@@ -290,32 +290,32 @@ class AdminController extends Controller
         ]);
 
         try {
-            // Supprimer l'ancien cachet si il existe
-            if ($user->cachet_path && Storage::disk('public')->exists($user->cachet_path)) {
-                Storage::disk('public')->delete($user->cachet_path);
+            // Supprimer l'ancien cachet P si il existe
+            if ($user->cachet_p_path && Storage::disk('public')->exists($user->cachet_p_path)) {
+                Storage::disk('public')->delete($user->cachet_p_path);
             }
 
-            // Stocker le nouveau cachet
+            // Stocker le nouveau cachet P
             $file = $request->file('cachet');
-            $filename = 'cachet_' . $user->id . '_' . time() . '.png';
+            $filename = 'cachet_p_' . $user->id . '_' . time() . '.png';
             $path = $file->storeAs('cachets', $filename, 'public');
 
             // Mettre à jour l'utilisateur
-            $user->update(['cachet_path' => $path]);
+            $user->update(['cachet_p_path' => $path]);
 
             return redirect()->route('admin.users')
-                ->with('success', 'Cachet uploadé avec succès pour ' . $user->name . ' !');
+                ->with('success', 'Cachet Prestataire uploadé avec succès pour ' . $user->name . ' !');
 
         } catch (\Exception $e) {
             return redirect()->back()
-                ->with('error', 'Erreur lors de l\'upload du cachet : ' . $e->getMessage());
+                ->with('error', 'Erreur lors de l\'upload du cachet P : ' . $e->getMessage());
         }
     }
 
     /**
-     * Supprimer le cachet d'un utilisateur
+     * Supprimer le cachet Prestataire d'un utilisateur
      */
-    public function deleteCachet(User $user)
+    public function deleteCachetP(User $user)
     {
         // Vérifier que l'utilisateur est admin
         if (!auth()->user()->isAdmin()) {
@@ -323,20 +323,103 @@ class AdminController extends Controller
         }
 
         try {
-            // Supprimer le fichier de cachet
-            if ($user->cachet_path && Storage::disk('public')->exists($user->cachet_path)) {
-                Storage::disk('public')->delete($user->cachet_path);
+            // Supprimer le fichier de cachet P
+            if ($user->cachet_p_path && Storage::disk('public')->exists($user->cachet_p_path)) {
+                Storage::disk('public')->delete($user->cachet_p_path);
             }
 
             // Mettre à jour l'utilisateur
-            $user->update(['cachet_path' => null]);
+            $user->update(['cachet_p_path' => null]);
 
             return redirect()->route('admin.users')
-                ->with('success', 'Cachet supprimé avec succès pour ' . $user->name . ' !');
+                ->with('success', 'Cachet Prestataire supprimé avec succès pour ' . $user->name . ' !');
 
         } catch (\Exception $e) {
             return redirect()->back()
-                ->with('error', 'Erreur lors de la suppression du cachet : ' . $e->getMessage());
+                ->with('error', 'Erreur lors de la suppression du cachet P : ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Uploader un cachet Fournisseur pour un utilisateur
+     */
+    public function uploadCachetF(Request $request, User $user)
+    {
+        // Vérifier que l'utilisateur est admin
+        if (!auth()->user()->isAdmin()) {
+            return redirect()->route('home')->with('error', 'Accès non autorisé.');
+        }
+
+        $validated = $request->validate([
+            'cachet' => 'required|file|mimes:png|max:2048', // PNG uniquement, max 2MB
+        ]);
+
+        try {
+            // Supprimer l'ancien cachet F si il existe
+            if ($user->cachet_f_path && Storage::disk('public')->exists($user->cachet_f_path)) {
+                Storage::disk('public')->delete($user->cachet_f_path);
+            }
+
+            // Stocker le nouveau cachet F
+            $file = $request->file('cachet');
+            $filename = 'cachet_f_' . $user->id . '_' . time() . '.png';
+            $path = $file->storeAs('cachets', $filename, 'public');
+
+            // Mettre à jour l'utilisateur
+            $user->update(['cachet_f_path' => $path]);
+
+            return redirect()->route('admin.users')
+                ->with('success', 'Cachet Fournisseur uploadé avec succès pour ' . $user->name . ' !');
+
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Erreur lors de l\'upload du cachet F : ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Supprimer le cachet Fournisseur d'un utilisateur
+     */
+    public function deleteCachetF(User $user)
+    {
+        // Vérifier que l'utilisateur est admin
+        if (!auth()->user()->isAdmin()) {
+            return redirect()->route('home')->with('error', 'Accès non autorisé.');
+        }
+
+        try {
+            // Supprimer le fichier de cachet F
+            if ($user->cachet_f_path && Storage::disk('public')->exists($user->cachet_f_path)) {
+                Storage::disk('public')->delete($user->cachet_f_path);
+            }
+
+            // Mettre à jour l'utilisateur
+            $user->update(['cachet_f_path' => null]);
+
+            return redirect()->route('admin.users')
+                ->with('success', 'Cachet Fournisseur supprimé avec succès pour ' . $user->name . ' !');
+
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Erreur lors de la suppression du cachet F : ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Uploader un cachet pour un utilisateur (rétrocompatibilité - utilise cachet P)
+     * @deprecated Utiliser uploadCachetP() ou uploadCachetF()
+     */
+    public function uploadCachet(Request $request, User $user)
+    {
+        return $this->uploadCachetP($request, $user);
+    }
+
+    /**
+     * Supprimer le cachet d'un utilisateur (rétrocompatibilité - utilise cachet P)
+     * @deprecated Utiliser deleteCachetP() ou deleteCachetF()
+     */
+    public function deleteCachet(User $user)
+    {
+        return $this->deleteCachetP($user);
     }
 }

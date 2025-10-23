@@ -304,10 +304,40 @@ class DocumentController extends Controller
             $query->whereDate('created_at', '<=', $request->date_to);
         }
 
-        // Pagination et tri
-        $documents = $query->orderBy('created_at', 'desc')->paginate(15);
+        // Récupérer tous les documents (sans pagination pour le regroupement)
+        $allDocuments = $query->orderBy('created_at', 'desc')->get();
 
-        return view('documents.history', compact('documents'));
+        // Regrouper les documents par type
+        $documentsByType = $allDocuments->groupBy('type')->map(function ($docs) {
+            return $docs->sortByDesc('created_at');
+        });
+
+        // Définir l'ordre des types et les libellés
+        $typeOrder = [
+            'contrat' => 'Contrats',
+            'facture' => 'Factures',
+            'rapport' => 'Rapports',
+            'lettre' => 'Lettres',
+            'note_de_service' => 'Notes de service',
+            'autre' => 'Autres'
+        ];
+
+        // Réorganiser selon l'ordre défini
+        $documentsByTypeOrdered = collect();
+        foreach ($typeOrder as $typeKey => $typeLabel) {
+            if ($documentsByType->has($typeKey)) {
+                $documentsByTypeOrdered->put($typeLabel, $documentsByType->get($typeKey));
+            }
+        }
+
+        // Ajouter les types non définis à la fin
+        foreach ($documentsByType as $type => $docs) {
+            if (!array_key_exists($type, $typeOrder)) {
+                $documentsByTypeOrdered->put(ucfirst($type), $docs);
+            }
+        }
+
+        return view('documents.history', compact('documentsByTypeOrdered', 'allDocuments'));
     }
 
     /**

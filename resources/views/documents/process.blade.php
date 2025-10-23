@@ -421,16 +421,35 @@
                                                 @endif
                                                 
                                                 @if($allowCachet)
-                                                    <button type="button" id="addCachetBtn" 
-                                                            class="group inline-flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-gray-50 text-secondary-600 hover:text-secondary-700 font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5"
-                                                            aria-label="Ajouter un cachet au document"
-                                                            aria-describedby="cachet-help">
-                                                        <i class="fas fa-stamp group-hover:scale-110 transition-transform"></i>
-                                                        <span>Cacheter</span>
-                                                    </button>
-                                                    <div id="cachet-help" class="sr-only">
-                                                        Cliquez pour ajouter un cachet au document. Vous pourrez ensuite cliquer sur le document pour le positionner.
-                                                    </div>
+                                                    {{-- Cachet Prestataire --}}
+                                                    @if($hasCachetP ?? false)
+                                                        <button type="button" id="addCachetPBtn"
+                                                                class="group inline-flex items-center gap-2 px-4 py-2.5 bg-purple-50 hover:bg-purple-100 text-purple-700 hover:text-purple-800 font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5"
+                                                                aria-label="Ajouter un cachet Prestataire au document"
+                                                                aria-describedby="cachet-p-help"
+                                                                title="Ajouter Cachet Prestataire">
+                                                            <i class="fas fa-stamp group-hover:scale-110 transition-transform"></i>
+                                                            <span>Cachet P</span>
+                                                        </button>
+                                                        <div id="cachet-p-help" class="sr-only">
+                                                            Cliquez pour ajouter un cachet Prestataire au document. Vous pourrez ensuite cliquer sur le document pour le positionner.
+                                                        </div>
+                                                    @endif
+
+                                                    {{-- Cachet Fournisseur --}}
+                                                    @if($hasCachetF ?? false)
+                                                        <button type="button" id="addCachetFBtn"
+                                                                class="group inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 hover:text-indigo-800 font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5"
+                                                                aria-label="Ajouter un cachet Fournisseur au document"
+                                                                aria-describedby="cachet-f-help"
+                                                                title="Ajouter Cachet Fournisseur">
+                                                            <i class="fas fa-stamp group-hover:scale-110 transition-transform"></i>
+                                                            <span>Cachet F</span>
+                                                        </button>
+                                                        <div id="cachet-f-help" class="sr-only">
+                                                            Cliquez pour ajouter un cachet Fournisseur au document. Vous pourrez ensuite cliquer sur le document pour le positionner.
+                                                        </div>
+                                                    @endif
                                                 @endif
                                                 
                                                 <button type="button" id="clearAllBtn" 
@@ -2246,7 +2265,11 @@ document.addEventListener('DOMContentLoaded', function() {
         pdfUrl: '{{ $displayPdfUrl ?? $pdfUrl }}',
         signatureUrl: '{{ $signatureUrl }}',
         parapheUrl: '{{ $parapheUrl }}',
-        cachetUrl: '{{ $cachetUrl ?? "/signatures/user-cachet" }}',
+        cachetUrl: '{{ $cachetUrl ?? "/signatures/user-cachet" }}', // Rétrocompatibilité
+        cachetPUrl: '{{ $cachetPUrl ?? "/signatures/user-cachet-p" }}',
+        cachetFUrl: '{{ $cachetFUrl ?? "/signatures/user-cachet-f" }}',
+        hasCachetP: {{ ($hasCachetP ?? false) ? 'true' : 'false' }},
+        hasCachetF: {{ ($hasCachetF ?? false) ? 'true' : 'false' }},
         uploadUrl: '{{ $uploadUrl ?? "/documents/upload-signed-pdf" }}',
         redirectUrl: '{{ $redirectUrl ?? "/documents/" . $document->id . "/process/view" }}',
         documentId: {{ $document->id }},
@@ -2267,7 +2290,9 @@ document.addEventListener('DOMContentLoaded', function() {
         cachetYInputId: 'cachet_y',
         addSignatureBtnId: 'addSignatureBtn',
         addParapheBtnId: 'addParapheBtn',
-        addCachetBtnId: 'addCachetBtn',
+        addCachetBtnId: 'addCachetBtn', // Rétrocompatibilité
+        addCachetPBtnId: 'addCachetPBtn',
+        addCachetFBtnId: 'addCachetFBtn',
         addSignAndParapheBtnId: 'addSignAndParapheBtn',
         clearAllBtnId: 'clearAllBtn',
         submitBtnId: 'submitBtn',

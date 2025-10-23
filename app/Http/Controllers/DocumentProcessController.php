@@ -46,6 +46,10 @@ class DocumentProcessController extends Controller
                 'signatureUrl' => null, // Pas de signature en mode lecture seule
                 'parapheUrl' => null,   // Pas de paraphe en mode lecture seule
                 'cachetUrl' => null,    // Pas de cachet en mode lecture seule
+                'cachetPUrl' => null,
+                'cachetFUrl' => null,
+                'hasCachetP' => false,
+                'hasCachetF' => false,
                 'formAction' => '#',    // Pas de soumission possible
                 'backUrl' => route('documents.pending'),
                 'allowSignature' => false,  // Désactiver la signature
@@ -83,15 +87,21 @@ class DocumentProcessController extends Controller
         $user = auth()->user();
         $signatureUrl = $user->getSignatureUrl();
         $parapheUrl = $user->getParapheUrl();
-        $cachetUrl = $user->getCachetUrl();
-        
+        $cachetUrl = $user->getCachetUrl(); // Rétrocompatibilité (cachet P)
+        $cachetPUrl = $user->getCachetPUrl();
+        $cachetFUrl = $user->getCachetFUrl();
+
         // Données pour la vue
         $viewData = [
             'document' => $document,
             'pdfUrl' => $pdfUrl,
             'signatureUrl' => $signatureUrl,
             'parapheUrl' => $parapheUrl,
-            'cachetUrl' => $cachetUrl,
+            'cachetUrl' => $cachetUrl, // Rétrocompatibilité
+            'cachetPUrl' => $cachetPUrl,
+            'cachetFUrl' => $cachetFUrl,
+            'hasCachetP' => $user->hasCachetP(),
+            'hasCachetF' => $user->hasCachetF(),
             'formAction' => route('documents.process.store', $document),
             'backUrl' => route('documents.pending'),
             'allowSignature' => $allowSignature,

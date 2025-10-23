@@ -24,7 +24,8 @@ class User extends Authenticatable
         'role_id',
         'signature_path',
         'paraphe_path',
-        'cachet_path',
+        'cachet_p_path', // Cachet Prestataire
+        'cachet_f_path', // Cachet Fournisseur
     ];
 
     /**
@@ -160,22 +161,84 @@ class User extends Authenticatable
     }
 
     /**
-     * Vérifier si l'utilisateur a un cachet
+     * Vérifier si l'utilisateur a un cachet (rétrocompatibilité - renvoie cachet P)
+     * @deprecated Utiliser hasCachetP() ou hasCachetF()
      */
     public function hasCachet(): bool
     {
-        return !empty($this->cachet_path) && \Storage::disk('public')->exists($this->cachet_path);
+        return $this->hasCachetP();
     }
 
     /**
-     * Obtenir l'URL du cachet
+     * Obtenir l'URL du cachet (rétrocompatibilité - renvoie cachet P)
+     * @deprecated Utiliser getCachetPUrl() ou getCachetFUrl()
      */
     public function getCachetUrl(): ?string
     {
-        if ($this->hasCachet()) {
+        return $this->getCachetPUrl();
+    }
+
+    /**
+     * Vérifier si l'utilisateur a un cachet Prestataire
+     */
+    public function hasCachetP(): bool
+    {
+        return !empty($this->cachet_p_path) && \Storage::disk('public')->exists($this->cachet_p_path);
+    }
+
+    /**
+     * Obtenir l'URL du cachet Prestataire
+     */
+    public function getCachetPUrl(): ?string
+    {
+        if ($this->hasCachetP()) {
             $baseUrl = config('app.url');
-            return $baseUrl . '/storage/' . $this->cachet_path;
+            return $baseUrl . '/storage/' . $this->cachet_p_path;
         }
         return null;
+    }
+
+    /**
+     * Vérifier si l'utilisateur a un cachet Fournisseur
+     */
+    public function hasCachetF(): bool
+    {
+        return !empty($this->cachet_f_path) && \Storage::disk('public')->exists($this->cachet_f_path);
+    }
+
+    /**
+     * Obtenir l'URL du cachet Fournisseur
+     */
+    public function getCachetFUrl(): ?string
+    {
+        if ($this->hasCachetF()) {
+            $baseUrl = config('app.url');
+            return $baseUrl . '/storage/' . $this->cachet_f_path;
+        }
+        return null;
+    }
+
+    /**
+     * Obtenir le chemin du cachet par type
+     */
+    public function getCachetPath(string $type = 'p'): ?string
+    {
+        return $type === 'f' ? $this->cachet_f_path : $this->cachet_p_path;
+    }
+
+    /**
+     * Obtenir l'URL du cachet par type
+     */
+    public function getCachetUrlByType(string $type = 'p'): ?string
+    {
+        return $type === 'f' ? $this->getCachetFUrl() : $this->getCachetPUrl();
+    }
+
+    /**
+     * Vérifier si l'utilisateur a un cachet par type
+     */
+    public function hasCachetByType(string $type = 'p'): bool
+    {
+        return $type === 'f' ? $this->hasCachetF() : $this->hasCachetP();
     }
 }

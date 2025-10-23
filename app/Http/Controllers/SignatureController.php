@@ -526,13 +526,13 @@ class SignatureController extends Controller
     }
 
     /**
-     * Récupérer le cachet de l'utilisateur connecté
+     * Récupérer le cachet Prestataire de l'utilisateur connecté
      */
-    public function getUserCachet()
+    public function getUserCachetP()
     {
         try {
             $user = auth()->user();
-            
+
             if (!$user) {
                 return response()->json([
                     'success' => false,
@@ -540,47 +540,89 @@ class SignatureController extends Controller
                 ], 401);
             }
 
-            // Vérifier si l'utilisateur a un cachet_path dans la base de données
-            if ($user->cachet_path && !empty($user->cachet_path)) {
-                // Vérifier que le fichier existe
-                if (\Storage::disk('public')->exists($user->cachet_path)) {
-                    // Construire l'URL du cachet
-                    $baseUrl = config('app.url');
-                    $cachetUrl = $baseUrl . '/storage/' . $user->cachet_path;
-                    
-                    return response()->json([
-                        'success' => true,
-                        'cachet_url' => $cachetUrl,
-                        'cachetUrl' => $cachetUrl, // Compatibilité
-                        'cachet_path' => $user->cachet_path,
-                        'has_cachet' => true,
-                        'hasCachet' => true, // Compatibilité
-                        'user_id' => $user->id,
-                        'user_name' => $user->name
-                    ]);
-                } else {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Le fichier de cachet n\'existe pas sur le serveur',
-                        'cachet_path' => $user->cachet_path,
-                        'user_id' => $user->id
-                    ], 404);
-                }
+            if ($user->hasCachetP()) {
+                $cachetUrl = $user->getCachetPUrl();
+
+                return response()->json([
+                    'success' => true,
+                    'cachet_url' => $cachetUrl,
+                    'cachetUrl' => $cachetUrl, // Compatibilité
+                    'cachet_path' => $user->cachet_p_path,
+                    'cachet_type' => 'p',
+                    'has_cachet' => true,
+                    'hasCachet' => true, // Compatibilité
+                    'user_id' => $user->id,
+                    'user_name' => $user->name
+                ]);
             }
-            
-            // Si aucun cachet_path n'est défini
+
             return response()->json([
                 'success' => false,
-                'message' => 'Aucun cachet défini pour cet utilisateur',
+                'message' => 'Aucun cachet Prestataire défini pour cet utilisateur',
                 'user_id' => $user->id,
                 'user_name' => $user->name
             ], 404);
-            
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Erreur lors de la récupération du cachet : ' . $e->getMessage()
+                'message' => 'Erreur lors de la récupération du cachet P : ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Récupérer le cachet Fournisseur de l'utilisateur connecté
+     */
+    public function getUserCachetF()
+    {
+        try {
+            $user = auth()->user();
+
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Utilisateur non authentifié'
+                ], 401);
+            }
+
+            if ($user->hasCachetF()) {
+                $cachetUrl = $user->getCachetFUrl();
+
+                return response()->json([
+                    'success' => true,
+                    'cachet_url' => $cachetUrl,
+                    'cachetUrl' => $cachetUrl, // Compatibilité
+                    'cachet_path' => $user->cachet_f_path,
+                    'cachet_type' => 'f',
+                    'has_cachet' => true,
+                    'hasCachet' => true, // Compatibilité
+                    'user_id' => $user->id,
+                    'user_name' => $user->name
+                ]);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Aucun cachet Fournisseur défini pour cet utilisateur',
+                'user_id' => $user->id,
+                'user_name' => $user->name
+            ], 404);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la récupération du cachet F : ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Récupérer le cachet de l'utilisateur connecté (rétrocompatibilité - renvoie cachet P)
+     * @deprecated Utiliser getUserCachetP() ou getUserCachetF()
+     */
+    public function getUserCachet()
+    {
+        return $this->getUserCachetP();
     }
 }

@@ -109,6 +109,8 @@
                                     <option value="contrat" {{ old('type') == 'contrat' ? 'selected' : '' }}>Contrat</option>
                                     <option value="facture" {{ old('type') == 'facture' ? 'selected' : '' }}>Facture</option>
                                     <option value="rapport" {{ old('type') == 'rapport' ? 'selected' : '' }}>Rapport</option>
+                                    <option value="lettre" {{ old('type') == 'lettre' ? 'selected' : '' }}>Lettre</option>
+                                    <option value="note_de_service" {{ old('type') == 'note_de_service' ? 'selected' : '' }}>Note de service</option>
                                     <option value="autre" {{ old('type') == 'autre' ? 'selected' : '' }}>Autre</option>
                                 </select>
                                 <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">

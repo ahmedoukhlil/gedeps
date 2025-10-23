@@ -190,9 +190,15 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/signatures/user-paraphe', [App\Http\Controllers\SignatureController::class, 'getUserParaphe'])
          ->name('signatures.user-paraphe');
     
-    // Route pour récupérer le cachet de l'utilisateur
+    // Routes pour récupérer les cachets de l'utilisateur
     Route::get('/signatures/user-cachet', [App\Http\Controllers\SignatureController::class, 'getUserCachet'])
-         ->name('signatures.user-cachet');
+         ->name('signatures.user-cachet'); // Rétrocompatibilité - renvoie cachet P
+
+    Route::get('/signatures/user-cachet-p', [App\Http\Controllers\SignatureController::class, 'getUserCachetP'])
+         ->name('signatures.user-cachet-p');
+
+    Route::get('/signatures/user-cachet-f', [App\Http\Controllers\SignatureController::class, 'getUserCachetF'])
+         ->name('signatures.user-cachet-f');
     
 // API pour récupérer la signature de l'utilisateur connecté
 Route::get('/api/user-signature', [App\Http\Controllers\SignatureController::class, 'getUserSignature'])
@@ -293,10 +299,25 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/admin/users/{user}/paraphe', [App\Http\Controllers\AdminController::class, 'deleteParaphe'])
          ->name('admin.users.paraphe.delete');
     
-    Route::post('/admin/users/{user}/cachet', [App\Http\Controllers\AdminController::class, 'uploadCachet'])
+    // Routes pour Cachet Prestataire (P)
+    Route::post('/admin/users/{user}/cachet-p', [App\Http\Controllers\AdminController::class, 'uploadCachetP'])
+         ->name('admin.users.cachet-p.upload');
+
+    Route::delete('/admin/users/{user}/cachet-p', [App\Http\Controllers\AdminController::class, 'deleteCachetP'])
+         ->name('admin.users.cachet-p.delete');
+
+    // Routes pour Cachet Fournisseur (F)
+    Route::post('/admin/users/{user}/cachet-f', [App\Http\Controllers\AdminController::class, 'uploadCachetF'])
+         ->name('admin.users.cachet-f.upload');
+
+    Route::delete('/admin/users/{user}/cachet-f', [App\Http\Controllers\AdminController::class, 'deleteCachetF'])
+         ->name('admin.users.cachet-f.delete');
+
+    // Routes rétrocompatibilité (utilise cachet P)
+    Route::post('/admin/users/{user}/cachet', [App\Http\Controllers\AdminController::class, 'uploadCachetP'])
          ->name('admin.users.cachet.upload');
-    
-    Route::delete('/admin/users/{user}/cachet', [App\Http\Controllers\AdminController::class, 'deleteCachet'])
+
+    Route::delete('/admin/users/{user}/cachet', [App\Http\Controllers\AdminController::class, 'deleteCachetP'])
          ->name('admin.users.cachet.delete');
 });
 

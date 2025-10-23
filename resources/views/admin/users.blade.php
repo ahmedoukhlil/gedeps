@@ -664,11 +664,13 @@
                                                         @endif
                                                     </div>
                                                     
-                                                    <!-- Section Cachet -->
+                                                    <!-- Section Cachet Prestataire -->
                                                     <div class="py-1">
-                                                        <div class="px-4 py-2 bg-gray-50 flex items-center justify-between">
-                                                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Cachet</p>
-                                                            @if($user->hasCachet())
+                                                        <div class="px-4 py-2 bg-purple-50 flex items-center justify-between">
+                                                            <p class="text-xs font-semibold text-purple-700 uppercase tracking-wide">
+                                                                <i class="fas fa-stamp mr-1"></i>Cachet Prestataire
+                                                            </p>
+                                                            @if($user->hasCachetP())
                                                                 <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
                                                                     <i class="fas fa-check mr-1"></i>Configuré
                                                                 </span>
@@ -678,25 +680,64 @@
                                                                 </span>
                                                             @endif
                                                         </div>
-                                                        @if($user->hasCachet())
-                                                            <button onclick="viewCachet({{ $user->id }}, '{{ $user->name }}', '{{ $user->getCachetUrl() }}'); toggleDropdown({{ $user->id }});"
+                                                        @if($user->hasCachetP())
+                                                            <button onclick="viewCachetP({{ $user->id }}, '{{ $user->name }}', '{{ $user->getCachetPUrl() }}'); toggleDropdown({{ $user->id }});"
                                                                     type="button"
-                                                                    class="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 flex items-center transition-colors duration-150">
-                                                                <i class="fas fa-eye w-5 text-green-600"></i>
-                                                                <span class="ml-3 flex-1">Voir le cachet</span>
+                                                                    class="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-700 flex items-center transition-colors duration-150">
+                                                                <i class="fas fa-eye w-5 text-purple-600"></i>
+                                                                <span class="ml-3 flex-1">Voir le cachet P</span>
                                                             </button>
-                                                            <button onclick="deleteCachet({{ $user->id }}, '{{ $user->name }}'); toggleDropdown({{ $user->id }});"
+                                                            <button onclick="deleteCachetP({{ $user->id }}, '{{ $user->name }}'); toggleDropdown({{ $user->id }});"
                                                                     type="button"
                                                                     class="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 flex items-center transition-colors duration-150">
                                                                 <i class="fas fa-trash w-5 text-red-600"></i>
-                                                                <span class="ml-3 flex-1">Supprimer le cachet</span>
+                                                                <span class="ml-3 flex-1">Supprimer le cachet P</span>
                                                             </button>
                                         @else
-                                                            <button onclick="uploadCachet({{ $user->id }}, '{{ $user->name }}'); toggleDropdown({{ $user->id }});"
+                                                            <button onclick="uploadCachetP({{ $user->id }}, '{{ $user->name }}'); toggleDropdown({{ $user->id }});"
                                                                     type="button"
-                                                                    class="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 flex items-center transition-colors duration-150">
-                                                                <i class="fas fa-upload w-5 text-blue-600"></i>
-                                                                <span class="ml-3 flex-1">Ajouter un cachet</span>
+                                                                    class="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-700 flex items-center transition-colors duration-150">
+                                                                <i class="fas fa-upload w-5 text-purple-600"></i>
+                                                                <span class="ml-3 flex-1">Ajouter un cachet P</span>
+                                                            </button>
+                                        @endif
+                                                    </div>
+
+                                                    <!-- Section Cachet Fournisseur -->
+                                                    <div class="py-1">
+                                                        <div class="px-4 py-2 bg-indigo-50 flex items-center justify-between">
+                                                            <p class="text-xs font-semibold text-indigo-700 uppercase tracking-wide">
+                                                                <i class="fas fa-stamp mr-1"></i>Cachet Fournisseur
+                                                            </p>
+                                                            @if($user->hasCachetF())
+                                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                                                    <i class="fas fa-check mr-1"></i>Configuré
+                                                                </span>
+                                                            @else
+                                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">
+                                                                    Non configuré
+                                                                </span>
+                                                            @endif
+                                                        </div>
+                                                        @if($user->hasCachetF())
+                                                            <button onclick="viewCachetF({{ $user->id }}, '{{ $user->name }}', '{{ $user->getCachetFUrl() }}'); toggleDropdown({{ $user->id }});"
+                                                                    type="button"
+                                                                    class="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 flex items-center transition-colors duration-150">
+                                                                <i class="fas fa-eye w-5 text-indigo-600"></i>
+                                                                <span class="ml-3 flex-1">Voir le cachet F</span>
+                                                            </button>
+                                                            <button onclick="deleteCachetF({{ $user->id }}, '{{ $user->name }}'); toggleDropdown({{ $user->id }});"
+                                                                    type="button"
+                                                                    class="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 flex items-center transition-colors duration-150">
+                                                                <i class="fas fa-trash w-5 text-red-600"></i>
+                                                                <span class="ml-3 flex-1">Supprimer le cachet F</span>
+                                                            </button>
+                                        @else
+                                                            <button onclick="uploadCachetF({{ $user->id }}, '{{ $user->name }}'); toggleDropdown({{ $user->id }});"
+                                                                    type="button"
+                                                                    class="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 flex items-center transition-colors duration-150">
+                                                                <i class="fas fa-upload w-5 text-indigo-600"></i>
+                                                                <span class="ml-3 flex-1">Ajouter un cachet F</span>
                                                             </button>
                                         @endif
                                                     </div>
@@ -892,27 +933,89 @@
     </div>
 </div>
 
-<!-- Modal d'upload de cachet -->
-<div id="cachetModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden">
+<!-- Modal d'upload de cachet Prestataire -->
+<div id="cachetPModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden">
     <div class="flex items-center justify-center min-h-screen p-4">
         <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
-            <div class="px-6 py-4 border-b border-gray-200">
-                <h3 class="text-lg font-medium text-gray-900">Ajouter un cachet</h3>
+            <div class="px-6 py-4 border-b border-gray-200 bg-purple-50">
+                <h3 class="text-lg font-medium text-purple-900">
+                    <i class="fas fa-stamp mr-2"></i>Ajouter un cachet Prestataire
+                </h3>
             </div>
-            <form id="cachetForm" method="POST" enctype="multipart/form-data" class="p-6">
+            <form id="cachetPForm" method="POST" enctype="multipart/form-data" class="p-6">
                 @csrf
-                
+
                 <div class="space-y-4">
                     <div>
-                        <label for="cachet_file" class="block text-sm font-medium text-gray-700 mb-2">Fichier de cachet (PNG uniquement)</label>
-                        <input type="file" name="cachet" id="cachet_file" accept=".png" required
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                        <label for="cachet_p_file" class="block text-sm font-medium text-gray-700 mb-2">Fichier de cachet Prestataire (PNG uniquement)</label>
+                        <input type="file" name="cachet" id="cachet_p_file" accept=".png" required
+                               class="w-full px-3 py-2 border border-purple-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
                         <p class="mt-1 text-xs text-gray-500">Format PNG uniquement, taille max: 2MB</p>
                     </div>
                 </div>
 
                 <div class="flex justify-end space-x-3 mt-6">
-                    <button type="button" onclick="closeCachetModal()"
+                    <button type="button" onclick="closeCachetPModal()"
+                            class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                        Annuler
+                    </button>
+                    <button type="submit"
+                            class="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700">
+                        Uploader
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de visualisation de cachet Prestataire -->
+<div id="viewCachetPModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div class="px-6 py-4 border-b border-gray-200 bg-purple-50">
+                <h3 class="text-lg font-medium text-purple-900">
+                    <i class="fas fa-stamp mr-2"></i>Cachet Prestataire de <span id="cachetPUserName"></span>
+                </h3>
+            </div>
+            <div class="p-6">
+                <div class="text-center">
+                    <img id="cachetPImage" src="" alt="Cachet Prestataire" class="max-w-full h-auto border border-purple-200 rounded">
+                </div>
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button onclick="closeViewCachetPModal()"
+                            class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                        Fermer
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal d'upload de cachet Fournisseur -->
+<div id="cachetFModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div class="px-6 py-4 border-b border-gray-200 bg-indigo-50">
+                <h3 class="text-lg font-medium text-indigo-900">
+                    <i class="fas fa-stamp mr-2"></i>Ajouter un cachet Fournisseur
+                </h3>
+            </div>
+            <form id="cachetFForm" method="POST" enctype="multipart/form-data" class="p-6">
+                @csrf
+
+                <div class="space-y-4">
+                    <div>
+                        <label for="cachet_f_file" class="block text-sm font-medium text-gray-700 mb-2">Fichier de cachet Fournisseur (PNG uniquement)</label>
+                        <input type="file" name="cachet" id="cachet_f_file" accept=".png" required
+                               class="w-full px-3 py-2 border border-indigo-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                        <p class="mt-1 text-xs text-gray-500">Format PNG uniquement, taille max: 2MB</p>
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button type="button" onclick="closeCachetFModal()"
                             class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
                         Annuler
                     </button>
@@ -926,19 +1029,21 @@
     </div>
 </div>
 
-<!-- Modal de visualisation de cachet -->
-<div id="viewCachetModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden">
+<!-- Modal de visualisation de cachet Fournisseur -->
+<div id="viewCachetFModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden">
     <div class="flex items-center justify-center min-h-screen p-4">
         <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
-            <div class="px-6 py-4 border-b border-gray-200">
-                <h3 class="text-lg font-medium text-gray-900">Cachet de <span id="cachetUserName"></span></h3>
+            <div class="px-6 py-4 border-b border-gray-200 bg-indigo-50">
+                <h3 class="text-lg font-medium text-indigo-900">
+                    <i class="fas fa-stamp mr-2"></i>Cachet Fournisseur de <span id="cachetFUserName"></span>
+                </h3>
             </div>
             <div class="p-6">
                 <div class="text-center">
-                    <img id="cachetImage" src="" alt="Cachet" class="max-w-full h-auto border border-gray-200 rounded">
+                    <img id="cachetFImage" src="" alt="Cachet Fournisseur" class="max-w-full h-auto border border-indigo-200 rounded">
                 </div>
                 <div class="flex justify-end space-x-3 mt-6">
-                    <button onclick="closeViewCachetModal()"
+                    <button onclick="closeViewCachetFModal()"
                             class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
                         Fermer
                     </button>
@@ -1070,42 +1175,87 @@ function deleteParaphe(id, name) {
     }
 }
 
-function uploadCachet(id, name) {
-    document.getElementById('cachetForm').action = `/admin/users/${id}/cachet`;
-    document.getElementById('cachetModal').classList.remove('hidden');
+// Fonctions pour Cachet Prestataire
+function uploadCachetP(id, name) {
+    document.getElementById('cachetPForm').action = `/admin/users/${id}/cachet-p`;
+    document.getElementById('cachetPModal').classList.remove('hidden');
 }
 
-function closeCachetModal() {
-    document.getElementById('cachetModal').classList.add('hidden');
-    document.getElementById('cachetForm').reset();
+function closeCachetPModal() {
+    document.getElementById('cachetPModal').classList.add('hidden');
+    document.getElementById('cachetPForm').reset();
 }
 
-function viewCachet(id, name, cachetUrl) {
-    document.getElementById('cachetUserName').textContent = name;
-    document.getElementById('cachetImage').src = cachetUrl;
-    document.getElementById('viewCachetModal').classList.remove('hidden');
+function viewCachetP(id, name, cachetUrl) {
+    document.getElementById('cachetPUserName').textContent = name;
+    document.getElementById('cachetPImage').src = cachetUrl;
+    document.getElementById('viewCachetPModal').classList.remove('hidden');
 }
 
-function closeViewCachetModal() {
-    document.getElementById('viewCachetModal').classList.add('hidden');
+function closeViewCachetPModal() {
+    document.getElementById('viewCachetPModal').classList.add('hidden');
 }
 
-function deleteCachet(id, name) {
-    if (confirm(`Êtes-vous sûr de vouloir supprimer le cachet de "${name}" ?`)) {
+function deleteCachetP(id, name) {
+    if (confirm(`Êtes-vous sûr de vouloir supprimer le cachet Prestataire de "${name}" ?`)) {
         const form = document.createElement('form');
         form.method = 'POST';
-        form.action = `/admin/users/${id}/cachet`;
-        
+        form.action = `/admin/users/${id}/cachet-p`;
+
         const methodInput = document.createElement('input');
         methodInput.type = 'hidden';
         methodInput.name = '_method';
         methodInput.value = 'DELETE';
-        
+
         const tokenInput = document.createElement('input');
         tokenInput.type = 'hidden';
         tokenInput.name = '_token';
         tokenInput.value = '{{ csrf_token() }}';
-        
+
+        form.appendChild(methodInput);
+        form.appendChild(tokenInput);
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+// Fonctions pour Cachet Fournisseur
+function uploadCachetF(id, name) {
+    document.getElementById('cachetFForm').action = `/admin/users/${id}/cachet-f`;
+    document.getElementById('cachetFModal').classList.remove('hidden');
+}
+
+function closeCachetFModal() {
+    document.getElementById('cachetFModal').classList.add('hidden');
+    document.getElementById('cachetFForm').reset();
+}
+
+function viewCachetF(id, name, cachetUrl) {
+    document.getElementById('cachetFUserName').textContent = name;
+    document.getElementById('cachetFImage').src = cachetUrl;
+    document.getElementById('viewCachetFModal').classList.remove('hidden');
+}
+
+function closeViewCachetFModal() {
+    document.getElementById('viewCachetFModal').classList.add('hidden');
+}
+
+function deleteCachetF(id, name) {
+    if (confirm(`Êtes-vous sûr de vouloir supprimer le cachet Fournisseur de "${name}" ?`)) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/admin/users/${id}/cachet-f`;
+
+        const methodInput = document.createElement('input');
+        methodInput.type = 'hidden';
+        methodInput.name = '_method';
+        methodInput.value = 'DELETE';
+
+        const tokenInput = document.createElement('input');
+        tokenInput.type = 'hidden';
+        tokenInput.name = '_token';
+        tokenInput.value = '{{ csrf_token() }}';
+
         form.appendChild(methodInput);
         form.appendChild(tokenInput);
         document.body.appendChild(form);
